@@ -1,0 +1,1 @@
+xetal-gpu-runtime on opencl3 (dynamic): devices across platforms, execute with device checks, typed buffers, in-order launches, outputs widened back; four device tests; xetal-gpu devices and run --device opencl:N; check-equiv runs every twin on every device within 1e-5. All five twins agree with the evaluator on the Apple M1 Max. Gate passes.
