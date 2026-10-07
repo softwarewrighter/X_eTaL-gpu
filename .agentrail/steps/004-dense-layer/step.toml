@@ -1,4 +1,4 @@
-number = 3
+number = 4
 slug = "dense-layer"
 status = "pending"
 description = "A dense layer and a softmax by row in X_eTaL and on the GPU: ac:d_ense x wb (..."

@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-07
 
+- 07:55 `docs` Macros and extensions analyzed (saga gpu-algebra, inserted step): `docs/macros-and-extensions.md` judges ten candidates by the user's three justifications (concision, speed, a third-party C-ABI library) with measurements here (a million Floats over the `ext:` bridge and back: 401 ms, against 152 ms for X_eTaL's own pipeline on them; a 256 by 256 product in X_eTaL: 1.54 s, 92 ns per multiply-add): one extension is justified (the GPU runtime as an ABI V1 package, X1), no new macro; `ffi:b_ind<`, `c_fg<` and `k:c_ases<` reused as they are; a model's XIR is data, so a function writes it, not a macro. Plan: saga gpu-extension added, saga gpu-hardware moved to the coming Arch machine with a newer GPU; ask G8 (the native hook with binary arrays); CLAUDE.md reads the analysis.
 - 07:25 `docs` CHANGES.md times set to the commits' (as committed, not as estimated).
 - 07:15 `plan` Saga gpu-foundation archived; saga gpu-algebra started with its four steps (axis-reduce, matvec, dense-layer, schedules), as `docs/plan.md` plans it.
 - 07:05 `chore` Saga step reduce-gpu completed; saga gpu-foundation done.

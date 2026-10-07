@@ -1,0 +1,8 @@
+number = 1
+slug = "macros-extensions-analysis"
+status = "in-progress"
+description = "docs/macros-and-extensions.md: a detailed analysis of how this repo should us..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T09:19:38"
+commits = []

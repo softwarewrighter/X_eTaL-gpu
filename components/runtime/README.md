@@ -38,7 +38,7 @@ where `devices` reports none. The runtime's own tests run on device
   `ocl-icd-libopencl1`); `clinfo` should list the card before
   `xetal-gpu devices` can. Kepler (K80) needs the 470 driver series,
   Maxwell and Pascal the 5xx series; both report OpenCL 1.2 (3.0 on
-  newer drivers) and have fp64. Saga 4 records what each generation
+  newer drivers) and have fp64. The gpu-hardware saga records what each generation
   does.
 
 ## Sizes and timings

@@ -72,7 +72,10 @@ Ints exactly and Floats within 1e-5 (`xetal-gpu devices`, `run
 1024, 65536 and 1048576 items, generated data run through the
 evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
 Next, saga 2 (gpu-algebra): reductions along an axis, matrix-vector
-and matrix products, a dense layer, schedules as files. See [`docs/plan.md`](docs/plan.md) for
+and matrix products, a dense layer, schedules as files; then the GPU
+as a native extension X_eTaL programs call themselves (saga 3). The
+work moves to an Arch machine with a newer GPU soon; nothing in the
+code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
 ## Build
@@ -133,6 +136,9 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   subset, the roadmap
 - [`docs/xetal-asks.md`](docs/xetal-asks.md) -- what this repo needs
   from X_eTaL; the blockers first
+- [`docs/macros-and-extensions.md`](docs/macros-and-extensions.md) --
+  where macros and native extensions are justified here, and where
+  not, with measurements
 - `docs/research7.txt` -- the planning conversation (archival, not
   normative)
 - [`CHANGES.md`](CHANGES.md) -- every commit

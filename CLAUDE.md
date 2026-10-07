@@ -304,6 +304,9 @@ Read before working:
 - `docs/xetal-asks.md` -- what this repo needs from X_eTaL; the first
   entries (G1-G4) are the blockers and say what is carried here
   provisionally
+- `docs/macros-and-extensions.md` -- when a macro or a native
+  extension is justified (concision, speed, a C-ABI library) and the
+  verdict on each candidate; a new one is judged the same way
 - `docs/research7.txt` -- the planning conversation (archival, NOT
   normative)
 - `../X_eTaL/docs/lang-choices.md`, `../X_eTaL/docs/reference.md` --

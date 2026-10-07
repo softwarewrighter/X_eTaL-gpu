@@ -138,12 +138,28 @@ Goal: axes and inner products, the operations a model is made of.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
+| 0 | macros-extensions-analysis | DONE (2026-10-07, inserted at the user's request): `docs/macros-and-extensions.md`, every macro and extension candidate judged by the three justifications (concision, speed, a C-ABI library), with measurements: one extension justified (the `Gpu` package, saga gpu-extension below), no new macro; `ffi:b_ind<`, `c_fg<` and `k:c_ases<` reused as they are; ask G8 |
 | 1 | axis-reduce | `reduce` along an axis of a matrix (`r_/_2`, `r_/`), one work-item per row or column; examples and twins |
 | 2 | matvec | `matmul` for matrix-vector (`x '+ '* i_nner w`): one work-item per output; a tiled schedule for matrix-matrix; `ac:m_atvec`, `ac:m_atmul`; sizes to 1024 by 1024 |
 | 3 | dense-layer | `y = relu(W x + b)` as X_eTaL (`ac:d_ense`, X_eTaL-ML's NN shape of weights with the bias row) and on the GPU; a softmax by row (exp, row reduce, divide) |
 | 4 | schedules | the schedule as a TOML file per device (work-group size, tile, element types, weight storage host or device); `xetal-gpu run --schedule FILE`; `explain` shows it |
 
-### Saga 3 -- gpu-models
+### Saga 3 -- gpu-extension
+
+Goal: X_eTaL programs call the GPU themselves, through
+X_eTaL-extensions' ABI V1 and its `xetal-x` bridge (justified in
+`docs/macros-and-extensions.md`, X1: OpenCL is a C-ABI library, and
+products and models are faster on the device even through the
+text bridge). Testable on this Mac.
+
+| # | Step slug | Delivers |
+| - | --------- | -------- |
+| 1 | pin-extensions | `XETAL_EXTENSIONS_COMMIT`, `scripts/xetal-extensions.sh` (clone into `work/xetal-extensions/`, build `xetal-x`), a gate check that `xetal-x` loads hello |
+| 2 | gpu-package | `extensions/gpu/`: `extension.toml`, `rust/` (a cdylib on `xetal-ext-sdk` and this repo's runtime: devices, load, bind, run, output, explain, one session per thread), Rust tests |
+| 3 | gpu-facade | `lib/Gpu.xtl` by `ffi:b_ind<`, its X_eTaL half (program writers for products and layers, `gp:r_un1`, `gp:n_ear`), reg-rs tests with `xetal-x`, types pinned |
+| 4 | offload-demo | one X_eTaL program computing a 512 by 512 product with the evaluator and on the GPU, compared and timed; the bridge's cost stated |
+
+### Saga 4 -- gpu-models
 
 Goal: research7's PoC G2, a tiny Jev-like typed-decision model (a
 small transformer-like classifier, trained from scratch, inference
@@ -157,10 +173,15 @@ then on the old cards.
 | 3 | jev-train | a trainer for the typed-decision task (requests classified as DRAW, ARRAY_QUERY, EXPLAIN, EXECUTE, DOC_SEARCH), f32 |
 | 4 | jev-gpu | the whole inference scheduled as OpenCL kernels; the same prompt, model and weights giving the same decision on CPU and GPU; a visualization of which X_eTaL operations became which kernels |
 
-### Saga 4 -- gpu-hardware
+### Saga 5 -- gpu-hardware
 
-Goal: the old cards. Needs the Arch machine with the NVIDIA OpenCL
-runtime; nothing here can be tested on this Mac.
+Goal: other GPUs, first the Arch machine with a newer GPU that the
+work moves to soon (the user, 2026-10-07), then the old cards.
+Nothing in the code changes on the move: the OpenCL library is
+loaded at run time and the checks use every device found. The
+machine needs `ocl-icd`, the vendor's OpenCL (`opencl-nvidia`,
+`rocm-opencl-runtime`) and `clinfo`; with fp64 there, `--float f64`
+schedules become testable. Nothing here can be tested on this Mac.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
@@ -168,7 +189,7 @@ runtime; nothing here can be tested on this Mac.
 | 2 | generations | the one program across every generation present (Kepler to Ampere and newer); a table of what ran where |
 | 3 | quantized | f16, then i8, then the ternary (1.58-bit) Jev: the GPU schedule decides the physical representation (packed 2-bit storage, i32 accumulation) of the semantic type (research7 "1.58-bit becomes a terrific later experiment") |
 
-### Saga 5 -- xetal-lowering (deferred: asks G1, G2, G6)
+### Saga 6 -- xetal-lowering (deferred: asks G1, G2, G6)
 
 Goal: the one-command demo, `xetal run --device opencl:0 demo.xtl`,
 once X_eTaL has the accelerator IR and the lowering.

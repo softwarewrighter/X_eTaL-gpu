@@ -1,4 +1,4 @@
-number = 2
+number = 3
 slug = "matvec"
 status = "pending"
 description = "Inner products. XIR: matmul %a %b for a matrix times a vector and a matrix ti..."
