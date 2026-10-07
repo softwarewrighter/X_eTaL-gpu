@@ -61,7 +61,10 @@ their baselines, the reference the GPU must reproduce (step 2); the
 provisional IR with its text form, checker and reference interpreter,
 the `xetal-gpu` tool (`check`, `run`, `print`), and the five examples'
 hand-lowered twins, each proved equal to the evaluator's output
-exactly (step 3). Next: the OpenCL emitter (4), the runtime (5), the
+exactly (step 3); the schedule and the OpenCL C 1.2 emitter, fusing
+each elementwise chain into one kernel and laying out reductions as
+local-memory trees, with every twin's kernel source and plan pinned
+(`xetal-gpu kernel`, `explain`; step 4). Next: the runtime (5), the
 reduction on the device (6). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
@@ -86,6 +89,8 @@ just test                            # every library's baselines, the components
 just gate                            # the pre-commit gate
 just build                           # the xetal-gpu tool (target/release/xetal-gpu)
 target/release/xetal-gpu run libs/Accel/demos/reduce-sum.xir   # the IR twin of an example, interpreted
+target/release/xetal-gpu kernel libs/Accel/demos/pipeline.xir  # the OpenCL C it becomes
+target/release/xetal-gpu explain libs/Accel/demos/pipeline.xir # which values became which kernels
 ```
 
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit

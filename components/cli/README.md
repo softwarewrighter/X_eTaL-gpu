@@ -7,6 +7,9 @@ xetal-gpu check FILE.xir                 parse and check: every value with its t
 xetal-gpu run FILE.xir [--device cpu]    run; each output printed as xetal prints it
     [--bind NAME=1,2,3 | --bind NAME=@FILE]...     an input's items (a file: whitespace-separated)
 xetal-gpu print FILE.xir                 the program in its canonical text form
+xetal-gpu kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
+xetal-gpu explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
+    SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)
 xetal-gpu version
 ```
 
@@ -29,7 +32,23 @@ $ xetal-gpu run libs/Accel/demos/reduce-sum.xir
 3.1875
 ```
 
-`--device cpu` is the reference interpreter (`xetal-gpu-xir`); the
-OpenCL devices (`--device opencl:N`, `xetal-gpu devices`, `kernel`,
-`explain`) come with the opencl and runtime components (plan saga 1,
-steps 4 and 5).
+```
+$ xetal-gpu explain libs/Accel/demos/pipeline.xir
+schedule: Float as float, Int as long, work-group 256
+buffers:
+  b_x: long 8 items, %x i64 [8]; constant, uploaded by the host
+  ...
+kernels:
+  k0: 8 elements, one work-item each; computes %xw %s %pos; writes %pos
+  reduce_add_long: a tree reduction in local memory, one partial per work-group; computes %sum
+  ...
+launches:
+  1: k0(b_x, b_w, b_pos) global 8 local 8: 8 elements (1 group of 8)
+  2: reduce_add_long(b_pos, b_sum, 8, local 2048 bytes) global 256 local 256: %sum: add 8 items to 1 partial (pass 1)
+  ...
+```
+
+`--device cpu` is the reference interpreter (`xetal-gpu-xir`);
+`kernel` and `explain` are the emitter (`xetal-gpu-opencl`). Running
+on an OpenCL device (`--device opencl:N`, `xetal-gpu devices`) comes
+with the runtime component (plan saga 1, step 5).

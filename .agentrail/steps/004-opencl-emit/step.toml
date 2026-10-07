@@ -1,6 +1,6 @@
 number = 4
 slug = "opencl-emit"
-status = "pending"
+status = "in-progress"
 description = "components/opencl (crate xetal-gpu-opencl): the schedule (a struct: fused ele..."
 role = "production"
 context_files = []

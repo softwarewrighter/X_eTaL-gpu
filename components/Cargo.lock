@@ -6,6 +6,14 @@ version = 4
 name = "xetal-gpu-cli"
 version = "0.1.0"
 dependencies = [
+ "xetal-gpu-opencl",
+ "xetal-gpu-xir",
+]
+
+[[package]]
+name = "xetal-gpu-opencl"
+version = "0.1.0"
+dependencies = [
  "xetal-gpu-xir",
 ]
 

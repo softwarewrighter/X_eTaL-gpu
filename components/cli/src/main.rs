@@ -5,11 +5,15 @@
 //! xetal-gpu run FILE.xir [--device cpu] [--bind NAME=1,2,3 | NAME=@FILE]...
 //!                                             run; each output printed as xetal prints it
 //! xetal-gpu print FILE.xir                    the program in its canonical text form
+//! xetal-gpu kernel FILE.xir [SCHEDULE]        the OpenCL C it would run
+//! xetal-gpu explain FILE.xir [SCHEDULE]       the plan: buffers, kernels, launches
+//!   SCHEDULE: --float f32|f64  --int i32|i64  --work-group N
 //! ```
 
 use std::collections::HashMap;
 use std::process::ExitCode;
 
+use xetal_gpu_opencl::{explain, plan, Schedule, Width};
 use xetal_gpu_xir::{check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
 
 const USAGE: &str = "\
@@ -18,6 +22,9 @@ usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   run FILE.xir [--device cpu]    run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   an input's items (a file: whitespace-separated)
   print FILE.xir                 the program in its canonical text form
+  kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
+  explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
+    SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)
   version";
 
 fn main() -> ExitCode {
@@ -57,6 +64,17 @@ fn dispatch(args: &[String]) -> Result<()> {
             print!("{}", text::print(&checked.program));
             Ok(())
         }
+        "kernel" | "explain" => {
+            let checked = load(args.get(1))?;
+            let schedule = schedule(&args[2.min(args.len())..])?;
+            let p = plan(&checked, &schedule);
+            if cmd == "kernel" {
+                print!("{}", p.source);
+            } else {
+                print!("{}", explain(&checked, &p));
+            }
+            Ok(())
+        }
         "run" => {
             let checked = load(args.get(1))?;
             let mut device = "cpu".to_string();
@@ -91,6 +109,41 @@ fn dispatch(args: &[String]) -> Result<()> {
         }
         other => Err(Error(format!("unknown command `{other}`\n{USAGE}"))),
     }
+}
+
+/// `--float f32|f64 --int i32|i64 --work-group N`, the defaults otherwise.
+fn schedule(args: &[String]) -> Result<Schedule> {
+    let mut s = Schedule::default();
+    let mut i = 0;
+    while i < args.len() {
+        let value = args.get(i + 1).ok_or_else(|| Error(format!("{} needs a value", args[i])))?;
+        match args[i].as_str() {
+            "--float" => {
+                s.float = match value.as_str() {
+                    "f32" => Width::W32,
+                    "f64" => Width::W64,
+                    other => return Err(Error(format!("--float takes f32 or f64, got `{other}`"))),
+                }
+            }
+            "--int" => {
+                s.int = match value.as_str() {
+                    "i32" => Width::W32,
+                    "i64" => Width::W64,
+                    other => return Err(Error(format!("--int takes i32 or i64, got `{other}`"))),
+                }
+            }
+            "--work-group" => {
+                s.work_group = value
+                    .parse()
+                    .ok()
+                    .filter(|n: &usize| n.is_power_of_two())
+                    .ok_or_else(|| Error(format!("--work-group takes a power of two, got `{value}`")))?;
+            }
+            other => return Err(Error(format!("unknown option `{other}`\n{USAGE}"))),
+        }
+        i += 2;
+    }
+    Ok(s)
 }
 
 fn load(path: Option<&String>) -> Result<Checked> {

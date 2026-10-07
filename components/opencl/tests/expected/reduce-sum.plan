@@ -1,0 +1,37 @@
+schedule: Float as float, Int as long, work-group 256
+buffers:
+  b_a: long 8 items, %a i64 [8]; constant, uploaded by the host
+  b_b: long 8 items, %b i64 [8]; written on the device
+  b_c: long 8 items, %c i64 [8]; written on the device
+  b_sum: long 1 item, %sum i64 []; written on the device
+  b_max: long 1 item, %max i64 []; written on the device
+  b_ab: long 8 items, %ab i64 [8]; written on the device
+  b_dot: long 1 item, %dot i64 []; written on the device
+  b_f: float 8 items, %f f64 [8]; written on the device
+  b_fsum: float 1 item, %fsum f64 []; written on the device
+  b_ff: float 8 items, %ff f64 [8]; written on the device
+  b_fdot: float 1 item, %fdot f64 []; written on the device
+kernels:
+  k0: 8 elements, one work-item each; computes %b %c; writes %b %c
+  reduce_add_long: a tree reduction in local memory, one partial per work-group; computes %sum %dot
+  reduce_max_long: a tree reduction in local memory, one partial per work-group; computes %max
+  k1: 8 elements, one work-item each; computes %ab; writes %ab
+  k2: 8 elements, one work-item each; computes %af %f; writes %f
+  reduce_add_float: a tree reduction in local memory, one partial per work-group; computes %fsum %fdot
+  k3: 8 elements, one work-item each; computes %ff; writes %ff
+launches:
+  1: k0(b_a, b_b, b_c) global 8 local 8: 8 elements (1 group of 8)
+  2: reduce_add_long(b_c, b_sum, 8, local 2048 bytes) global 256 local 256: %sum: add 8 items to 1 partial (pass 1)
+  3: reduce_max_long(b_c, b_max, 8, local 2048 bytes) global 256 local 256: %max: max 8 items to 1 partial (pass 1)
+  4: k1(b_a, b_b, b_ab) global 8 local 8: 8 elements (1 group of 8)
+  5: reduce_add_long(b_ab, b_dot, 8, local 2048 bytes) global 256 local 256: %dot: add 8 items to 1 partial (pass 1)
+  6: k2(b_a, b_f) global 8 local 8: 8 elements (1 group of 8)
+  7: reduce_add_float(b_f, b_fsum, 8, local 1024 bytes) global 256 local 256: %fsum: add 8 items to 1 partial (pass 1)
+  8: k3(b_f, b_ff) global 8 local 8: 8 elements (1 group of 8)
+  9: reduce_add_float(b_ff, b_fdot, 8, local 1024 bytes) global 256 local 256: %fdot: add 8 items to 1 partial (pass 1)
+outputs:
+  %sum from b_sum, read back by the host
+  %max from b_max, read back by the host
+  %dot from b_dot, read back by the host
+  %fsum from b_fsum, read back by the host
+  %fdot from b_fdot, read back by the host

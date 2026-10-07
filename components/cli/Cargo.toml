@@ -13,3 +13,4 @@ path = "src/main.rs"
 
 [dependencies]
 xetal-gpu-xir = { path = "../xir" }
+xetal-gpu-opencl = { path = "../opencl" }

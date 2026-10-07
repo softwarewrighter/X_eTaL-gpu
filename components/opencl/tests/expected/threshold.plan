@@ -1,0 +1,19 @@
+schedule: Float as float, Int as long, work-group 256
+buffers:
+  b_r: float 8 items, %r f64 [8]; constant, uploaded by the host
+  b_n0: long 8 items, %n0 i64 [8]; constant, uploaded by the host
+  b_x: float 8 items, %x f64 [8]; written on the device
+  b_th: float 8 items, %th f64 [8]; written on the device
+  b_relu: float 8 items, %relu f64 [8]; written on the device
+  b_relun: long 8 items, %relun i64 [8]; written on the device
+  b_kept: long 8 items, %kept i64 [8]; written on the device
+kernels:
+  k0: 8 elements, one work-item each; computes %q %x %m %mf %th %relu %n %relun %mask %kept; writes %x %th %relu %relun %kept
+launches:
+  1: k0(b_r, b_n0, b_x, b_th, b_relu, b_relun, b_kept) global 8 local 8: 8 elements (1 group of 8)
+outputs:
+  %x from b_x, read back by the host
+  %th from b_th, read back by the host
+  %relu from b_relu, read back by the host
+  %relun from b_relun, read back by the host
+  %kept from b_kept, read back by the host
