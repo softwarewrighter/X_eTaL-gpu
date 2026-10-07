@@ -94,7 +94,7 @@ Implementable work first (the GPU side, against hand-lowered
 examples); what needs an X_eTaL ask (the lowering, the one-command
 demo) is in the last saga and moves up when the ask lands.
 
-### Saga 1 -- gpu-foundation  [ACTIVE]
+### Saga 1 -- gpu-foundation  [DONE]
 
 Goal: the process, the pinned X_eTaL, the acceleratable subset as a
 tested library, the provisional IR with an interpreter, OpenCL
@@ -108,7 +108,29 @@ and the first proof: one X_eTaL program's result reproduced on a GPU.
 | 3 | xir | DONE: `xetal-gpu-xir` (ir, text, check, interp, format; 17 tests), the five twins, `scripts/compare-out.py` and `check-equiv.sh` (exact on cpu; a demo without a twin fails), `xetal-gpu check`, `run --device cpu`, `print`; found that X_eTaL prints Floats in full decimal (no exponent) and folds a reduce from the right, both matched. Planned: `components/xir`: the IR (types, shapes, ops), its text form (parse and print, round-trip tested), shape and type checking, the reference interpreter (i64 and f64, X_eTaL's semantics); each demo's `.xir` twin; `scripts/check-equiv.sh` (the twin's interpretation against the baseline, Ints exact, Floats within tolerance); `xetal-gpu check` and `run --device cpu` |
 | 4 | opencl-emit | DONE: `xetal-gpu-opencl` (Schedule: float/int widths, work-group; Plan: source, buffers, launches, outputs; fusion of consecutive elementwise values of one shape, only needed values written, single-value constants as literals; a tree reduction kernel per op and type, launched on its partials until one is left, two partial buffers alternating; floored idiv/mod helpers), `explain`, `xetal-gpu kernel` and `explain` with `--float --int --work-group`; 7 unit tests and every twin's `.cl` and `.plan` pinned. Planned: `components/opencl`: the schedule (fused elementwise kernels, a reduction in two passes, device element types) and the OpenCL C 1.2 emitter; the kernel text of every twin pinned as a test; `xetal-gpu kernel` and `explain` |
 | 5 | opencl-run | DONE: `xetal-gpu-runtime` on opencl3 (dynamic loading, so the tool runs without OpenCL and reports no device); devices listed across platforms; execute: device checks (fp64, work-group), build with the device's log as the error, typed buffers uploaded in the schedule's widths, launches on an in-order queue, outputs widened back; 4 device tests (skipped without one); `xetal-gpu devices`, `run --device opencl:N`; check-equiv runs every twin on every device within 1e-5; all five agree on the Apple M1 Max (OpenCL 1.2, no fp64), including a 70000-item three-pass reduction in the tests. Planned: `components/runtime`: devices, buffers, compile, run, read back (`opencl3`); `xetal-gpu devices` and `run --device opencl:N`; the equivalence script runs the GPU side too when a device is present (this Mac's Apple OpenCL device); every demo reproduced on the GPU, Ints exact |
-| 6 | reduce-gpu | the reduction on the device (work-group partials in local memory, second pass), the pipeline example end to end on the GPU; sizes beyond one work-group (1024, 1 M elements) checked; timings noted (not a goal) |
+| 6 | reduce-gpu | DONE: `scripts/check-sizes.py` (`just sizes`; the gate runs 1024 and 65536): generated data, the evaluator's answer on the same files, the XIR program with bound inputs on the interpreter (exactly) and on the GPU (within 1e-5), timed; 1024, 65536 and 1048576 items all agree (a million-item reduce is three launches); timings in the runtime README. Planned: the reduction on the device (work-group partials in local memory, second pass), the pipeline example end to end on the GPU; sizes beyond one work-group (1024, 1 M elements) checked; timings noted (not a goal) |
+
+### Saga 1 retrospective
+
+Delivered in one day: the process, the pinned evaluator as the
+specification, the Accel library with five example programs and
+their baselines, a provisional IR (text form, checker, interpreter
+with the evaluator's exact semantics), a schedule and an OpenCL C
+emitter (fused elementwise kernels, tree reductions over any size),
+a runtime on opencl3, and the proof: every example and every size
+up to a million items agrees with the evaluator on this Mac's GPU,
+Ints exactly. Learned: (1) the hand-lowered twin is a workable
+stand-in for the lowering, but every twin is a transcription a
+reader must trust, so ask G2 stays the first ask; (2) a Bool mask
+in X_eTaL converts only to the type of the literal it meets, which
+shaped `t_hreshold` (Float-only) and `k_eep` (Int masks); (3) the
+evaluator's Float printing (full decimal, no exponent) and fold
+order (from the right) are not in the reference and were found by
+probing (ask G7); (4) Apple's OpenCL has no fp64, so the default
+schedule computes Float as `float`, and the f32 results stay within
+1e-5 of the f64 evaluator on everything tried; (5) whole-process
+timings are dominated by compiling the kernels (0.15 s), so a
+kernel cache is the first speed step when speed becomes a goal.
 
 ### Saga 2 -- gpu-algebra
 

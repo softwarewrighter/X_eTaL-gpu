@@ -1,6 +1,6 @@
 number = 6
 slug = "reduce-gpu"
-status = "pending"
+status = "in-progress"
 description = "The reduction on the device: work-group partial reductions in local memory, t..."
 role = "production"
 context_files = []

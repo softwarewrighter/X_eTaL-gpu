@@ -3,7 +3,8 @@
 # clones and builds on a fresh checkout), the library tooling's
 # self-test, every library's baselines, the Rust components (format,
 # clippy, tests), the equivalence checks (CPU evaluator against the
-# XIR interpreter and, when a device is present, the GPU), American
+# XIR interpreter and, when a device is present, the GPU; the
+# reductions at sizes beyond one work-group), American
 # spellings, then ASCII-only markdown for the docs we own.
 #   scripts/gate.sh
 set -euo pipefail
@@ -19,6 +20,8 @@ if [ -f "$root/components/Cargo.toml" ]; then
   echo "ok: components (fmt, clippy, tests)"
 fi
 [ -x "$root/scripts/check-equiv.sh" ] && "$root/scripts/check-equiv.sh"
+# The reductions beyond one work-group (the million-item size is `just sizes`).
+[ -x "$root/scripts/check-sizes.py" ] && "$root/scripts/check-sizes.py" 1024 65536
 # American spellings only (the checker checks itself first).
 "$root/scripts/check-spelling.py" --self-test
 "$root/scripts/check-spelling.py"

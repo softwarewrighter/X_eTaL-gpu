@@ -74,6 +74,10 @@ test:
     @[ -f components/Cargo.toml ] && (cd components && cargo test -q) || true
     @[ -x scripts/check-equiv.sh ] && scripts/check-equiv.sh || true
 
+# The reductions and the pipeline at large sizes (default 1024 65536 1048576), evaluator against interpreter and GPU, timed: just sizes
+sizes *n:
+    scripts/check-sizes.py --table "$@"
+
 # Build the GPU tool, xetal-gpu (components/cli), in release mode
 build:
     cd components && cargo build -q --release -p xetal-gpu-cli

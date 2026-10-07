@@ -41,6 +41,27 @@ where `devices` reports none. The runtime's own tests run on device
   newer drivers) and have fp64. Saga 4 records what each generation
   does.
 
+## Sizes and timings
+
+`just sizes` (`scripts/check-sizes.py`) generates Ints and Floats
+into `work/sizes/`, runs an Accel program on them with the pinned
+`xetal` (sum, largest, inner product, the pipeline, a Float sum and
+inner product) and the same computation as an XIR program with
+inputs bound to the same files, on the interpreter (exactly) and on
+every device (Floats within 1e-5). The gate runs the two smaller
+sizes. On this Mac, whole-process times (the OpenCL run includes
+compiling the kernels, about 0.15 s; speed is not a goal yet):
+
+| items | xetal (s) | interpreter (s) | Apple M1 Max (s) |
+| ----- | --------- | --------------- | ---------------- |
+| 1024 | 0.07 | 0.00 | 0.17 |
+| 65536 | 0.13 | 0.01 | 0.17 |
+| 1048576 | 1.06 | 0.10 | 0.24 |
+
+A million-item reduction is three launches (4096 partials, 16, 1);
+the Float sums agree with the evaluator's f64 right fold within
+1e-5 although the device adds `float`s as a tree.
+
 ## Checked
 
 `scripts/check-equiv.sh` runs every twin on every device found and

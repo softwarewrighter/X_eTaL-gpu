@@ -54,8 +54,8 @@ twins go when X_eTaL's lowering lands.
 
 ## Status
 
-Saga 1 (gpu-foundation) in progress: the process, the pinned X_eTaL
-(75e6a5c) and the library tooling are in place (step 1); the Accel
+Saga 1 (gpu-foundation) done on 2026-10-06: the process, the pinned
+X_eTaL (75e6a5c) and the library tooling (step 1); the Accel
 library, the acceleratable subset with its five example programs and
 their baselines, the reference the GPU must reproduce (step 2); the
 provisional IR with its text form, checker and reference interpreter,
@@ -68,8 +68,11 @@ local-memory trees, with every twin's kernel source and plan pinned
 listed, the plan executed on one, results read back, and every
 example reproduced on this Mac's GPU (Apple M1 Max, OpenCL 1.2),
 Ints exactly and Floats within 1e-5 (`xetal-gpu devices`, `run
---device opencl:0`; step 5). Next: the reduction on the device at
-large sizes, with timings (6). See [`docs/plan.md`](docs/plan.md) for
+--device opencl:0`; step 5); the reductions and the pipeline at
+1024, 65536 and 1048576 items, generated data run through the
+evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
+Next, saga 2 (gpu-algebra): reductions along an axis, matrix-vector
+and matrix products, a dense layer, schedules as files. See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
 ## Build
@@ -97,6 +100,7 @@ target/release/xetal-gpu kernel libs/Accel/demos/pipeline.xir  # the OpenCL C it
 target/release/xetal-gpu explain libs/Accel/demos/pipeline.xir # which values became which kernels
 target/release/xetal-gpu devices                               # the OpenCL devices here
 target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   # the same program on the GPU
+just sizes                           # a million-item reduction: evaluator, interpreter, GPU, timed
 ```
 
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit
