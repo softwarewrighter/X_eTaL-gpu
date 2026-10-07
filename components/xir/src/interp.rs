@@ -147,6 +147,7 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
             }
             Op::Reduce { op, arg, axis } => reduce(*op, &values[arg.0], *axis, ty)?,
             Op::Cast { op, arg } => cast(&values[arg.0], op.to)?,
+            Op::Matmul { a, b } => matmul(&values[a.0], &values[b.0], ty)?,
         };
         values.push(array);
     }
@@ -306,7 +307,9 @@ pub fn axis_split(shape: &Shape, axis: usize) -> (usize, usize, usize) {
 
 /// A reduce folds from the right, as X_eTaL's `r_/` does: the last
 /// item first, then each earlier item combined with the result so far;
-/// along an axis, each line of the array along that axis is folded so.
+/// along an axis, each line of the array along that axis is folded so;
+/// the whole of a matrix is folded down its columns first, then the
+/// column results, as `'+ r_/_12` does (not its ravel).
 fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array> {
     if let Some(ax) = axis {
         let (outer, len, inner) = axis_split(&a.shape, ax);
@@ -341,6 +344,22 @@ fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array
         let data = if a.scalar.is_int() { Data::Int(ints) } else { Data::Float(floats) };
         return Array::new(ty.scalar, ty.shape.clone(), data);
     }
+    // The whole of a matrix (or higher rank) as X_eTaL's r_/_12 reduces
+    // it: down the first axis, then the next, until one line is left.
+    if a.shape.rank() > 1 {
+        let mut dims = a.shape.0.clone();
+        dims.remove(0);
+        let down = reduce(
+            op,
+            a,
+            Some(1),
+            &Ty {
+                scalar: ty.scalar,
+                shape: Shape(dims),
+            },
+        )?;
+        return reduce(op, &down, None, ty);
+    }
     let data = match &a.data {
         Data::Int(v) => {
             let f = |x: i64, acc: i64| match op {
@@ -372,6 +391,55 @@ fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array
         Data::Bool(_) => unreachable!("checked: numbers"),
     };
     Array::new(ty.scalar, Shape::scalar(), data)
+}
+
+/// The lengths of an inner product: a's leading items (m), the axis
+/// contracted (n), b's trailing items (p); item (i, j) of the result
+/// is the sum over k of a[i * n + k] * b[k * p + j].
+pub fn matmul_split(a: &Shape, b: &Shape) -> (usize, usize, usize) {
+    let n = *a.0.last().expect("rank 1 or more");
+    (a.len() / n.max(1), n, b.len() / n.max(1))
+}
+
+/// `a '+ '* i_nner b`: each result item the sum of its products,
+/// folded from the right as X_eTaL does (the last product first).
+fn matmul(a: &Array, b: &Array, ty: &Ty) -> Result<Array> {
+    let (m, n, p) = matmul_split(&a.shape, &b.shape);
+    let data = match (&a.data, &b.data) {
+        (Data::Int(x), Data::Int(y)) => Data::Int(
+            (0..m * p)
+                .map(|ij| {
+                    let (i, j) = (ij / p, ij % p);
+                    (0..n)
+                        .rev()
+                        .fold(None, |acc: Option<i64>, k| {
+                            let t = x[i * n + k].wrapping_mul(y[k * p + j]);
+                            Some(acc.map_or(t, |s| t.wrapping_add(s)))
+                        })
+                        .expect("n > 0")
+                })
+                .collect(),
+        ),
+        (Data::Float(x), Data::Float(y)) => {
+            let narrow = |v: f64| if a.scalar == Scalar::F32 { v as f32 as f64 } else { v };
+            Data::Float(
+                (0..m * p)
+                    .map(|ij| {
+                        let (i, j) = (ij / p, ij % p);
+                        (0..n)
+                            .rev()
+                            .fold(None, |acc: Option<f64>, k| {
+                                let t = narrow(x[i * n + k] * y[k * p + j]);
+                                Some(acc.map_or(t, |s| narrow(t + s)))
+                            })
+                            .expect("n > 0")
+                    })
+                    .collect(),
+            )
+        }
+        _ => unreachable!("checked: numbers of one type"),
+    };
+    Array::new(ty.scalar, ty.shape.clone(), data)
 }
 
 /// A cast: between Int and Float as X_eTaL's `f_loat` and `f_loor`
@@ -454,6 +522,22 @@ mod tests {
             out,
             ["5 7 9", "6 15", "3 6", " 5  7  9\n17 19 21", " 6 15\n24 33", " 8 10 12\n14 16 18"]
         );
+    }
+
+    #[test]
+    fn inner_products_as_xetal_computes_them() {
+        // A := 2 3 r_eshape r_ange 6; B := 3 2 r_eshape r_ange 6; xetal prints these.
+        let out = eval("%a = const i64 [2 3] 1 2 3 4 5 6\n%b = const i64 [3 2] 1 2 3 4 5 6\n%v = const i64 [3] 1 0 2\n%ab = matmul %a %b\n%av = matmul %a %v\n%vb = matmul %v %b\n%f = const f64 [3] 0.1 0.2 0.3\n%one = const f64 [3] 1.0\n%ff = matmul %f %one\noutput %ab\noutput %av\noutput %vb\noutput %ff\n");
+        assert_eq!(out, ["22 28\n49 64", "7 16", "11 14", "0.6"]);
+    }
+
+    #[test]
+    fn a_whole_matrix_reduces_down_the_columns_first() {
+        // m := 2 3 r_eshape 0.1 0.2 0.3 0.4 0.5 0.6, then '+ r_/_12 m: the
+        // columns (0.5 0.7 0.8999999999999999) folded from the right.
+        let out = eval("%m = const f64 [2 3] 0.1 0.2 0.3 0.4 0.5 0.6\n%s = reduce add %m\noutput %s\n");
+        let cols = [0.1 + 0.4, 0.2 + 0.5, 0.3 + 0.6];
+        assert_eq!(out, [crate::format::float(cols[0] + (cols[1] + cols[2]))]);
     }
 
     #[test]

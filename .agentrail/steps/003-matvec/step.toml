@@ -1,6 +1,6 @@
 number = 3
 slug = "matvec"
-status = "pending"
+status = "in-progress"
 description = "Inner products. XIR: matmul %a %b for a matrix times a vector and a matrix ti..."
 role = "production"
 context_files = []

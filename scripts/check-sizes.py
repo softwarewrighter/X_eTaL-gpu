@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The reductions and the pipeline at sizes beyond one work-group:
+"""The reductions, the pipeline and matrix products at large sizes:
 for each size N, deterministic data is generated into work/sizes/
 (Ints in -1000..1000 and Floats in [0, 1)), an X_eTaL program on the
 Accel library reads it and prints the sum, the largest item, an inner
@@ -8,8 +8,13 @@ same computation as an XIR program with inputs bound to the same
 files runs on the reference interpreter (exactly) and on every
 OpenCL device found (Floats within 1e-5). Each run is timed.
 
-  scripts/check-sizes.py [N...]        # default 1024 65536 1048576
-  scripts/check-sizes.py --table N...  # also print a markdown table of the timings
+A size mN is an N by N matrix product instead (Ints in -9..9, so the
+product is exact, and Floats in [0, 1)): its sum and largest item
+from the evaluator, the interpreter and every device, on the device
+both untiled and in 16 by 16 tiles.
+
+  scripts/check-sizes.py [N|mN...]        # default 1024 65536 1048576 m64 m256
+  scripts/check-sizes.py --table N|mN...  # also print a markdown table of the timings
 """
 import os
 import random
@@ -59,6 +64,49 @@ output %fd
 '''
 
 
+MXTL = '''"ac:" u_se< "Accel"
+a := {n} {n} r_eshape f_loor n_umbers []N_GET "{d}/m{n}-a.txt"
+b := {n} {n} r_eshape f_loor n_umbers []N_GET "{d}/m{n}-b.txt"
+c := a ac:m_atmul b
+'+ r_/_12 c
+'m_ax r_/_12 c
+f := {n} {n} r_eshape n_umbers []N_GET "{d}/m{n}-f.txt"
+g := {n} {n} r_eshape n_umbers []N_GET "{d}/m{n}-g.txt"
+h := f ac:m_atmul g
+'+ r_/_12 h
+'m_ax r_/_12 h
+'''
+
+MXIR = '''%a = input i64 [{n} {n}]
+%b = input i64 [{n} {n}]
+%c = matmul %a %b
+%cs = reduce add %c
+%cm = reduce max %c
+%f = input f64 [{n} {n}]
+%g = input f64 [{n} {n}]
+%h = matmul %f %g
+%hs = reduce add %h
+%hm = reduce max %h
+output %cs
+output %cm
+output %hs
+output %hm
+'''
+
+
+def generate_matrix(n):
+    WORK.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(1000 + n)
+    for tag, make in (("a", lambda: rng.randint(-9, 9)), ("b", lambda: rng.randint(-9, 9)),
+                      ("f", lambda: round(rng.random(), 6)), ("g", lambda: round(rng.random(), 6))):
+        p = WORK / f"m{n}-{tag}.txt"
+        if not p.exists():
+            p.write_text("\n".join(str(make()) for _ in range(n * n)) + "\n")
+    rel = os.path.relpath(WORK, ROOT)
+    (WORK / f"m{n}.xtl").write_text(MXTL.format(d=rel, n=n))
+    (WORK / f"m{n}.xir").write_text(MXIR.format(n=n))
+
+
 def generate(n):
     WORK.mkdir(parents=True, exist_ok=True)
     rng = random.Random(n)
@@ -86,43 +134,54 @@ def devices():
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     table = "--table" in sys.argv
-    sizes = [int(a) for a in args] or [1024, 65536, 1048576]
+    sizes = args or ["1024", "65536", "1048576", "m64", "m256"]
     subprocess.run(["cargo", "build", "-q", "--release", "-p", "xetal-gpu-cli"], cwd=ROOT / "components", check=True)
     devs = devices()
     if not devs:
         print("check-sizes: no OpenCL device here; the GPU side is skipped")
     rows = []
     fail = 0
-    for n in sizes:
-        generate(n)
-        want = WORK / f"{n}.out"
-        r, t_eval = timed([XT, "run", os.path.relpath(WORK / f"{n}.xtl", ROOT)])
+    for size in sizes:
+        matrix = size.startswith("m")
+        n = int(size[1:] if matrix else size)
+        name = f"m{n}" if matrix else f"{n}"
+        what = f"{n} by {n} product" if matrix else f"{n} items"
+        if matrix:
+            generate_matrix(n)
+            tags = ("a", "b", "f", "g")
+        else:
+            generate(n)
+            tags = ("x", "w", "f")
+        want = WORK / f"{name}.out"
+        r, t_eval = timed([XT, "run", os.path.relpath(WORK / f"{name}.xtl", ROOT)])
         if r.returncode != 0:
-            print(f"FAIL: xetal on {n}: {r.stderr.strip()}"); fail = 1; continue
+            print(f"FAIL: xetal on {what}: {r.stderr.strip()}"); fail = 1; continue
         want.write_text(r.stdout)
         binds = []
-        for tag in ("x", "w", "f"):
-            binds += ["--bind", f"{tag}=@{WORK / f'{n}-{tag}.txt'}"]
-        row = {"n": n, "xetal": t_eval}
-        for dev, tol in [("cpu", "0")] + [(d, "1e-5") for d in devs]:
-            r, t = timed([GPU, "run", WORK / f"{n}.xir", "--device", dev] + binds)
+        for tag in tags:
+            binds += ["--bind", f"{tag}=@{WORK / f'{name}-{tag}.txt'}"]
+        row = {"n": what, "xetal": t_eval}
+        runs = [("cpu", [], "0")] + [(d, [], "1e-5") for d in devs] + [(d + " tile 16", ["--tile", "16"], "1e-5") for d in devs if matrix]
+        for label, extra, tol in runs:
+            dev = label.split()[0]
+            r, t = timed([GPU, "run", WORK / f"{name}.xir", "--device", dev] + extra + binds)
             if r.returncode != 0:
-                print(f"FAIL: xetal-gpu on {dev}, {n}: {r.stderr.strip()}"); fail = 1; continue
-            got = WORK / f"{n}-{dev.replace(':', '')}.out"
+                print(f"FAIL: xetal-gpu on {label}, {what}: {r.stderr.strip()}"); fail = 1; continue
+            got = WORK / f"{name}-{label.replace(':', '').replace(' ', '-')}.out"
             got.write_text(r.stdout)
             c = subprocess.run([COMPARE, want, got, tol], capture_output=True, text=True)
             if c.returncode == 0:
-                print(f"ok: {n} items on {dev}, {c.stdout.strip()} ({t:.2f} s; xetal {t_eval:.2f} s)")
+                print(f"ok: {what} on {label}, {c.stdout.strip()} ({t:.2f} s; xetal {t_eval:.2f} s)")
             else:
-                print(f"FAIL: {n} items on {dev}: {(c.stdout + c.stderr).strip()}"); fail = 1
-            row[dev] = t
+                print(f"FAIL: {what} on {label}: {(c.stdout + c.stderr).strip()}"); fail = 1
+            row[label] = t
         rows.append(row)
     if table and rows:
-        cols = ["xetal", "cpu"] + devs
-        print("\n| items | " + " | ".join(f"{c} (s)" for c in cols) + " |")
-        print("| ----- | " + " | ".join("-" * (len(c) + 4) for c in cols) + " |")
+        cols = ["xetal", "cpu"] + devs + [d + " tile 16" for d in devs]
+        print("\n| work | " + " | ".join(f"{c} (s)" for c in cols) + " |")
+        print("| ---- | " + " | ".join("-" * (len(c) + 4) for c in cols) + " |")
         for row in rows:
-            print(f"| {row['n']} | " + " | ".join(f"{row.get(c, float('nan')):.2f}" for c in cols) + " |")
+            print(f"| {row['n']} | " + " | ".join(f"{row[c]:.2f}" if c in row else "--" for c in cols) + " |")
     print(f"check-sizes: {len(sizes)} size{'s' if len(sizes) != 1 else ''}" + (", all agree with the evaluator" if not fail else ", FAILURES"))
     sys.exit(fail)
 

@@ -1,0 +1,19 @@
+# The twin of matmul.xtl, lowered by hand (docs/xetal-asks.md, G2).
+%a = const i64 [3 4] 1 2 3 4 5 6 7 8 9 10 11 12   # a := 3 4 r_eshape r_ange 12
+%b = const i64 [4 2] 1 0 0 1 1 1 2 -1             # b := 4 2 r_eshape ...
+%ab = matmul %a %b                                # a ac:m_atmul b: a '+ '* i_nner b
+output %ab
+%v = const i64 [4] 1 -1 1 -1
+%av = matmul %a %v                                # a ac:m_atmul 1 -1 1 -1
+output %av
+%u = const i64 [3] 1 2 3
+%ua = matmul %u %a                                # 1 2 3 ac:m_atmul a
+output %ua
+%af = cast f64 %a
+%four = const f64 [] 4.0
+%f = map div %af %four                            # f := (3 4 r_eshape r_ange 12) / 4
+%g0 = const f64 [4 3] 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0
+%eight = const f64 [] 8.0
+%g = map div %g0 %eight                           # g := (4 3 r_eshape r_ange 12) / 8
+%fg = matmul %f %g                                # f ac:m_atmul g
+output %fg

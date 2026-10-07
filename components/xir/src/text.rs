@@ -224,7 +224,21 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 },
             ))
         }
-        other => err(format!("unknown operation `{other}` (input, const, map, select, reduce, cast)")),
+        "matmul" => {
+            if rest.len() != 2 {
+                return err("matmul takes two values: matmul %a %b");
+            }
+            Ok((
+                None,
+                Op::Matmul {
+                    a: reference(program, rest[0])?,
+                    b: reference(program, rest[1])?,
+                },
+            ))
+        }
+        other => err(format!(
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul)"
+        )),
     }
 }
 
@@ -284,6 +298,7 @@ pub fn print(program: &Program) -> String {
                 None => out.push_str(&format!("reduce {op} {}", name(*arg))),
             },
             Op::Cast { op, arg } => out.push_str(&format!("cast {} {}", op.to, name(*arg))),
+            Op::Matmul { a, b } => out.push_str(&format!("matmul {} {}", name(*a), name(*b))),
         }
         out.push('\n');
     }
@@ -309,6 +324,8 @@ mod tests {
 %t = const bool [2] 1 0
 %mm = const i64 [2 3] 1 2 3 4 5 6
 %rs = reduce max axis=2 %mm
+%v = const i64 [3] 1 0 2
+%mv = matmul %mm %v
 output %c
 output %f
 ";
@@ -362,7 +379,7 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul)"
         );
         assert_eq!(e("%a = const bool [1] 2\n"), "line 1: not a Bool (0, 1, false, true): `2`");
     }

@@ -73,7 +73,9 @@ Ints exactly and Floats within 1e-5 (`xetal-gpu devices`, `run
 evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
 Saga 2 (gpu-algebra) in progress: the macros-and-extensions analysis
 and reductions along an axis of a matrix (row sums, column sums, row
-maxima) on the GPU are done; next matrix-vector and matrix products, a dense layer, schedules as files; then the GPU
+maxima) and inner products (`'+ '* i_nner`, untiled and in tiles; a
+512 by 512 product in 0.13 s against the evaluator's 29 s) on the GPU
+are done; next a dense layer, schedules as files; then the GPU
 as a native extension X_eTaL programs call themselves (saga 3). The
 work moves to an Arch machine with a newer GPU soon; nothing in the
 code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for

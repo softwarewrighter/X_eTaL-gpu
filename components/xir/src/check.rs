@@ -121,6 +121,36 @@ pub fn check(program: Program) -> Result<Checked> {
                 };
                 Ty { scalar: t.scalar, shape }
             }
+            Op::Matmul { a, b } => {
+                let (ta, tb) = (ty_of(*a), ty_of(*b));
+                if ta.scalar != tb.scalar || !ta.scalar.is_num() {
+                    return err(format!(
+                        "%{name}: matmul needs numbers of one scalar type, got {} and {}",
+                        ta.scalar, tb.scalar
+                    ));
+                }
+                if ta.shape.is_scalar() || tb.shape.is_scalar() {
+                    return err(format!(
+                        "%{name}: matmul needs arrays of rank 1 or more (a single value scales: map mul)"
+                    ));
+                }
+                let n = *ta.shape.0.last().unwrap();
+                if n != tb.shape.0[0] {
+                    return err(format!(
+                        "%{name}: matmul: the last axis of {} ({n}) is not the first of {} ({})",
+                        ta.shape, tb.shape, tb.shape.0[0]
+                    ));
+                }
+                if n == 0 {
+                    return err(format!("%{name}: matmul over an empty axis has no value"));
+                }
+                let mut dims = ta.shape.0[..ta.shape.rank() - 1].to_vec();
+                dims.extend_from_slice(&tb.shape.0[1..]);
+                Ty {
+                    scalar: ta.scalar,
+                    shape: Shape(dims),
+                }
+            }
             Op::Cast { op, arg } => Ty {
                 scalar: op.to,
                 shape: ty_of(*arg).shape.clone(),
@@ -241,6 +271,20 @@ mod tests {
         assert_eq!(
             error_of("%m = const i64 [2 0]\n%r = reduce add axis=2 %m\noutput %r\n"),
             "%r: reduce add axis=2: that axis is empty, so there is no value"
+        );
+    }
+
+    #[test]
+    fn inner_products() {
+        let t = types_of("%a = const f64 [2 3] 1.0\n%b = const f64 [3 4] 1.0\n%v = const f64 [3] 1.0\n%ab = matmul %a %b\n%av = matmul %a %v\n%va = matmul %v %b\n%vv = matmul %v %v\noutput %ab\n");
+        assert_eq!(t[3..], ["f64 [2 4]", "f64 [2]", "f64 [4]", "f64 []"]);
+        assert_eq!(
+            error_of("%a = const f64 [2 3] 1.0\n%b = const f64 [2 3] 1.0\n%c = matmul %a %b\noutput %c\n"),
+            "%c: matmul: the last axis of [2 3] (3) is not the first of [2 3] (2)"
+        );
+        assert_eq!(
+            error_of("%a = const f64 [2] 1.0\n%b = const i64 [2] 1\n%c = matmul %a %b\noutput %c\n"),
+            "%c: matmul needs numbers of one scalar type, got f64 and i64"
         );
     }
 

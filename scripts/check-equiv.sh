@@ -32,13 +32,15 @@ for xtl in libs/*/demos/*.xtl; do
   fi
   if out="$(scripts/compare-out.py "$want" "$tmp/cpu.out" 0)"; then echo "ok: $lib/$name on cpu, $out"
   else echo "FAIL: $lib/$name on cpu: $out"; fail=1; fi
-  for dev in "${devices[@]}"; do
-    if ! "$gpu" run "$xir" --device "$dev" > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
-      echo "FAIL: $xir on $dev:"; cat "$tmp/gpu.err"; fail=1; continue
+  # Each device with the default schedule and with products in 8 by 8 tiles.
+  for dev in "${devices[@]}"; do for sched in "" "--tile 8"; do
+    label="$dev${sched:+ $sched}"
+    if ! "$gpu" run "$xir" --device "$dev" $sched > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
+      echo "FAIL: $xir on $label:"; cat "$tmp/gpu.err"; fail=1; continue
     fi
-    if out="$(scripts/compare-out.py "$want" "$tmp/gpu.out" 1e-5)"; then echo "ok: $lib/$name on $dev, $out"
-    else echo "FAIL: $lib/$name on $dev: $out"; fail=1; fi
-  done
+    if out="$(scripts/compare-out.py "$want" "$tmp/gpu.out" 1e-5)"; then echo "ok: $lib/$name on $label, $out"
+    else echo "FAIL: $lib/$name on $label: $out"; fail=1; fi
+  done; done
 done
 echo "check-equiv: $n twin$([ $n = 1 ] || echo s) on cpu and ${#devices[@]} OpenCL device$([ ${#devices[@]} = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
 exit $fail

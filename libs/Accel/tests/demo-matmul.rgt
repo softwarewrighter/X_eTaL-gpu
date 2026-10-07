@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run ../demos/matmul.xtl"
+exit_code = 0

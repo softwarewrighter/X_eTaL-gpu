@@ -1,0 +1,13 @@
+#!/usr/bin/env xetal
+# Inner products: a matrix times a matrix, a matrix times a vector, a
+# vector times a matrix, on Ints and Floats; every result item a sum of
+# products. Run with "just demo-lib Accel matmul".
+"ac:" u_se< "Accel"
+a := 3 4 r_eshape r_ange 12
+b := 4 2 r_eshape 1 0 0 1 1 1 2 -1
+a ac:m_atmul b
+a ac:m_atmul 1 -1 1 -1
+1 2 3 ac:m_atmul a
+f := (3 4 r_eshape r_ange 12) / 4
+g := (4 3 r_eshape r_ange 12) / 8
+f ac:m_atmul g

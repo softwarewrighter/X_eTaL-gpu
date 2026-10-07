@@ -1,4 +1,4 @@
-schedule: Float as float, Int as long, work-group 256
+schedule: Float as float, Int as long, work-group 256, products untiled
 buffers:
   b_m: long 12 items, %m i64 [3 4]; constant, uploaded by the host
   b_m1: long 12 items, %m1 i64 [3 4]; written on the device

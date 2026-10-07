@@ -24,3 +24,9 @@ m := 4 4 r_eshape r_ange 16
 (28 32 36 40) u:c_heck ac:c_olSums m
 (4 8 12 16) u:c_heck ac:r_owMax m
 (ac:s_um ac:r_owSums m) u:c_heck ac:s_um ac:c_olSums m
+i := 4 4 r_eshape 1 0 0 0 0
+m u:c_heck m ac:m_atmul i
+m u:c_heck i ac:m_atmul m
+(ac:r_owSums m) u:c_heck m ac:m_atmul 1 1 1 1
+(ac:c_olSums m) u:c_heck 1 1 1 1 ac:m_atmul m
+(1 2 3 4 ac:d_ot 1 2 3 4) u:c_heck 1 2 3 4 ac:m_atmul 1 2 3 4

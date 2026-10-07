@@ -27,7 +27,7 @@ usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
-    SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)
+    SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)
   version";
 
 fn main() -> ExitCode {
@@ -147,7 +147,7 @@ fn dispatch(args: &[String]) -> Result<()> {
     }
 }
 
-/// `--float f32|f64 --int i32|i64 --work-group N`, the defaults otherwise.
+/// `--float f32|f64 --int i32|i64 --work-group N --tile T`, the defaults otherwise.
 fn schedule(args: &[String]) -> Result<Schedule> {
     let mut s = Schedule::default();
     let mut i = 0;
@@ -174,6 +174,13 @@ fn schedule(args: &[String]) -> Result<Schedule> {
                     .ok()
                     .filter(|n: &usize| n.is_power_of_two())
                     .ok_or_else(|| Error(format!("--work-group takes a power of two, got `{value}`")))?;
+            }
+            "--tile" => {
+                s.tile = value
+                    .parse()
+                    .ok()
+                    .filter(|t: &usize| *t == 0 || t.is_power_of_two())
+                    .ok_or_else(|| Error(format!("--tile takes 0 (no tiling) or a power of two, got `{value}`")))?;
             }
             other => return Err(Error(format!("unknown option `{other}`\n{USAGE}"))),
         }
@@ -204,6 +211,7 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Reduce { op, arg, axis: None } => format!("reduce {op} {}", name(*arg)),
         Op::Reduce { op, arg, axis: Some(a) } => format!("reduce {op} axis={a} {}", name(*arg)),
         Op::Cast { op, arg } => format!("cast {} {}", op.to, name(*arg)),
+        Op::Matmul { a, b } => format!("matmul {} {}", name(*a), name(*b)),
     }
 }
 

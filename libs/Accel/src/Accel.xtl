@@ -60,6 +60,14 @@ l:c_olSums := { m -> '+ r_/ m }
 # r_owMax m: the largest item of each row.
 l:r_owMax := { m -> 'm_ax r_/_2 m }
 
+### Inner products
+
+# x m_atmul w: the inner product of x's last axis with w's first
+# (APL's +.x): a matrix times a vector, a vector times a matrix, a
+# matrix times a matrix. Each result item is a sum of products, one
+# GPU work-item each (or a tile of them, as the schedule says).
+l:m_atmul := { x w -> x '+ '* i_nner w }
+
 ### The acceptance pipeline
 
 # x p_ipeline w: multiply, add, select, reduce in one expression:

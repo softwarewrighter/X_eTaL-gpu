@@ -84,6 +84,10 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 b.group.push(id);
                 b.places.insert(id, Place::Register(format!("t_{}", v.name)));
             }
+            Op::Matmul { a, b: rhs } => {
+                b.flush(&outputs);
+                b.matmul(id, *a, *rhs);
+            }
             Op::Reduce { op, arg, axis } => {
                 b.flush(&outputs);
                 match axis {
@@ -286,6 +290,87 @@ impl<'a> Builder<'a> {
                 self.places.remove(&id);
             }
         }
+    }
+
+    /// An inner product: one work-item per result item, its sum folded
+    /// from the right (the evaluator's order); with a tile, the operands
+    /// staged through local memory a T by T block at a time, the same
+    /// order kept.
+    fn matmul(&mut self, id: ValueId, a: ValueId, b: ValueId) {
+        let elem = self.elem_of(a);
+        let (Place::Buffer(ba), Place::Buffer(bb)) = (self.places[&a].clone(), self.places[&b].clone()) else {
+            unreachable!("matmul reads buffers")
+        };
+        let (m, n, p) = xetal_gpu_xir::interp::matmul_split(&self.ty(a).shape, &self.ty(b).shape);
+        let t = self.schedule.tile;
+        assert!(
+            t == 0 || t * t <= self.schedule.work_group,
+            "a tile of {t} by {t} needs a work-group of {}",
+            t * t
+        );
+        let kname = if t == 0 {
+            format!("matmul_{elem}")
+        } else {
+            format!("matmul_tiled{t}_{elem}")
+        };
+        if !self.source.contains(&format!("__kernel void {kname}(")) {
+            self.source.push_str(&if t == 0 {
+                matmul_kernel(&kname, elem)
+            } else {
+                matmul_tiled_kernel(&kname, elem, t)
+            });
+            self.kernels.push(KernelInfo {
+                name: kname.clone(),
+                computes: vec![],
+                writes: vec![],
+                elements: 0,
+            });
+        }
+        let result = self.buffer(Some(id), elem, m * p, Init::Device);
+        let args = vec![
+            Arg::Buffer(ba),
+            Arg::Buffer(bb),
+            Arg::Buffer(result),
+            Arg::Long(m as i64),
+            Arg::Long(n as i64),
+            Arg::Long(p as i64),
+        ];
+        let name = self.checked.program.value(id).name.clone();
+        let (global, local, note) = if t == 0 {
+            let total = (m * p).max(1);
+            let local = self.schedule.work_group.min(total.next_power_of_two());
+            (
+                total.div_ceil(local) * local,
+                local,
+                format!(
+                    "%{name}: {m} by {n} times {n} by {p}, {} sums of {n} products, one work-item each",
+                    m * p
+                ),
+            )
+        } else {
+            let groups = m.div_ceil(t) * p.div_ceil(t);
+            (
+                groups * t * t,
+                t * t,
+                format!(
+                    "%{name}: {m} by {n} times {n} by {p} in {t} by {t} tiles: {groups} work-group{} of {}",
+                    if groups == 1 { "" } else { "s" },
+                    t * t
+                ),
+            )
+        };
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args,
+            global,
+            local,
+            note,
+        });
+        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+            k.computes.push(id);
+            k.writes.push(id);
+        }
+        self.places.insert(id, Place::Buffer(result));
     }
 
     /// A reduction along an axis: one work-item per result item, each
@@ -498,6 +583,62 @@ fn combine(op: ReduceOp, elem: Elem, x: &str, acc: &str) -> String {
     }
 }
 
+fn matmul_kernel(name: &str, elem: Elem) -> String {
+    format!(
+        "
+// {name}: a by b, a's last axis (n) with b's first; one work-item per
+// result item (i, j), its n products summed from the last to the first,
+// as X_eTaL's '+ '* i_nner sums them.
+__kernel void {name}(__global const {elem}* a, __global const {elem}* b, __global {elem}* c, const long m, const long n, const long p) {{
+    long ij = get_global_id(0);
+    if (ij >= m * p) return;
+    long i = ij / p, j = ij % p;
+    {elem} acc = a[i * n + n - 1] * b[(n - 1) * p + j];
+    for (long k = n - 2; k >= 0; k--) acc = a[i * n + k] * b[k * p + j] + acc;
+    c[ij] = acc;
+}}
+"
+    )
+}
+
+fn matmul_tiled_kernel(name: &str, elem: Elem, t: usize) -> String {
+    format!(
+        "
+// {name}: a by b in {t} by {t} tiles: each work-group computes a {t} by {t}
+// block of the result, staging a block of a and of b in local memory per
+// step; the steps go from the last block of the axis to the first and
+// each block's products from the last to the first, so every sum is
+// folded from the right, as X_eTaL's '+ '* i_nner folds it.
+__kernel void {name}(__global const {elem}* a, __global const {elem}* b, __global {elem}* c, const long m, const long n, const long p) {{
+    __local {elem} sa[{t}][{t}];
+    __local {elem} sb[{t}][{t}];
+    long lid = get_local_id(0);
+    long ty = lid / {t}, tx = lid % {t};
+    long blocksp = (p + {t} - 1) / {t};
+    long g = get_group_id(0);
+    long i = (g / blocksp) * {t} + ty, j = (g % blocksp) * {t} + tx;
+    {elem} acc = 0;
+    int started = 0;
+    for (long s = (n + {t} - 1) / {t} - 1; s >= 0; s--) {{
+        long ka = s * {t} + tx, kb = s * {t} + ty;
+        sa[ty][tx] = (i < m && ka < n) ? a[i * n + ka] : 0;
+        sb[ty][tx] = (kb < n && j < p) ? b[kb * p + j] : 0;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (long kk = {t} - 1; kk >= 0; kk--) {{
+            if (s * {t} + kk < n) {{
+                {elem} prod = sa[ty][kk] * sb[kk][tx];
+                acc = started ? prod + acc : prod;
+                started = 1;
+            }}
+        }}
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }}
+    if (i < m && j < p) c[i * p + j] = acc;
+}}
+"
+    )
+}
+
 fn reduce_axis_kernel(name: &str, op: ReduceOp, elem: Elem) -> String {
     let step = combine(op, elem, "in[base + j * inner]", "acc");
     format!(
@@ -629,6 +770,28 @@ mod tests {
     }
 
     #[test]
+    fn inner_products_untiled_and_tiled() {
+        let src = "%a = const f64 [5 3] 1.0\n%b = const f64 [3 7] 1.0\n%c = matmul %a %b\noutput %c\n";
+        let p = plan_of(src, &Schedule::default());
+        assert_eq!(p.launches[0].args[3..], [Arg::Long(5), Arg::Long(3), Arg::Long(7)]);
+        assert_eq!((p.launches[0].global, p.launches[0].local), (64, 64));
+        assert!(p
+            .source
+            .contains("for (long k = n - 2; k >= 0; k--) acc = a[i * n + k] * b[k * p + j] + acc;"));
+        let p = plan_of(
+            src,
+            &Schedule {
+                tile: 4,
+                ..Schedule::default()
+            },
+        );
+        // 5 by 7 in 4 by 4 tiles: 2 by 2 blocks, 16 work-items each.
+        assert_eq!((p.launches[0].global, p.launches[0].local), (64, 16));
+        assert!(p.source.contains("__kernel void matmul_tiled4_float("));
+        assert!(p.source.contains("__local float sa[4][4];"));
+    }
+
+    #[test]
     fn widths_follow_the_schedule() {
         let src = "%a = const f64 [2] 1.5 2.5\n%i = const i64 [2] 1 2\n%k = const f64 [] 0.5\n%b = map mul %k %a\n%j = map mod %i %i\n%f = cast f64 %i\noutput %b\noutput %j\noutput %f\n";
         let p = plan_of(src, &Schedule::default());
@@ -642,6 +805,7 @@ mod tests {
                 float: Width::W64,
                 int: Width::W32,
                 work_group: 64,
+                tile: 0,
             },
         );
         assert!(p.source.starts_with("#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n"));

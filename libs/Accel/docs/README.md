@@ -46,6 +46,7 @@ recommended alias.
 | `ac:r_owSums m` | `Num a => a -> a` | the sum of each row (`'+ r_/_2 m`) |
 | `ac:c_olSums m` | `Num a => a -> a` | the sum of each column (`'+ r_/ m`) |
 | `ac:r_owMax m` | `Num a => a -> a` | the largest item of each row |
+| `x ac:m_atmul w` | `Num a => a -> a -> a` | the inner product of x's last axis with w's first: matrix by matrix, matrix by vector, vector by matrix |
 | `x ac:p_ipeline w` | `Num a => a -> a -> a` | the sum of the positive items of x + x * w: multiply, add, select, reduce |
 
 ## Examples
@@ -96,6 +97,9 @@ The example programs, each the reference for a GPU run:
 - [`demos/axis-reduce.xtl`](../demos/axis-reduce.xtl): row sums,
   column sums and row maxima of a matrix, Ints and Floats; one GPU
   work-item per result.
+- [`demos/matmul.xtl`](../demos/matmul.xtl): inner products at
+  every rank pairing, Ints and Floats; one GPU work-item (or a tile)
+  per result item.
 - [`demos/pipeline.xtl`](../demos/pipeline.xtl): the acceptance
   pipeline, multiply, add, select, reduce, as one expression.
 

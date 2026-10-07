@@ -46,6 +46,10 @@ pub struct Schedule {
     pub int: Width,
     /// Work-items per work-group; a power of two (the reduction tree needs it).
     pub work_group: usize,
+    /// Inner products in T by T tiles staged in local memory (a work-group
+    /// of T * T items); 0 computes each result item straight from global
+    /// memory. A power of two, T * T at most the work-group.
+    pub tile: usize,
 }
 
 impl Default for Schedule {
@@ -54,6 +58,7 @@ impl Default for Schedule {
             float: Width::W32,
             int: Width::W64,
             work_group: 256,
+            tile: 0,
         }
     }
 }
@@ -81,7 +86,7 @@ impl fmt::Display for Schedule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Float as {}, Int as {}, work-group {}",
+            "Float as {}, Int as {}, work-group {}, {}",
             match self.float {
                 Width::W32 => "float",
                 Width::W64 => "double",
@@ -90,7 +95,12 @@ impl fmt::Display for Schedule {
                 Width::W32 => "int",
                 Width::W64 => "long",
             },
-            self.work_group
+            self.work_group,
+            if self.tile == 0 {
+                "products untiled".to_string()
+            } else {
+                format!("products in {0} by {0} tiles", self.tile)
+            }
         )
     }
 }

@@ -313,6 +313,9 @@ pub enum Op {
     Reduce { op: ReduceOp, arg: ValueId, axis: Option<usize> },
     /// The items converted to another scalar type.
     Cast { op: CastOp, arg: ValueId },
+    /// The inner product `a '+ '* i_nner b`: a's last axis with b's
+    /// first, each sum folded from the right.
+    Matmul { a: ValueId, b: ValueId },
 }
 
 impl Op {
@@ -323,6 +326,7 @@ impl Op {
             Op::Map { args, .. } => args.clone(),
             Op::Select { cond, a, b } => vec![*cond, *a, *b],
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],
+            Op::Matmul { a, b } => vec![*a, *b],
         }
     }
 }

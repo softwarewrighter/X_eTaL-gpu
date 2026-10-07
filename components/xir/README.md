@@ -27,6 +27,7 @@ becomes an adapter and the twins go.
 %r = reduce add %s                   # a whole array to one number
 %q = reduce max axis=2 %m            # along one axis (1 is the first): rank n to n - 1
 %f = cast f64 %r                     # between scalar types, same shape
+%p = matmul %a %w                    # a's last axis with w's first ('+ '* i_nner)
 output %c                            # what the program prints, in order
 output %f
 ```
@@ -56,7 +57,9 @@ The interpreter is the reference the GPU is compared with:
 - `idiv` and `mod` are floored: `-7 idiv 2` is -4, `-3 mod 2` is 1,
   `3 mod -2` is -1; division by zero is an error.
 - A reduce folds from the right: the last item first, then each
-  earlier item combined with the result so far (`'+ r_/ 0.1 0.2 0.3`
+  earlier item combined with the result so far; the whole of a matrix
+  is folded down its columns first, then across the column results,
+  as `'+ r_/_12` does (found by probing: not the ravel's fold) (`'+ r_/ 0.1 0.2 0.3`
   is `0.1 + (0.2 + 0.3)`, which prints `0.6`; the left fold would
   print `0.6000000000000001`).
 - Printing follows `xetal`: a Bool as 1 or 0; a vector's items
@@ -83,7 +86,6 @@ against the evaluator's baseline, exactly.
 
 ## Not yet
 
-Inner products (`matmul`) and lookup come with saga 2
-(`docs/plan.md`); a map still extends only a single value, as
+Lookup comes later (the model saga); a map still extends only a single value, as
 X_eTaL does (a vector across the rows of a matrix is a shape error
 there too).

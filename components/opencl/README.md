@@ -22,6 +22,7 @@ represents each scalar type and how big a work-group is.
 | `float` | `f32` (`float`) | X_eTaL's Float on the device; `f64` asks for `double` (`cl_khr_fp64`) |
 | `int` | `i64` (`long`) | X_eTaL's Int on the device; `i32` asks for `int` |
 | `work_group` | 256 | work-items per work-group, a power of two (the reduction tree needs it) |
+| `tile` | 0 | inner products in T by T tiles in local memory; 0 untiled |
 
 Bool is `int` (1 or 0, what a C comparison gives).
 
@@ -52,6 +53,13 @@ Bool is `int` (1 or 0, what a C comparison gives).
   exactly in the device's width. Along the only axis of a vector it is
   the tree above. No local memory yet: a row of a million items is
   one work-item's loop.
+- **Inner products.** `matmul` (a's last axis with b's first, any
+  ranks) is one work-item per result item, its products summed from
+  the last to the first as `'+ '* i_nner` sums them (`matmul_float`).
+  With `--tile T` (a power of two, T * T at most the work-group) a
+  work-group computes a T by T block, staging blocks of a and b in
+  local memory; the blocks go from the last to the first and each
+  block's products likewise, so the fold order is the same.
 - **Semantics kept.** `idiv` and `mod` are floored
   (`xetal_idiv_long`, `xetal_imod_long`), Float to Int casts take
   `floor`, a number to Bool is `!= 0`, `abs` of a `long` avoids the
@@ -68,5 +76,5 @@ values it computes and writes) and every launch with its sizes.
 
 ## Not yet
 
-Inner products and tiled schedules, a tree per line for very long
-axes, and a schedule file per device (saga 2).
+A tree per line for very long axes, and a schedule file per device
+(saga 2).

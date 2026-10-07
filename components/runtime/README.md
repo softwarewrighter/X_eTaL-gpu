@@ -49,14 +49,26 @@ into `work/sizes/`, runs an Accel program on them with the pinned
 inner product) and the same computation as an XIR program with
 inputs bound to the same files, on the interpreter (exactly) and on
 every device (Floats within 1e-5). The gate runs the two smaller
-sizes. On this Mac, whole-process times (the OpenCL run includes
-compiling the kernels, about 0.15 s; speed is not a goal yet):
+sizes and a 64 by 64 product. A size `mN` is an N by N product (Ints
+in -9..9, exact; Floats in [0, 1)), its sum and largest item checked,
+run on the device untiled and in 16 by 16 tiles. On this Mac,
+whole-process times (each includes reading the data files, which
+dominates the evaluator's small cases; the OpenCL runs include
+compiling the kernels; speed is not a goal yet):
 
-| items | xetal (s) | interpreter (s) | Apple M1 Max (s) |
-| ----- | --------- | --------------- | ---------------- |
-| 1024 | 0.07 | 0.00 | 0.17 |
-| 65536 | 0.13 | 0.01 | 0.17 |
-| 1048576 | 1.06 | 0.10 | 0.24 |
+| work | xetal (s) | interpreter (s) | Apple M1 Max (s) | M1 Max, 16 by 16 tiles (s) |
+| ---- | --------- | --------------- | ---------------- | -------------------------- |
+| 1024 items | 0.07 | 0.00 | 0.08 | -- |
+| 65536 items | 0.14 | 0.01 | 0.09 | -- |
+| 1048576 items | 1.21 | 0.10 | 0.16 | -- |
+| 64 by 64 product | 0.13 | 0.00 | 0.08 | 0.07 |
+| 256 by 256 product | 3.48 | 0.04 | 0.08 | 0.09 |
+| 512 by 512 product | 28.75 | 0.45 | 0.14 | 0.13 |
+
+At 512 the GPU is about 200 times faster than the evaluator for the
+whole program, as `docs/macros-and-extensions.md` expects for
+products; tiling makes no difference yet at these sizes on this
+device.
 
 A million-item reduction is three launches (4096 partials, 16, 1);
 the Float sums agree with the evaluator's f64 right fold within
