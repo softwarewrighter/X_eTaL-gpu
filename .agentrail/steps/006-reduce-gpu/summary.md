@@ -1,0 +1,1 @@
+scripts/check-sizes.py (just sizes; gate runs 1024 and 65536): generated data, evaluator against interpreter (exact) and GPU (1e-5), timed; 1024, 65536 and 1048576 items all agree on the Apple M1 Max (a million-item reduce: three launches, 0.24 s vs the evaluator's 1.06 s). Timings in the runtime README, saga retrospective in the plan. Saga gpu-foundation done; gate passes.
