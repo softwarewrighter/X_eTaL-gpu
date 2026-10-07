@@ -1,0 +1,1 @@
+saga gpu-foundation done: every example and every size agrees with the evaluator on the GPU

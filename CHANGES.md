@@ -10,8 +10,13 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-07
+
+- 00:10 `plan` Saga gpu-foundation archived; saga gpu-algebra started with its four steps (axis-reduce, matvec, dense-layer, schedules), as `docs/plan.md` plans it.
+
 ## 2026-10-06
 
+- 21:40 `chore` Saga step reduce-gpu completed; saga gpu-foundation done.
 - 21:30 `test` The reductions beyond one work-group (step 6): `scripts/check-sizes.py` (`just sizes`; the gate runs 1024 and 65536) generates Ints and Floats into `work/sizes/`, runs an Accel program on them with the pinned `xetal` and the same computation as an XIR program with bound inputs on the interpreter (exactly) and on every device (within 1e-5), timed; 1024, 65536 and 1048576 items all agree on the Apple M1 Max (a million-item reduce is three launches; 0.24 s against the evaluator's 1.06 s, compile included). Timings in the runtime README; saga 1 retrospective in the plan; saga gpu-foundation done.
 - 21:05 `chore` Saga step opencl-run completed.
 - 21:00 `feat` The OpenCL runtime (step 5): `xetal-gpu-runtime` on the opencl3 crate (the OpenCL library loaded at run time, so the tool builds and runs anywhere and `devices` says when there is none); every device of every platform listed with its kind, version, units, work-group limit, memory and fp64; `execute`: the device checked against the plan (double precision, work-group size, with the flag to pass), the source built with the device's compiler and its log as the error, every buffer allocated in the schedule's element type with inputs and constants converted up, the launches run in order on an in-order queue, the outputs read back and widened to the program's types. `xetal-gpu devices` and `run --device opencl:N` (with the schedule flags). `scripts/check-equiv.sh` runs every twin on every device found (Floats within 1e-5, Ints exactly) and says when the GPU side is skipped. On this Mac (Apple M1 Max, OpenCL 1.2, no fp64) all five twins agree with the evaluator, `-0.0` included; the runtime's four tests pass, among them a 70000-item reduction in three passes.

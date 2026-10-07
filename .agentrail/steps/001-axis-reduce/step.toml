@@ -1,0 +1,8 @@
+number = 1
+slug = "axis-reduce"
+status = "pending"
+description = "Reduce along an axis of a matrix. XIR: reduce takes an optional axis (reduce ..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T07:15:05"
+commits = []

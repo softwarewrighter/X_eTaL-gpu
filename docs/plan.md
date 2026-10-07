@@ -132,7 +132,7 @@ schedule computes Float as `float`, and the f32 results stay within
 timings are dominated by compiling the kernels (0.15 s), so a
 kernel cache is the first speed step when speed becomes a goal.
 
-### Saga 2 -- gpu-algebra
+### Saga 2 -- gpu-algebra  [ACTIVE]
 
 Goal: axes and inner products, the operations a model is made of.
 

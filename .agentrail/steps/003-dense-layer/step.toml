@@ -1,0 +1,8 @@
+number = 3
+slug = "dense-layer"
+status = "pending"
+description = "A dense layer and a softmax by row in X_eTaL and on the GPU: ac:d_ense x wb (..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T07:15:05"
+commits = []

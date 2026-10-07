@@ -1,0 +1,8 @@
+number = 2
+slug = "matvec"
+status = "pending"
+description = "Inner products. XIR: matmul %a %b for a matrix times a vector and a matrix ti..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T07:15:05"
+commits = []

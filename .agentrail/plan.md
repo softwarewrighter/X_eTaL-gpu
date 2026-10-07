@@ -1,31 +1,25 @@
-# Saga: gpu-foundation
+# Saga: gpu-algebra
 
-Goal: the process, the pinned X_eTaL, the acceleratable subset as a
-tested X_eTaL library, a provisional accelerator IR with an
-interpreter, OpenCL kernels for elementwise operations and
-reductions, a host runtime, and the first proof: one X_eTaL program's
-result reproduced on a GPU. The roadmap and the architecture
-decisions are in docs/plan.md; the blockers in docs/xetal-asks.md.
+Goal: axes and inner products, the operations a model is made of:
+reductions along an axis of a matrix, matrix-vector and matrix
+products, a dense layer with ReLU and a softmax by row, and the
+schedule as a file per device. Every step keeps the discipline of
+saga 1: an .xtl first (the Accel library grows), its baseline, a
+hand-lowered twin, the interpreter exact, the GPU within tolerance
+(docs/plan.md, saga 2; docs/xetal-asks.md for anything missing).
 
-1. scaffold: agentrail saga, CLAUDE.md/AGENTS.md, README, COPYRIGHT,
-   LICENSE, .gitignore, justfile, scripts/gate.sh, the pinned X_eTaL
-   (XETAL_COMMIT, scripts/xetal.sh, check-xetal.sh), the library
-   tooling (xt, libs.py, test-libs.sh, new-lib.sh, selftest-libs.sh,
-   templates/Library), docs/plan.md, docs/xetal-asks.md, CHANGES.md.
-2. accel-lib: libs/Accel, the acceleratable subset as exported
-   functions, tests, pinned types, the example programs as its demos
-   (vector-add, saxpy, threshold, reduce-sum, pipeline), reg-rs
-   baselines, the reference page.
-3. xir: components/xir, the provisional IR (types, shapes, ops), its
-   text form (parse, print, round-trip), checking, the reference
-   interpreter; each demo's .xir twin; scripts/check-equiv.sh;
-   xetal-gpu check and run --device cpu.
-4. opencl-emit: components/opencl, the schedule and the OpenCL C 1.2
-   emitter; every twin's kernel text pinned; xetal-gpu kernel and
-   explain.
-5. opencl-run: components/runtime on opencl3; xetal-gpu devices and
-   run --device opencl:N; the equivalence script runs the GPU side
-   when a device is present; every demo reproduced on the GPU.
-6. reduce-gpu: the reduction on the device (work-group partials,
-   second pass); the pipeline example end to end on the GPU; sizes
-   beyond one work-group; timings noted.
+1. axis-reduce: reduce along an axis of a matrix (r_/_2 and r_/),
+   one work-item per row or column; the checker's rank rules; the
+   emitter and the interpreter; Accel exports (r_owSums, c_olSums,
+   r_owMax); demos and twins; the pinned kernels.
+2. matvec: matmul for matrix-vector and matrix-matrix (x '+ '*
+   i_nner w): one work-item per output element, then a tiled
+   schedule; ac:m_atvec, ac:m_atmul; sizes to 1024 by 1024 in
+   check-sizes; twins; kernels pinned.
+3. dense-layer: y = relu(W x + b) as X_eTaL (ac:d_ense with the bias
+   row, as X_eTaL-ML's NN) and on the GPU; a softmax by row (exp,
+   row reduce, divide); twins; equivalence.
+4. schedules: the schedule as a TOML file per device (work-group,
+   tile, element widths); xetal-gpu run --schedule FILE; explain
+   shows it; a file for the Apple M1 Max and templates for the old
+   NVIDIA cards.
