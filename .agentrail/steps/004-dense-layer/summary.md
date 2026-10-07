@@ -1,0 +1,1 @@
+IR take/drop/ravel/table (left, right, map ops) with copy and table kernels; Accel d_ense (NN bias-row convention) and s_oftmax by row; tiny-net demo with data files and its twin agree on cpu (exact) and GPU (tiled, untiled); explain's shared-kernel descriptions fixed. Gate passes.

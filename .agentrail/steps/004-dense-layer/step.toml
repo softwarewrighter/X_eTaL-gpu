@@ -1,8 +1,9 @@
 number = 4
 slug = "dense-layer"
-status = "in-progress"
+status = "completed"
 description = "A dense layer and a softmax by row in X_eTaL and on the GPU: ac:d_ense x wb (..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T07:15:05"
-commits = []
+completed_at = "2026-10-07T14:01:42"
+commits = ["48b553ab1f224ec2d5c2bf734322d400229358e2"]
