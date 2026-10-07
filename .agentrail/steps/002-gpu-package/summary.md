@@ -1,0 +1,1 @@
+extensions/gpu: package manifest and xetal-ext-gpu cdylib (devices, load, bind, schedule, run, output, explain, kernel; per-thread session), 5 raw-ABI tests incl. a tiled device session; scripts/gpu-ext.sh and gate check; README. Gate passes.
