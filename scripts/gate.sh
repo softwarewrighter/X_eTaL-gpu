@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The pre-commit gate: the pinned X_eTaL (scripts/check-xetal.sh; it
-# clones and builds on a fresh checkout), the library tooling's
+# clones and builds on a fresh checkout), the pinned xetal-x of
+# X_eTaL-extensions (scripts/check-xetal-x.sh), the library tooling's
 # self-test, every library's baselines, the Rust components (format,
 # clippy, tests), the equivalence checks (CPU evaluator against the
 # XIR interpreter and, when a device is present, the GPU; the
@@ -11,6 +12,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 "$root/scripts/check-xetal.sh"
+"$root/scripts/check-xetal-x.sh"
 "$root/scripts/selftest-libs.sh"
 "$root/scripts/test-libs.sh"
 if [ -f "$root/components/Cargo.toml" ]; then

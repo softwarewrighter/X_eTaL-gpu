@@ -1,6 +1,6 @@
 number = 1
 slug = "pin-extensions"
-status = "pending"
+status = "in-progress"
 description = "Pin X_eTaL-extensions as X_eTaL is pinned: XETAL_EXTENSIONS_COMMIT (a committ..."
 role = "production"
 context_files = []

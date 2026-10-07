@@ -21,8 +21,10 @@
 *~
 .DS_Store
 
-# the X_eTaL clone (scripts/xetal.sh; XETAL_COMMIT is tracked), the
+# the X_eTaL and X_eTaL-extensions clones (scripts/xetal.sh,
+# scripts/xetal-extensions.sh; their commits are tracked), the
 # binary's symlink, local scratch, drawn pictures and generated kernels
 /tmp/
 work/
 bin/xetal
+bin/xetal-x

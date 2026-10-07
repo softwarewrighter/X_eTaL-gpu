@@ -194,7 +194,11 @@ To X_eTaL-extensions (recorded here; this repo does not change it):
 - an `ints` argument kind and a `bool` result kind for `ffi:b_ind<`,
   so an Int array goes out without passing through `f_loat`;
 - results of more than one array per call, or the session pattern
-  above documented as the way to return several.
+  above documented as the way to return several;
+- `xetal-x` looks for native libraries beside the path it was started
+  from without resolving a symlink, so a repository that links
+  `bin/xetal-x` to the binary finds none (found 2026-10-07; this repo
+  writes a wrapper script instead); resolving the path would fix it.
 
 ## Plan changes
 

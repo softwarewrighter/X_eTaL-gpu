@@ -28,6 +28,18 @@ eval expr:
 core expr:
     @scripts/xt core -e "$1"
 
+# Get and build xetal-x, X_eTaL-extensions' bridge host, at XETAL_EXTENSIONS_COMMIT (clone in work/xetal-extensions, bin/xetal-x)
+xetal-x:
+    @scripts/xetal-extensions.sh
+
+# Pin a committed ref of ../X_eTaL-extensions (default HEAD) in XETAL_EXTENSIONS_COMMIT and build it; commit it on its own
+extensions-pin ref="HEAD":
+    scripts/xetal-extensions.sh --pin "$1"
+
+# Check the pinned xetal-x: it reports its commit, hello answers through the bridge, every library program gives its baseline under its X_eTaL
+check-xetal-x:
+    scripts/check-xetal-x.sh
+
 # Check the pinned X_eTaL: CLI builds, answers, reports its commit, dumps Core
 check-xetal:
     scripts/check-xetal.sh

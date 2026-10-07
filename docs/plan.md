@@ -172,7 +172,7 @@ text bridge). Testable on this Mac.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
-| 1 | pin-extensions | `XETAL_EXTENSIONS_COMMIT`, `scripts/xetal-extensions.sh` (clone into `work/xetal-extensions/`, build `xetal-x`), a gate check that `xetal-x` loads hello |
+| 1 | pin-extensions | DONE: `XETAL_EXTENSIONS_COMMIT` (7bdd827), `scripts/xetal-extensions.sh` (clone, its own X_eTaL from the sibling checkout, `xetal-x`, hello and clock built into `target/xetal-extensions/`, `bin/xetal-x` a wrapper: a symlink is not followed when xetal-x looks for libraries beside itself), `just xetal-x`, `just extensions-pin`, `scripts/check-xetal-x.sh` in the gate (its commit, hello through the bridge, every Accel test and demo identical under xetal-x's X_eTaL v0.1.0, which differs from this repo's 75e6a5c). Planned: | `XETAL_EXTENSIONS_COMMIT`, `scripts/xetal-extensions.sh` (clone into `work/xetal-extensions/`, build `xetal-x`), a gate check that `xetal-x` loads hello |
 | 2 | gpu-package | `extensions/gpu/`: `extension.toml`, `rust/` (a cdylib on `xetal-ext-sdk` and this repo's runtime: devices, load, bind, run, output, explain, one session per thread), Rust tests |
 | 3 | gpu-facade | `lib/Gpu.xtl` by `ffi:b_ind<`, its X_eTaL half (program writers for products and layers, `gp:r_un1`, `gp:n_ear`), reg-rs tests with `xetal-x`, types pinned |
 | 4 | offload-demo | one X_eTaL program computing a 512 by 512 product with the evaluator and on the GPU, compared and timed; the bridge's cost stated |

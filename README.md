@@ -112,6 +112,13 @@ target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   #
 just sizes                           # a million-item reduction: evaluator, interpreter, GPU, timed
 ```
 
+X_eTaL-extensions is pinned the same way (`XETAL_EXTENSIONS_COMMIT`,
+`just xetal-x`, cloned into `work/xetal-extensions/`): its `xetal-x`
+is X_eTaL's CLI plus native extensions, which the GPU extension
+needs. It embeds the X_eTaL that X_eTaL-extensions pins (v0.1.0),
+so the gate checks that every library program here prints the same
+under it.
+
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit
 (one line, the full SHA), `just xetal` clones X_eTaL into `work/xetal/`
 (gitignored), checks it out, builds the CLI and links it as
