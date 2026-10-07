@@ -1,8 +1,9 @@
 number = 4
 slug = "opencl-emit"
-status = "in-progress"
+status = "completed"
 description = "components/opencl (crate xetal-gpu-opencl): the schedule (a struct: fused ele..."
 role = "production"
 context_files = []
 created_at = "2026-10-06T18:03:03"
-commits = []
+completed_at = "2026-10-06T19:29:53"
+commits = ["8ac568b176948a9fdd353d6101225ff08417e448"]

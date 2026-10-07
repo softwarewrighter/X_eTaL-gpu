@@ -1,0 +1,1 @@
+xetal-gpu-opencl: Schedule (widths, work-group), Plan (source, buffers, launches, outputs); fusion of elementwise chains into one kernel with only needed values written; tree reductions in local memory launched on partials until one is left; explain; xetal-gpu kernel/explain with schedule flags; 7 unit tests and every twin's source and plan pinned. Gate passes.
