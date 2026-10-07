@@ -1,0 +1,1 @@
+matmul in IR/checker/interpreter (i_nner's right fold), untiled and tiled (--tile T) kernels, Accel m_atmul, matmul demo and twin, tiled runs in check-equiv, products to 512 in check-sizes (GPU 0.13 s vs evaluator 28.75 s). Fixed the whole-matrix reduce order to match r_/_12 (columns first); ask G7 extended. Gate passes.

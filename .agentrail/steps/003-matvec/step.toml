@@ -1,8 +1,9 @@
 number = 3
 slug = "matvec"
-status = "in-progress"
+status = "completed"
 description = "Inner products. XIR: matmul %a %b for a matrix times a vector and a matrix ti..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T07:15:05"
-commits = []
+completed_at = "2026-10-07T13:07:35"
+commits = ["8b675a9bf85412b09a21183e7f0e665db27bce2d"]
