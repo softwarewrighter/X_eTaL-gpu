@@ -1,0 +1,8 @@
+number = 2
+slug = "gpu-package"
+status = "pending"
+description = "extensions/gpu/: extension.toml (name gpu, abi 1, facade lib/Gpu.xtl, library..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T15:18:59"
+commits = []

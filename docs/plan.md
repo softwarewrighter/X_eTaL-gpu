@@ -162,7 +162,7 @@ X_eTaL's (G1); (3) pinned explain output caught nothing about its own
 wording, so a wrong description sat pinned for two steps: the
 pinning tests the plan, a reader still has to read it.
 
-### Saga 3 -- gpu-extension  [NEXT]
+### Saga 3 -- gpu-extension  [ACTIVE]
 
 Goal: X_eTaL programs call the GPU themselves, through
 X_eTaL-extensions' ABI V1 and its `xetal-x` bridge (justified in

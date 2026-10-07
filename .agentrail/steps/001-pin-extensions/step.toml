@@ -1,0 +1,8 @@
+number = 1
+slug = "pin-extensions"
+status = "pending"
+description = "Pin X_eTaL-extensions as X_eTaL is pinned: XETAL_EXTENSIONS_COMMIT (a committ..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T15:18:59"
+commits = []
