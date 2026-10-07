@@ -1,0 +1,11 @@
+# The gpu package: what xetal-x's loader reads to find and check the
+# native library, and the facade programs import (X_eTaL-extensions'
+# package format, ABI V1).
+[extension]
+name = "gpu"
+version = "0.1.0"
+abi = 1
+facade = "lib/Gpu.xtl"
+# The library's file stem: libxetal_ext_gpu.dylib on macOS,
+# libxetal_ext_gpu.so on Linux. Built by "just gpu-ext" beside xetal-x.
+library = "xetal_ext_gpu"

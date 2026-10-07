@@ -36,6 +36,10 @@ xetal-x:
 extensions-pin ref="HEAD":
     scripts/xetal-extensions.sh --pin "$1"
 
+# Build the gpu extension beside xetal-x (extensions/gpu)
+gpu-ext:
+    @scripts/gpu-ext.sh
+
 # Check the pinned xetal-x: it reports its commit, hello answers through the bridge, every library program gives its baseline under its X_eTaL
 check-xetal-x:
     scripts/check-xetal-x.sh

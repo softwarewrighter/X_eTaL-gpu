@@ -27,6 +27,7 @@ generations of parallel hardware with the same answer, not speed.
 | `components/xir/` | the provisional accelerator IR (typed arrays, elementwise maps, reductions), its text form and a reference interpreter |
 | `components/opencl/` | the schedule and the OpenCL C 1.2 kernel emitter |
 | `components/runtime/` | the OpenCL host runtime (devices, buffers, kernels) |
+| `extensions/gpu/` | the GPU as a native extension X_eTaL programs call through X_eTaL-extensions' `xetal-x` |
 | `components/cli/` | the `xetal-gpu` tool: `devices`, `check`, `run`, `kernel`, `explain` |
 | `schedules/` | how each device runs a program (widths, work-group, tiles), one TOML file per device |
 | `docs/` | the plan, the asks for X_eTaL, the research notes |

@@ -1,0 +1,28 @@
+[package]
+name = "xetal-ext-gpu"
+version = "0.1.0"
+description = "The gpu extension for X_eTaL: XIR programs run on OpenCL devices (or the reference interpreter) from X_eTaL code, through X_eTaL-extensions' ABI V1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+name = "xetal_ext_gpu"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# The SDK of the pinned X_eTaL-extensions (scripts/xetal-extensions.sh
+# clones it into work/), and this repository's components.
+xetal-ext-sdk = { path = "../../../work/xetal-extensions/crates/xetal-ext-sdk" }
+xetal-gpu-xir = { path = "../../../components/xir" }
+xetal-gpu-opencl = { path = "../../../components/opencl" }
+xetal-gpu-runtime = { path = "../../../components/runtime" }
+
+[features]
+# Link statically beside other extensions (no unmangled entry point);
+# the SDK's macro reads it. Never enabled for the shared library.
+static = []
+
+# Its own workspace: it depends on the clone in work/, which the
+# components workspace does not need.
+[workspace]

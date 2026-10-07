@@ -13,6 +13,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 "$root/scripts/check-xetal.sh"
 "$root/scripts/check-xetal-x.sh"
+"$root/scripts/gpu-ext.sh" --check
 "$root/scripts/selftest-libs.sh"
 "$root/scripts/test-libs.sh"
 if [ -f "$root/components/Cargo.toml" ]; then
@@ -28,7 +29,7 @@ fi
 # American spellings only (the checker checks itself first).
 "$root/scripts/check-spelling.py" --self-test
 "$root/scripts/check-spelling.py"
-md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md)
+md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md extensions/gpu/README.md)
 for f in libs/*/README.md libs/*/docs/README.md components/*/README.md; do [ -e "$f" ] && md+=("$f"); done
 for f in "${md[@]}"; do sw-markdown-checker -f "$f" >/dev/null || { sw-markdown-checker -f "$f"; exit 1; }; done
 echo "gate: ok"
