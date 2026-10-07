@@ -1,8 +1,9 @@
 number = 5
 slug = "schedules"
-status = "in-progress"
+status = "completed"
 description = "The schedule as a file: schedules/<device>.toml (float, int, work_group, tile..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T07:15:05"
-commits = []
+completed_at = "2026-10-07T15:18:18"
+commits = ["ac14b31b81e11641c2d42719b830ef157be915e1"]

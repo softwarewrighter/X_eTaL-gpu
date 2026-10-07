@@ -1,0 +1,1 @@
+Schedules as TOML files: from_toml with unknown keys refused, validate naming fields, --schedule FILE with flag overrides, schedules/ (Apple file tested and equal to defaults; NVIDIA modern, modern-f64 and legacy templates); runtime refusals name the field; work-group suggestion bug fixed. Saga gpu-algebra done with retrospective. Gate passes.
