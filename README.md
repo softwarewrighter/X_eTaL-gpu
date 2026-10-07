@@ -28,6 +28,7 @@ generations of parallel hardware with the same answer, not speed.
 | `components/opencl/` | the schedule and the OpenCL C 1.2 kernel emitter |
 | `components/runtime/` | the OpenCL host runtime (devices, buffers, kernels) |
 | `components/cli/` | the `xetal-gpu` tool: `devices`, `check`, `run`, `kernel`, `explain` |
+| `schedules/` | how each device runs a program (widths, work-group, tiles), one TOML file per device |
 | `docs/` | the plan, the asks for X_eTaL, the research notes |
 
 Every example is an X_eTaL program first; the pinned X_eTaL
@@ -71,13 +72,14 @@ Ints exactly and Floats within 1e-5 (`xetal-gpu devices`, `run
 --device opencl:0`; step 5); the reductions and the pipeline at
 1024, 65536 and 1048576 items, generated data run through the
 evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
-Saga 2 (gpu-algebra) in progress: the macros-and-extensions analysis
+Saga 2 (gpu-algebra): the macros-and-extensions analysis
 and reductions along an axis of a matrix (row sums, column sums, row
 maxima) and inner products (`'+ '* i_nner`, untiled and in tiles; a
 512 by 512 product in 0.13 s against the evaluator's 29 s), and a
 tiny two-layer network (dense, ReLU, dense, softmax) whose output on
-the GPU matches the evaluator's are done; next schedules as files;
-then the GPU as a native extension X_eTaL programs call themselves (saga 3). The
+the GPU matches the evaluator's, and schedules as files per device
+are done (saga 2, finished 2026-10-07). Next, saga 3: the GPU as a
+native extension X_eTaL programs call themselves (saga 3). The
 work moves to an Arch machine with a newer GPU soon; nothing in the
 code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.

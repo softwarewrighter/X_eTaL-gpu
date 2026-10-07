@@ -437,11 +437,7 @@ __kernel void {kname}({}) {{
         };
         let (m, n, p) = xetal_gpu_xir::interp::matmul_split(&self.ty(a).shape, &self.ty(b).shape);
         let t = self.schedule.tile;
-        assert!(
-            t == 0 || t * t <= self.schedule.work_group,
-            "a tile of {t} by {t} needs a work-group of {}",
-            t * t
-        );
+        debug_assert!(self.schedule.validate().is_ok(), "a schedule is validated before planning");
         let kname = if t == 0 {
             format!("matmul_{elem}")
         } else {

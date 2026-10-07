@@ -1,0 +1,9 @@
+# The schedule for this repository's development Mac, and the defaults:
+# Apple's OpenCL 1.2 on the M1 Max has no double precision and allows
+# work-groups of 256, so a 16 by 16 tile is the largest.
+device = "Apple M1 Max (OpenCL 1.2)"
+tested = true
+float = "f32"
+int = "i64"
+work_group = 256
+tile = 0

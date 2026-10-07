@@ -30,6 +30,58 @@ use xetal_gpu_xir::{Const, Scalar, ValueId};
 pub use emit::plan;
 pub use explain::explain;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn schedule_files() {
+        assert_eq!(Schedule::from_toml("").unwrap(), Schedule::default());
+        let s = Schedule::from_toml("device = \"x\"\nfloat = \"f64\"\nint = \"i32\"\nwork_group = 1024\ntile = 32\n").unwrap();
+        assert_eq!(
+            s,
+            Schedule {
+                float: Width::W64,
+                int: Width::W32,
+                work_group: 1024,
+                tile: 32
+            }
+        );
+        assert_eq!(
+            Schedule::from_toml("tile = 32\n").unwrap_err(),
+            "tile = 32: a 32 by 32 tile is a work-group of 1024, more than work_group = 256"
+        );
+        assert_eq!(Schedule::from_toml("float = \"f16\"\n").unwrap_err(), "float = \"f16\": f32 or f64");
+        assert_eq!(
+            Schedule::from_toml("work_group = 100\n").unwrap_err(),
+            "work_group = 100: a power of two (the reduction tree needs it)"
+        );
+        assert!(Schedule::from_toml("workgroup = 64\n")
+            .unwrap_err()
+            .contains("unknown field `workgroup`"));
+    }
+
+    #[test]
+    fn every_schedule_file_reads() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../schedules");
+        let mut n = 0;
+        for e in std::fs::read_dir(&dir).expect("schedules/").flatten() {
+            if e.path().extension().is_some_and(|x| x == "toml") {
+                let text = std::fs::read_to_string(e.path()).unwrap();
+                Schedule::from_toml(&text).unwrap_or_else(|err| panic!("{}: {err}", e.path().display()));
+                n += 1;
+            }
+        }
+        assert!(n >= 2, "schedule files found: {n}");
+        let apple = std::fs::read_to_string(dir.join("apple-m1-max.toml")).unwrap();
+        assert_eq!(
+            Schedule::from_toml(&apple).unwrap(),
+            Schedule::default(),
+            "the Apple file is the defaults"
+        );
+    }
+}
+
 /// How wide a number is on the device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Width {
@@ -63,7 +115,76 @@ impl Default for Schedule {
     }
 }
 
+/// A schedule as a file (`schedules/<device>.toml`): every field
+/// optional, the defaults otherwise; an unknown key is an error.
+#[derive(Debug, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ScheduleFile {
+    /// What the file is for (shown by `explain`; not used otherwise).
+    #[allow(dead_code)]
+    device: Option<String>,
+    /// Whether the file has been run on its device (documentation).
+    #[allow(dead_code)]
+    tested: Option<bool>,
+    float: Option<String>,
+    int: Option<String>,
+    work_group: Option<usize>,
+    tile: Option<usize>,
+}
+
 impl Schedule {
+    /// A schedule from the text of a TOML file: `float = "f32"`,
+    /// `int = "i64"`, `work_group = 256`, `tile = 16` (each optional),
+    /// and `device = "..."`, `tested = true` as documentation.
+    pub fn from_toml(text: &str) -> Result<Schedule, String> {
+        let f: ScheduleFile = toml::from_str(text).map_err(|e| e.to_string().trim().to_string())?;
+        let mut s = Schedule::default();
+        if let Some(v) = f.float {
+            s.float = match v.as_str() {
+                "f32" => Width::W32,
+                "f64" => Width::W64,
+                _ => return Err(format!("float = \"{v}\": f32 or f64")),
+            };
+        }
+        if let Some(v) = f.int {
+            s.int = match v.as_str() {
+                "i32" => Width::W32,
+                "i64" => Width::W64,
+                _ => return Err(format!("int = \"{v}\": i32 or i64")),
+            };
+        }
+        if let Some(v) = f.work_group {
+            s.work_group = v;
+        }
+        if let Some(v) = f.tile {
+            s.tile = v;
+        }
+        s.validate()?;
+        Ok(s)
+    }
+
+    /// Whether the fields fit together, naming the one that does not.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.work_group == 0 || !self.work_group.is_power_of_two() {
+            return Err(format!(
+                "work_group = {}: a power of two (the reduction tree needs it)",
+                self.work_group
+            ));
+        }
+        if self.tile != 0 && !self.tile.is_power_of_two() {
+            return Err(format!("tile = {}: 0 (untiled) or a power of two", self.tile));
+        }
+        if self.tile * self.tile > self.work_group {
+            return Err(format!(
+                "tile = {}: a {0} by {0} tile is a work-group of {}, more than work_group = {}",
+                self.tile,
+                self.tile * self.tile,
+                self.work_group
+            ));
+        }
+        Ok(())
+    }
+
     /// The device element type for a scalar type.
     pub fn elem(&self, s: Scalar) -> Elem {
         match s {

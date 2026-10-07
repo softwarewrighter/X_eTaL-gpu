@@ -100,6 +100,11 @@ fn device(index: usize) -> Result<(DeviceInfo, Device)> {
     unreachable!("the device was listed")
 }
 
+/// The largest power of two not above n (n at least 1).
+fn largest_power_of_two(n: usize) -> usize {
+    1 << (usize::BITS - 1 - n.max(1).leading_zeros())
+}
+
 fn cl(e: opencl3::error_codes::ClError) -> Error {
     Error(format!("OpenCL: {e}"))
 }
@@ -118,16 +123,17 @@ pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, 
     let (info, dev) = device(index)?;
     if plan.needs_fp64() && !info.fp64 {
         return Err(Error(format!(
-            "device opencl:{index} ({}) has no double precision; schedule Float as f32",
+            "device opencl:{index} ({}) has no double precision: the schedule's float = \"f64\" cannot run there (use f32)",
             info.name
         )));
     }
     if plan.schedule.work_group > info.max_work_group {
         return Err(Error(format!(
-            "device opencl:{index} ({}) allows work-groups of at most {}; schedule --work-group {} or less",
+            "device opencl:{index} ({}) allows work-groups of at most {}: the schedule's work_group = {} cannot run there (use {} or less)",
             info.name,
             info.max_work_group,
-            info.max_work_group.next_power_of_two() / 2
+            plan.schedule.work_group,
+            largest_power_of_two(info.max_work_group)
         )));
     }
     let context = Context::from_device(&dev).map_err(cl)?;
@@ -359,6 +365,34 @@ mod tests {
         let src = format!("%a = const i64 [{n}] 3\n%r = reduce add %a\n%m = reduce max %a\noutput %r\noutput %m\n");
         let Some(out) = on_device(&src, &Schedule::default()) else { return };
         assert_eq!(out, [(3 * n).to_string(), "3".to_string()]);
+    }
+
+    #[test]
+    fn a_schedule_the_device_cannot_run_is_refused_by_field() {
+        assert_eq!(
+            (largest_power_of_two(256), largest_power_of_two(1000), largest_power_of_two(1)),
+            (256, 512, 1)
+        );
+        let Ok(found) = devices() else { return };
+        let Some(d) = found.first() else {
+            eprintln!("skipped: no OpenCL device");
+            return;
+        };
+        let checked = check(text::parse("%a = const f64 [4] 1.0\n%r = reduce add %a\noutput %r\n").unwrap()).unwrap();
+        let big = Schedule {
+            work_group: d.max_work_group * 2,
+            ..Schedule::default()
+        };
+        let e = execute(&checked, &plan(&checked, &big), &HashMap::new(), 0).unwrap_err().0;
+        assert!(e.contains(&format!("work_group = {}", d.max_work_group * 2)), "{e}");
+        if !d.fp64 {
+            let f64s = Schedule {
+                float: xetal_gpu_opencl::Width::W64,
+                ..Schedule::default()
+            };
+            let e = execute(&checked, &plan(&checked, &f64s), &HashMap::new(), 0).unwrap_err().0;
+            assert!(e.contains("float = \"f64\""), "{e}");
+        }
     }
 
     #[test]

@@ -1,0 +1,9 @@
+# The same as nvidia-modern.toml with X_eTaL's Float computed in double
+# precision on the device, so results can be compared with the
+# evaluator more tightly. Not yet run on such a card.
+device = "NVIDIA, Turing and later, double precision (template)"
+tested = false
+float = "f64"
+int = "i64"
+work_group = 1024
+tile = 16

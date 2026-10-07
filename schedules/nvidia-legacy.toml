@@ -1,0 +1,10 @@
+# A template for the old NVIDIA cards (Kepler K80, Maxwell M40, Pascal
+# P40 and P100; the 470 driver series for Kepler, the 5xx series for
+# the others; OpenCL 1.2 or 3.0): work-groups of 1024, products in
+# 16 by 16 tiles. Not yet run on such a card.
+device = "NVIDIA Kepler, Maxwell, Pascal (template)"
+tested = false
+float = "f32"
+int = "i64"
+work_group = 1024
+tile = 16

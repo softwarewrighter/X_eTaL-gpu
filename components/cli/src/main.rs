@@ -27,7 +27,7 @@ usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
-    SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)
+    SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)  --schedule FILE (a schedules/*.toml; the flags override it)
   version";
 
 fn main() -> ExitCode {
@@ -149,7 +149,15 @@ fn dispatch(args: &[String]) -> Result<()> {
 
 /// `--float f32|f64 --int i32|i64 --work-group N --tile T`, the defaults otherwise.
 fn schedule(args: &[String]) -> Result<Schedule> {
-    let mut s = Schedule::default();
+    // A file first (--schedule FILE), then the flags over it.
+    let mut s = match args.iter().position(|a| a == "--schedule") {
+        Some(k) => {
+            let path = args.get(k + 1).ok_or_else(|| Error("--schedule needs a file".into()))?;
+            let text = std::fs::read_to_string(path).map_err(|e| Error(format!("--schedule {path}: {e}")))?;
+            Schedule::from_toml(&text).map_err(|e| Error(format!("--schedule {path}: {e}")))?
+        }
+        None => Schedule::default(),
+    };
     let mut i = 0;
     while i < args.len() {
         let value = args.get(i + 1).ok_or_else(|| Error(format!("{} needs a value", args[i])))?;
@@ -175,6 +183,7 @@ fn schedule(args: &[String]) -> Result<Schedule> {
                     .filter(|n: &usize| n.is_power_of_two())
                     .ok_or_else(|| Error(format!("--work-group takes a power of two, got `{value}`")))?;
             }
+            "--schedule" => {}
             "--tile" => {
                 s.tile = value
                     .parse()
@@ -186,6 +195,7 @@ fn schedule(args: &[String]) -> Result<Schedule> {
         }
         i += 2;
     }
+    s.validate().map_err(|e| Error(format!("schedule: {e}")))?;
     Ok(s)
 }
 

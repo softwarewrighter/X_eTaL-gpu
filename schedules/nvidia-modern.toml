@@ -1,0 +1,10 @@
+# A template for the coming Arch machine's newer NVIDIA GPU (Turing,
+# Ampere, Ada and later, the driver's OpenCL 3.0): work-groups of
+# 1024, double precision available, products in 16 by 16 tiles. Not
+# yet run on such a card; adjust it there and set tested = true.
+device = "NVIDIA, Turing and later (template)"
+tested = false
+float = "f32"
+int = "i64"
+work_group = 1024
+tile = 16

@@ -26,6 +26,25 @@ represents each scalar type and how big a work-group is.
 
 Bool is `int` (1 or 0, what a C comparison gives).
 
+A schedule can be a file, `schedules/<device>.toml`, with the same
+fields (each optional, the defaults otherwise) and two for the
+reader, `device` and `tested`; an unknown key is an error, and
+`validate` names the field that does not fit (a work-group that is
+not a power of two, a tile too large for the work-group). The
+runtime refuses a schedule its device cannot run the same way,
+naming the field and the value to use.
+
+```
+xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml --tile 16
+```
+
+| File | For | Run there |
+| ---- | --- | --------- |
+| `apple-m1-max.toml` | this repository's Mac; the defaults | yes |
+| `nvidia-modern.toml` | the coming Arch machine's newer NVIDIA GPU: work-groups of 1024, 16 by 16 tiles | not yet |
+| `nvidia-modern-f64.toml` | the same, Float as `double` | not yet |
+| `nvidia-legacy.toml` | Kepler, Maxwell, Pascal cards | not yet |
+
 ## What the emitter decides
 
 - **Fusion.** Walking the program in order, consecutive elementwise
@@ -81,5 +100,5 @@ values it computes and writes) and every launch with its sizes.
 
 ## Not yet
 
-A tree per line for very long axes, and a schedule file per device
-(saga 2).
+A tree per line for very long axes, and where the weights live
+(host or device) as a schedule field (the model saga).

@@ -1,6 +1,6 @@
 number = 5
 slug = "schedules"
-status = "pending"
+status = "in-progress"
 description = "The schedule as a file: schedules/<device>.toml (float, int, work_group, tile..."
 role = "production"
 context_files = []

@@ -132,7 +132,7 @@ schedule computes Float as `float`, and the f32 results stay within
 timings are dominated by compiling the kernels (0.15 s), so a
 kernel cache is the first speed step when speed becomes a goal.
 
-### Saga 2 -- gpu-algebra  [ACTIVE]
+### Saga 2 -- gpu-algebra  [DONE]
 
 Goal: axes and inner products, the operations a model is made of.
 
@@ -142,9 +142,27 @@ Goal: axes and inner products, the operations a model is made of.
 | 1 | axis-reduce | DONE: `reduce OP axis=K` in the IR (text, checker: rank n to n - 1, an empty axis refused; interpreter: each line folded from the right, `r_/_2` and `r_/` of a matrix, rank 3 checked against xetal), the emitter's `reduce_axis_*` kernel (one work-item per result, the evaluator's fold order, so exact), Accel `r_owSums`, `c_olSums`, `r_owMax`, the axis-reduce demo and twin; six twins agree on the interpreter and the GPU. Planned: `reduce` along an axis of a matrix (`r_/_2`, `r_/`), one work-item per row or column; examples and twins |
 | 2 | matvec | DONE: `matmul` in the IR (any ranks, a's last axis with b's first; checked; interpreted in `i_nner`'s right-fold order), an untiled kernel (one work-item per result) and a tiled one (`--tile T`, local memory, the same fold order), Accel `m_atmul` (one export for every rank pairing), the matmul demo and twin, check-equiv runs every twin tiled too, `check-sizes` products to 512 (GPU 0.13 s against the evaluator's 28.75 s). Found: `'+ r_/_12` folds down the columns first (the interpreter now does too; ask G7). Planned: `matmul` for matrix-vector (`x '+ '* i_nner w`): one work-item per output; a tiled schedule for matrix-matrix; `ac:m_atvec`, `ac:m_atmul`; sizes to 1024 by 1024 |
 | 3 | dense-layer | DONE: Accel `d_ense` (NN's bias-row convention, spread by `'r_ight t_able`) and `s_oftmax` by row (spread by `'l_eft t_able`), the tiny-net demo (two layers, weights from `data/`) and its twin; the XIR needed only general operations: `take`, `drop`, `ravel`, `table` (with `left`, `right`), on top of exp, axis reductions and matmul; the network agrees with the evaluator on the GPU (8 twins). `explain` now describes each shared kernel truthfully (it had called all of them tree reductions). Planned: `y = relu(W x + b)` as X_eTaL (`ac:d_ense`, X_eTaL-ML's NN shape of weights with the bias row) and on the GPU; a softmax by row (exp, row reduce, divide) |
-| 4 | schedules | the schedule as a TOML file per device (work-group size, tile, element types, weight storage host or device); `xetal-gpu run --schedule FILE`; `explain` shows it |
+| 4 | schedules | DONE: `Schedule::from_toml` and `validate` (unknown keys refused, each error naming its field), `--schedule FILE` (flags override it) for run, kernel and explain, `schedules/` with the Apple file (tested; equal to the defaults, checked) and templates for the newer NVIDIA GPU (f32 and f64) and the legacy cards (work-groups of 1024, 16 by 16 tiles); the runtime's refusals name the field and the value to use (and suggest the device's own maximum, not half of it). Planned: the schedule as a TOML file per device (work-group size, tile, element types, weight storage host or device); `xetal-gpu run --schedule FILE`; `explain` shows it |
 
-### Saga 3 -- gpu-extension
+### Saga 2 retrospective
+
+Delivered: the macros-and-extensions analysis (one extension
+justified, no new macro), reductions along an axis, inner products
+untiled and tiled, a dense layer and a row softmax through four
+general IR operations (take, drop, ravel, table), and schedules as
+files. Every example, now eight, agrees with the evaluator on the
+interpreter exactly and on the GPU within 1e-5, tiled and untiled; a
+512 by 512 product runs in 0.13 s on the GPU against the evaluator's
+29 s. Learned: (1) the evaluator's fold orders are part of its
+meaning for Floats and must be probed (`'+ r_/_12` folds the columns
+first, which the interpreter got wrong until a product's sum showed
+it; ask G7); (2) a network needed no model-specific IR, only X_eTaL's
+own structural primitives, which keeps the IR a candidate for
+X_eTaL's (G1); (3) pinned explain output caught nothing about its own
+wording, so a wrong description sat pinned for two steps: the
+pinning tests the plan, a reader still has to read it.
+
+### Saga 3 -- gpu-extension  [NEXT]
 
 Goal: X_eTaL programs call the GPU themselves, through
 X_eTaL-extensions' ABI V1 and its `xetal-x` bridge (justified in
