@@ -2,7 +2,8 @@
 //!
 //! ```text
 //! xetal-gpu check FILE.xir                    parse and check; every value with its type
-//! xetal-gpu run FILE.xir [--device cpu] [--bind NAME=1,2,3 | NAME=@FILE]...
+//! xetal-gpu devices                           the OpenCL devices found
+//! xetal-gpu run FILE.xir [--device cpu|opencl:N] [--bind NAME=1,2,3 | NAME=@FILE]...
 //!                                             run; each output printed as xetal prints it
 //! xetal-gpu print FILE.xir                    the program in its canonical text form
 //! xetal-gpu kernel FILE.xir [SCHEDULE]        the OpenCL C it would run
@@ -14,12 +15,14 @@ use std::collections::HashMap;
 use std::process::ExitCode;
 
 use xetal_gpu_opencl::{explain, plan, Schedule, Width};
+use xetal_gpu_runtime::{devices, execute};
 use xetal_gpu_xir::{check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
 
 const USAGE: &str = "\
 usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   check FILE.xir                 parse and check: every value with its type
-  run FILE.xir [--device cpu]    run; each output printed as xetal prints it
+  devices                        the OpenCL devices found (opencl:N)
+  run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   an input's items (a file: whitespace-separated)
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
@@ -64,6 +67,27 @@ fn dispatch(args: &[String]) -> Result<()> {
             print!("{}", text::print(&checked.program));
             Ok(())
         }
+        "devices" => {
+            let found = devices()?;
+            if found.is_empty() {
+                println!("no OpenCL device found (no OpenCL library, or no platform reports a device)");
+            }
+            for d in found {
+                println!(
+                    "opencl:{}  {} ({}, {}; {}), {} compute units, work-groups to {}, {} MB, {}",
+                    d.index,
+                    d.name,
+                    d.kind,
+                    d.vendor,
+                    d.version,
+                    d.compute_units,
+                    d.max_work_group,
+                    d.global_mem_bytes / (1024 * 1024),
+                    if d.fp64 { "fp64" } else { "no fp64" }
+                );
+            }
+            Ok(())
+        }
         "kernel" | "explain" => {
             let checked = load(args.get(1))?;
             let schedule = schedule(&args[2.min(args.len())..])?;
@@ -79,6 +103,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             let checked = load(args.get(1))?;
             let mut device = "cpu".to_string();
             let mut binds: Vec<String> = Vec::new();
+            let mut rest: Vec<String> = Vec::new();
             let mut i = 2;
             while i < args.len() {
                 match args[i].as_str() {
@@ -86,23 +111,34 @@ fn dispatch(args: &[String]) -> Result<()> {
                         device = args
                             .get(i + 1)
                             .cloned()
-                            .ok_or_else(|| Error("--device needs a value (cpu)".into()))?;
+                            .ok_or_else(|| Error("--device needs a value (cpu, opencl:N)".into()))?;
                         i += 2;
                     }
                     "--bind" => {
                         binds.push(args.get(i + 1).cloned().ok_or_else(|| Error("--bind needs NAME=items".into()))?);
                         i += 2;
                     }
-                    other => return Err(Error(format!("unknown option `{other}`\n{USAGE}"))),
+                    _ => {
+                        rest.push(args[i].clone());
+                        i += 1;
+                    }
                 }
             }
-            if device != "cpu" {
-                return Err(Error(format!(
-                    "device `{device}`: only `cpu` (the reference interpreter) exists yet; OpenCL devices come with the runtime component"
-                )));
-            }
+            let schedule = schedule(&rest)?;
             let inputs = bindings(&checked, &binds)?;
-            for out in run(&checked, &inputs)? {
+            let outputs = if device == "cpu" {
+                run(&checked, &inputs)?
+            } else if let Some(n) = device.strip_prefix("opencl:") {
+                let index: usize = n
+                    .parse()
+                    .map_err(|_| Error(format!("--device opencl:N takes a number, got `{device}`")))?;
+                execute(&checked, &plan(&checked, &schedule), &inputs, index)?
+            } else {
+                return Err(Error(format!(
+                    "unknown device `{device}` (cpu, or opencl:N from `xetal-gpu devices`)"
+                )));
+            };
+            for out in outputs {
                 println!("{}", format::show(&out));
             }
             Ok(())

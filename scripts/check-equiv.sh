@@ -14,6 +14,10 @@ cd "$root"
 gpu="$root/target/release/xetal-gpu"
 fail=0; n=0
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+# The OpenCL devices present (none is not a failure: it is said).
+devices=()
+while IFS= read -r d; do [ -n "$d" ] && devices+=("$d"); done < <("$gpu" devices | grep -o '^opencl:[0-9]*' || true)
+[ ${#devices[@]} -gt 0 ] || echo "check-equiv: no OpenCL device here; the GPU side is skipped"
 for xtl in libs/*/demos/*.xtl; do
   name="$(basename "$xtl" .xtl)"; lib="$(basename "$(dirname "$(dirname "$xtl")")")"
   xir="${xtl%.xtl}.xir"; want="libs/$lib/tests/demo-$name.out"
@@ -28,6 +32,13 @@ for xtl in libs/*/demos/*.xtl; do
   fi
   if out="$(scripts/compare-out.py "$want" "$tmp/cpu.out" 0)"; then echo "ok: $lib/$name on cpu, $out"
   else echo "FAIL: $lib/$name on cpu: $out"; fail=1; fi
+  for dev in "${devices[@]}"; do
+    if ! "$gpu" run "$xir" --device "$dev" > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
+      echo "FAIL: $xir on $dev:"; cat "$tmp/gpu.err"; fail=1; continue
+    fi
+    if out="$(scripts/compare-out.py "$want" "$tmp/gpu.out" 1e-5)"; then echo "ok: $lib/$name on $dev, $out"
+    else echo "FAIL: $lib/$name on $dev: $out"; fail=1; fi
+  done
 done
-echo "check-equiv: $n twin$([ $n = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
+echo "check-equiv: $n twin$([ $n = 1 ] || echo s) on cpu and ${#devices[@]} OpenCL device$([ ${#devices[@]} = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
 exit $fail

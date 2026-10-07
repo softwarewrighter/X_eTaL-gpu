@@ -1,0 +1,19 @@
+[package]
+name = "xetal-gpu-runtime"
+description = "The OpenCL host runtime of X_eTaL-gpu: devices, buffers, kernels; executes a plan and reads the results back"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+xetal-gpu-xir = { path = "../xir" }
+xetal-gpu-opencl = { path = "../opencl" }
+# Loads the OpenCL library at run time (the `dynamic` feature), so the
+# tool builds and runs on a machine without OpenCL and only `devices`
+# reports there is none.
+opencl3 = "0.12"

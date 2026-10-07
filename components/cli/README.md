@@ -4,7 +4,8 @@
 
 ```
 xetal-gpu check FILE.xir                 parse and check: every value with its type and shape
-xetal-gpu run FILE.xir [--device cpu]    run; each output printed as xetal prints it
+xetal-gpu devices                        the OpenCL devices found (opencl:N)
+xetal-gpu run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
     [--bind NAME=1,2,3 | --bind NAME=@FILE]...     an input's items (a file: whitespace-separated)
 xetal-gpu print FILE.xir                 the program in its canonical text form
 xetal-gpu kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
@@ -48,7 +49,15 @@ launches:
   ...
 ```
 
+```
+$ xetal-gpu devices
+opencl:0  Apple M1 Max (GPU, Apple; OpenCL 1.2), 32 compute units, work-groups to 256, 53084 MB, no fp64
+$ xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0
+32
+16.625
+```
+
 `--device cpu` is the reference interpreter (`xetal-gpu-xir`);
-`kernel` and `explain` are the emitter (`xetal-gpu-opencl`). Running
-on an OpenCL device (`--device opencl:N`, `xetal-gpu devices`) comes
-with the runtime component (plan saga 1, step 5).
+`kernel` and `explain` are the emitter (`xetal-gpu-opencl`);
+`devices` and `--device opencl:N` are the runtime
+(`xetal-gpu-runtime`), which takes the same schedule flags.

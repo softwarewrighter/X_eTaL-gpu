@@ -64,8 +64,12 @@ hand-lowered twins, each proved equal to the evaluator's output
 exactly (step 3); the schedule and the OpenCL C 1.2 emitter, fusing
 each elementwise chain into one kernel and laying out reductions as
 local-memory trees, with every twin's kernel source and plan pinned
-(`xetal-gpu kernel`, `explain`; step 4). Next: the runtime (5), the
-reduction on the device (6). See [`docs/plan.md`](docs/plan.md) for
+(`xetal-gpu kernel`, `explain`; step 4); the OpenCL runtime: devices
+listed, the plan executed on one, results read back, and every
+example reproduced on this Mac's GPU (Apple M1 Max, OpenCL 1.2),
+Ints exactly and Floats within 1e-5 (`xetal-gpu devices`, `run
+--device opencl:0`; step 5). Next: the reduction on the device at
+large sizes, with timings (6). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
 ## Build
@@ -91,6 +95,8 @@ just build                           # the xetal-gpu tool (target/release/xetal-
 target/release/xetal-gpu run libs/Accel/demos/reduce-sum.xir   # the IR twin of an example, interpreted
 target/release/xetal-gpu kernel libs/Accel/demos/pipeline.xir  # the OpenCL C it becomes
 target/release/xetal-gpu explain libs/Accel/demos/pipeline.xir # which values became which kernels
+target/release/xetal-gpu devices                               # the OpenCL devices here
+target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   # the same program on the GPU
 ```
 
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit
