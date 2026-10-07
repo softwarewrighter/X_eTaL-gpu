@@ -1,0 +1,1 @@
+Axis reductions: reduce OP axis=K in text/check/interp (right fold, matches xetal incl. rank 3), reduce_axis kernel (one work-item per result, exact fold order), Accel r_owSums/c_olSums/r_owMax, axis-reduce demo and twin; six twins agree on cpu and GPU. Gate passes.

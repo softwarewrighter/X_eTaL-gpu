@@ -1,8 +1,9 @@
 number = 2
 slug = "axis-reduce"
-status = "in-progress"
+status = "completed"
 description = "Reduce along an axis of a matrix. XIR: reduce takes an optional axis (reduce ..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T07:15:05"
-commits = []
+completed_at = "2026-10-07T11:43:10"
+commits = ["bda2ee27160e19d1a3dd6552e5880c885889e501"]
