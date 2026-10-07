@@ -1,0 +1,1 @@
+components/ workspace: xetal-gpu-xir (IR, text form, checker, interpreter with X_eTaL's semantics, xetal-style printing; 17 tests) and xetal-gpu-cli (check, run --device cpu, print); the five hand-lowered twins; compare-out.py and check-equiv.sh in the gate: every twin agrees with the evaluator exactly. Gate passes.
