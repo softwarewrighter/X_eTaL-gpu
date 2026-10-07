@@ -96,7 +96,7 @@ pub fn check(program: Program) -> Result<Checked> {
                 let shape = extend(name, "select", &[&tc.shape, &ta.shape, &tb.shape])?;
                 Ty { scalar: ta.scalar, shape }
             }
-            Op::Reduce { op, arg } => {
+            Op::Reduce { op, arg, axis } => {
                 let t = ty_of(*arg);
                 if !t.scalar.is_num() {
                     return err(format!("%{name}: reduce {op} needs numbers, got {}", t.scalar));
@@ -104,13 +104,22 @@ pub fn check(program: Program) -> Result<Checked> {
                 if t.shape.is_scalar() {
                     return err(format!("%{name}: reduce {op} needs an array of rank 1 or more, got a single value"));
                 }
-                if t.shape.is_empty() {
-                    return err(format!("%{name}: reduce {op} of an empty array has no value"));
-                }
-                Ty {
-                    scalar: t.scalar,
-                    shape: Shape::scalar(),
-                }
+                let shape = match axis {
+                    None if t.shape.is_empty() => return err(format!("%{name}: reduce {op} of an empty array has no value")),
+                    None => Shape::scalar(),
+                    Some(a) if *a > t.shape.rank() => {
+                        return err(format!("%{name}: reduce {op} axis={a}: the array has rank {}", t.shape.rank()));
+                    }
+                    Some(a) => {
+                        let mut dims = t.shape.0.clone();
+                        if dims[a - 1] == 0 {
+                            return err(format!("%{name}: reduce {op} axis={a}: that axis is empty, so there is no value"));
+                        }
+                        dims.remove(a - 1);
+                        Shape(dims)
+                    }
+                };
+                Ty { scalar: t.scalar, shape }
             }
             Op::Cast { op, arg } => Ty {
                 scalar: op.to,
@@ -218,6 +227,20 @@ mod tests {
         assert_eq!(
             error_of("%a = const i64 [0]\n%c = reduce add %a\noutput %c\n"),
             "%c: reduce add of an empty array has no value"
+        );
+    }
+
+    #[test]
+    fn reduces_along_an_axis() {
+        let t = types_of("%m = const i64 [2 3] 1\n%r = reduce add axis=2 %m\n%c = reduce add axis=1 %m\n%w = reduce add %m\n%v = reduce max axis=1 %r\noutput %v\n");
+        assert_eq!(t, ["i64 [2 3]", "i64 [2]", "i64 [3]", "i64 []", "i64 []"]);
+        assert_eq!(
+            error_of("%m = const i64 [2 3] 1\n%r = reduce add axis=3 %m\noutput %r\n"),
+            "%r: reduce add axis=3: the array has rank 2"
+        );
+        assert_eq!(
+            error_of("%m = const i64 [2 0]\n%r = reduce add axis=2 %m\noutput %r\n"),
+            "%r: reduce add axis=2: that axis is empty, so there is no value"
         );
     }
 

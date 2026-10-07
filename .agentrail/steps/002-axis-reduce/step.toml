@@ -1,6 +1,6 @@
 number = 2
 slug = "axis-reduce"
-status = "pending"
+status = "in-progress"
 description = "Reduce along an axis of a matrix. XIR: reduce takes an optional axis (reduce ..."
 role = "production"
 context_files = []

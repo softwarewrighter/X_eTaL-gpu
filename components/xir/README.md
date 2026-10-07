@@ -25,6 +25,7 @@ becomes an adapter and the twins go.
 %m = map gt %c %b                    # comparisons give bool
 %s = select %m %c %b                 # cond ? a : b, item by item
 %r = reduce add %s                   # a whole array to one number
+%q = reduce max axis=2 %m            # along one axis (1 is the first): rank n to n - 1
 %f = cast f64 %r                     # between scalar types, same shape
 output %c                            # what the program prints, in order
 output %f
@@ -35,13 +36,14 @@ output %f
 | scalar type | `i32`, `i64` (X_eTaL's Int), `f32`, `f64` (Float), `bool` |
 | shape | `[]` one value, `[8]` a vector, `[2 3]` a matrix (rows first) |
 | map operations | `add sub mul min max neg abs` (any number); `div exp log` (Floats only: X_eTaL's `/` gives a Float, so an Int is cast first); `idiv mod` (Ints, floored as `d_iv` and `m_od`); `eq ne` (any one type, give bool); `lt le gt ge` (numbers, give bool); `and or not` (bool) |
-| reduce operations | `add mul min max`, folded from the right as `r_/` is |
+| reduce operations | `add mul min max`, folded from the right as `r_/` is; the whole array (`r_/_12`, or `r_/` of a vector) without `axis=`, one axis with it (`axis=2` is `r_/_2`, `axis=1` is `r_/` of a matrix) |
 | cast | Int to Float exactly, Float to Int toward negative infinity (`f_loor`), Bool to 0 or 1, a number to bool when not 0 |
 
 Rules: a value is defined once, before it is used; a map's arguments
 share one scalar type and one shape, except that a single value
 (`[]`) extends to every item; `select` takes a bool condition;
-`reduce` needs rank 1 or more and gives rank 0; the program has at
+`reduce` needs rank 1 or more and gives rank 0, or, along an axis,
+leaves that axis out (an empty axis has no value); the program has at
 least one `output`.
 
 ## Semantics (X_eTaL's)
@@ -81,6 +83,7 @@ against the evaluator's baseline, exactly.
 
 ## Not yet
 
-Rank 2 reductions along an axis, inner products (`matmul`), lookup,
-and shapes above rank 2 in the checker's rules come with saga 2
-(`docs/plan.md`); the IR's data model already holds any rank.
+Inner products (`matmul`) and lookup come with saga 2
+(`docs/plan.md`); a map still extends only a single value, as
+X_eTaL does (a vector across the rows of a matrix is a shape error
+there too).

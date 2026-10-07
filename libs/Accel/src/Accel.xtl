@@ -48,6 +48,18 @@ l:l_argest := { x -> 'm_ax r_/ x }
 # reduce.
 l:d_ot := { x y -> '+ r_/ x * y }
 
+### Along an axis
+
+# r_owSums m: the sum of each row of a matrix (along axis 2, one
+# result per row: one work-item per row on a GPU).
+l:r_owSums := { m -> '+ r_/_2 m }
+
+# c_olSums m: the sum of each column (along axis 1, r_/'s default).
+l:c_olSums := { m -> '+ r_/ m }
+
+# r_owMax m: the largest item of each row.
+l:r_owMax := { m -> 'm_ax r_/_2 m }
+
 ### The acceptance pipeline
 
 # x p_ipeline w: multiply, add, select, reduce in one expression:

@@ -1,0 +1,14 @@
+#!/usr/bin/env xetal
+# Along an axis: row sums, column sums, row maxima of a matrix, on
+# Ints and on Floats; one GPU work-item per result, folding its line.
+# Run with "just demo-lib Accel axis-reduce".
+"ac:" u_se< "Accel"
+m := 3 4 r_eshape r_ange 12
+m
+ac:r_owSums m
+ac:c_olSums m
+ac:r_owMax m
+f := (3 4 r_eshape r_ange 12) / 8
+ac:r_owSums f
+ac:c_olSums f
+ac:s_um ac:r_owSums f

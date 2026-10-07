@@ -1,0 +1,20 @@
+# The twin of axis-reduce.xtl, lowered by hand (docs/xetal-asks.md, G2).
+%m = const i64 [3 4] 1 2 3 4 5 6 7 8 9 10 11 12   # m := 3 4 r_eshape r_ange 12
+%mm = const i64 [] 1
+%m1 = map mul %m %mm                              # (m printed: a value of its own)
+output %m1
+%rs = reduce add axis=2 %m                        # ac:r_owSums m: '+ r_/_2 m
+output %rs
+%cs = reduce add axis=1 %m                        # ac:c_olSums m: '+ r_/ m
+output %cs
+%rm = reduce max axis=2 %m                        # ac:r_owMax m: 'm_ax r_/_2 m
+output %rm
+%mf = cast f64 %m
+%eight = const f64 [] 8.0
+%f = map div %mf %eight                           # f := (3 4 r_eshape r_ange 12) / 8
+%frs = reduce add axis=2 %f                       # ac:r_owSums f
+output %frs
+%fcs = reduce add axis=1 %f                       # ac:c_olSums f
+output %fcs
+%fs = reduce add %frs                             # ac:s_um ac:r_owSums f
+output %fs

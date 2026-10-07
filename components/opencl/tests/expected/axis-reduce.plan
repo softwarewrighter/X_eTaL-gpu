@@ -1,0 +1,35 @@
+schedule: Float as float, Int as long, work-group 256
+buffers:
+  b_m: long 12 items, %m i64 [3 4]; constant, uploaded by the host
+  b_m1: long 12 items, %m1 i64 [3 4]; written on the device
+  b_rs: long 3 items, %rs i64 [3]; written on the device
+  b_cs: long 4 items, %cs i64 [4]; written on the device
+  b_rm: long 3 items, %rm i64 [3]; written on the device
+  b_f: float 12 items, %f f64 [3 4]; written on the device
+  b_frs: float 3 items, %frs f64 [3]; written on the device
+  b_fcs: float 4 items, %fcs f64 [4]; written on the device
+  b_fs: float 1 item, %fs f64 []; written on the device
+kernels:
+  k0: 12 elements, one work-item each; computes %m1; writes %m1
+  reduce_axis_add_long: a tree reduction in local memory, one partial per work-group; computes %rs %cs
+  reduce_axis_max_long: a tree reduction in local memory, one partial per work-group; computes %rm
+  k1: 12 elements, one work-item each; computes %mf %f; writes %f
+  reduce_axis_add_float: a tree reduction in local memory, one partial per work-group; computes %frs %fcs
+  reduce_add_float: a tree reduction in local memory, one partial per work-group; computes %fs
+launches:
+  1: k0(b_m, b_m1) global 16 local 16: 12 elements (1 group of 16)
+  2: reduce_axis_add_long(b_m, b_rs, 3, 4, 1) global 4 local 4: %rs: add along axis 2: 3 lines of 4, one work-item each
+  3: reduce_axis_add_long(b_m, b_cs, 1, 3, 4) global 4 local 4: %cs: add along axis 1: 4 lines of 3, one work-item each
+  4: reduce_axis_max_long(b_m, b_rm, 3, 4, 1) global 4 local 4: %rm: max along axis 2: 3 lines of 4, one work-item each
+  5: k1(b_m, b_f) global 16 local 16: 12 elements (1 group of 16)
+  6: reduce_axis_add_float(b_f, b_frs, 3, 4, 1) global 4 local 4: %frs: add along axis 2: 3 lines of 4, one work-item each
+  7: reduce_axis_add_float(b_f, b_fcs, 1, 3, 4) global 4 local 4: %fcs: add along axis 1: 4 lines of 3, one work-item each
+  8: reduce_add_float(b_frs, b_fs, 3, local 1024 bytes) global 256 local 256: %fs: add 3 items to 1 partial (pass 1)
+outputs:
+  %m1 from b_m1, read back by the host
+  %rs from b_rs, read back by the host
+  %cs from b_cs, read back by the host
+  %rm from b_rm, read back by the host
+  %frs from b_frs, read back by the host
+  %fcs from b_fcs, read back by the host
+  %fs from b_fs, read back by the host

@@ -180,8 +180,20 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         "reduce" => {
+            // `reduce add %v`, or `reduce add axis=2 %m` (the `=` arrives spaced).
+            let (rest, axis) = match rest {
+                [op, "axis", "=", n, v] => {
+                    let axis: usize = n
+                        .parse()
+                        .ok()
+                        .filter(|a| *a >= 1)
+                        .ok_or_else(|| crate::Error(format!("an axis is a whole number from 1, got `{n}`")))?;
+                    (vec![*op, *v], Some(axis))
+                }
+                _ => (rest.to_vec(), None),
+            };
             if rest.len() != 2 {
-                return err("reduce takes an operation and a value: reduce add %v");
+                return err("reduce takes an operation, an optional axis and a value: reduce add %v, reduce add axis=2 %m");
             }
             let op = ReduceOp::parse(rest[0]).ok_or_else(|| {
                 crate::Error(format!(
@@ -195,6 +207,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 Op::Reduce {
                     op,
                     arg: reference(program, rest[1])?,
+                    axis,
                 },
             ))
         }
@@ -266,7 +279,10 @@ pub fn print(program: &Program) -> String {
                 args.iter().for_each(|a| out.push_str(&format!(" {}", name(*a))));
             }
             Op::Select { cond, a, b } => out.push_str(&format!("select {} {} {}", name(*cond), name(*a), name(*b))),
-            Op::Reduce { op, arg } => out.push_str(&format!("reduce {op} {}", name(*arg))),
+            Op::Reduce { op, arg, axis } => match axis {
+                Some(a) => out.push_str(&format!("reduce {op} axis={a} {}", name(*arg))),
+                None => out.push_str(&format!("reduce {op} {}", name(*arg))),
+            },
             Op::Cast { op, arg } => out.push_str(&format!("cast {} {}", op.to, name(*arg))),
         }
         out.push('\n');
@@ -291,6 +307,8 @@ mod tests {
 %r = reduce add %s
 %f = cast f64 %r
 %t = const bool [2] 1 0
+%mm = const i64 [2 3] 1 2 3 4 5 6
+%rs = reduce max axis=2 %mm
 output %c
 output %f
 ";

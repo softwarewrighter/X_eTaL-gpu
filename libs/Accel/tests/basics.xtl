@@ -17,3 +17,8 @@ ac:l_argest 1.5 -2.0
 0.5 1.0 ac:d_ot 2.0 4.0
 1 2 3 4 ac:p_ipeline 1 -2 1 -2
 0.5 1.0 1.5 ac:p_ipeline -2.0 0.0 1.0
+m := 2 3 r_eshape 1 20 3 4 5 60
+ac:r_owSums m
+ac:c_olSums m
+ac:r_owMax m
+ac:r_owSums 2 2 r_eshape 0.5 0.25 1.5 -1.0

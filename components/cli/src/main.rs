@@ -201,7 +201,8 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Const(c) => format!("const ({} item{})", c.len(), if c.len() == 1 { "" } else { "s" }),
         Op::Map { op, args } => format!("map {op} {}", args.iter().map(|a| name(*a)).collect::<Vec<_>>().join(" ")),
         Op::Select { cond, a, b } => format!("select {} {} {}", name(*cond), name(*a), name(*b)),
-        Op::Reduce { op, arg } => format!("reduce {op} {}", name(*arg)),
+        Op::Reduce { op, arg, axis: None } => format!("reduce {op} {}", name(*arg)),
+        Op::Reduce { op, arg, axis: Some(a) } => format!("reduce {op} axis={a} {}", name(*arg)),
         Op::Cast { op, arg } => format!("cast {} {}", op.to, name(*arg)),
     }
 }

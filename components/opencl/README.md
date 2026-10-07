@@ -45,6 +45,13 @@ Bool is `int` (1 or 0, what a C comparison gives).
   Two partial buffers alternate between passes. The fold order
   differs from the evaluator's right fold, so Float results agree
   within a tolerance, Ints exactly.
+- **Reductions along an axis.** One kernel per operation and element
+  type (`reduce_axis_add_long`): one work-item per result item, each
+  folding its line of the array (`len` items, `inner` apart) from the
+  right, as the evaluator does, so the result is the evaluator's
+  exactly in the device's width. Along the only axis of a vector it is
+  the tree above. No local memory yet: a row of a million items is
+  one work-item's loop.
 - **Semantics kept.** `idiv` and `mod` are floored
   (`xetal_idiv_long`, `xetal_imod_long`), Float to Int casts take
   `floor`, a number to Bool is `!= 0`, `abs` of a `long` avoids the
@@ -61,6 +68,5 @@ values it computes and writes) and every launch with its sizes.
 
 ## Not yet
 
-Reductions along an axis of a matrix (one work-item per row), inner
-products and tiled schedules, and a schedule file per device (saga
-2); the runtime that runs a plan (step 5).
+Inner products and tiled schedules, a tree per line for very long
+axes, and a schedule file per device (saga 2).

@@ -139,7 +139,7 @@ Goal: axes and inner products, the operations a model is made of.
 | # | Step slug | Delivers |
 | - | --------- | -------- |
 | 0 | macros-extensions-analysis | DONE (2026-10-07, inserted at the user's request): `docs/macros-and-extensions.md`, every macro and extension candidate judged by the three justifications (concision, speed, a C-ABI library), with measurements: one extension justified (the `Gpu` package, saga gpu-extension below), no new macro; `ffi:b_ind<`, `c_fg<` and `k:c_ases<` reused as they are; ask G8 |
-| 1 | axis-reduce | `reduce` along an axis of a matrix (`r_/_2`, `r_/`), one work-item per row or column; examples and twins |
+| 1 | axis-reduce | DONE: `reduce OP axis=K` in the IR (text, checker: rank n to n - 1, an empty axis refused; interpreter: each line folded from the right, `r_/_2` and `r_/` of a matrix, rank 3 checked against xetal), the emitter's `reduce_axis_*` kernel (one work-item per result, the evaluator's fold order, so exact), Accel `r_owSums`, `c_olSums`, `r_owMax`, the axis-reduce demo and twin; six twins agree on the interpreter and the GPU. Planned: `reduce` along an axis of a matrix (`r_/_2`, `r_/`), one work-item per row or column; examples and twins |
 | 2 | matvec | `matmul` for matrix-vector (`x '+ '* i_nner w`): one work-item per output; a tiled schedule for matrix-matrix; `ac:m_atvec`, `ac:m_atmul`; sizes to 1024 by 1024 |
 | 3 | dense-layer | `y = relu(W x + b)` as X_eTaL (`ac:d_ense`, X_eTaL-ML's NN shape of weights with the bias row) and on the GPU; a softmax by row (exp, row reduce, divide) |
 | 4 | schedules | the schedule as a TOML file per device (work-group size, tile, element types, weight storage host or device); `xetal-gpu run --schedule FILE`; `explain` shows it |

@@ -71,8 +71,9 @@ Ints exactly and Floats within 1e-5 (`xetal-gpu devices`, `run
 --device opencl:0`; step 5); the reductions and the pipeline at
 1024, 65536 and 1048576 items, generated data run through the
 evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
-Next, saga 2 (gpu-algebra): reductions along an axis, matrix-vector
-and matrix products, a dense layer, schedules as files; then the GPU
+Saga 2 (gpu-algebra) in progress: the macros-and-extensions analysis
+and reductions along an axis of a matrix (row sums, column sums, row
+maxima) on the GPU are done; next matrix-vector and matrix products, a dense layer, schedules as files; then the GPU
 as a native extension X_eTaL programs call themselves (saga 3). The
 work moves to an Arch machine with a newer GPU soon; nothing in the
 code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for

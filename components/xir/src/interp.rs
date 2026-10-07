@@ -145,7 +145,7 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
                 };
                 Array::new(ty.scalar, ty.shape.clone(), data)?
             }
-            Op::Reduce { op, arg } => reduce(*op, &values[arg.0], ty)?,
+            Op::Reduce { op, arg, axis } => reduce(*op, &values[arg.0], *axis, ty)?,
             Op::Cast { op, arg } => cast(&values[arg.0], op.to)?,
         };
         values.push(array);
@@ -297,9 +297,50 @@ fn map(name: &str, op: MapOp, args: &[&Array], ty: &Ty) -> Result<Array> {
     Array::new(ty.scalar, ty.shape.clone(), data)
 }
 
+/// The lengths before an axis, along it and after it (row order), so
+/// item (o, j, i) is at `(o * len + j) * inner + i`.
+pub fn axis_split(shape: &Shape, axis: usize) -> (usize, usize, usize) {
+    let d = &shape.0;
+    (d[..axis - 1].iter().product(), d[axis - 1], d[axis..].iter().product())
+}
+
 /// A reduce folds from the right, as X_eTaL's `r_/` does: the last
-/// item first, then each earlier item combined with the result so far.
-fn reduce(op: ReduceOp, a: &Array, ty: &Ty) -> Result<Array> {
+/// item first, then each earlier item combined with the result so far;
+/// along an axis, each line of the array along that axis is folded so.
+fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array> {
+    if let Some(ax) = axis {
+        let (outer, len, inner) = axis_split(&a.shape, ax);
+        let line = |o: usize, i: usize| -> Array {
+            let data = |idx: usize| (o * len + idx) * inner + i;
+            let d = match &a.data {
+                Data::Int(v) => Data::Int((0..len).map(|j| v[data(j)]).collect()),
+                Data::Float(v) => Data::Float((0..len).map(|j| v[data(j)]).collect()),
+                Data::Bool(_) => unreachable!("checked: numbers"),
+            };
+            Array {
+                scalar: a.scalar,
+                shape: Shape(vec![len]),
+                data: d,
+            }
+        };
+        let scalar_ty = Ty {
+            scalar: ty.scalar,
+            shape: Shape::scalar(),
+        };
+        let mut ints = Vec::new();
+        let mut floats = Vec::new();
+        for o in 0..outer {
+            for i in 0..inner {
+                match reduce(op, &line(o, i), None, &scalar_ty)?.data {
+                    Data::Int(v) => ints.push(v[0]),
+                    Data::Float(v) => floats.push(v[0]),
+                    Data::Bool(_) => unreachable!(),
+                }
+            }
+        }
+        let data = if a.scalar.is_int() { Data::Int(ints) } else { Data::Float(floats) };
+        return Array::new(ty.scalar, ty.shape.clone(), data);
+    }
     let data = match &a.data {
         Data::Int(v) => {
             let f = |x: i64, acc: i64| match op {
@@ -402,6 +443,17 @@ mod tests {
         let out = eval("%x = const f64 [3] 0.1 0.2 0.3\n%r = reduce add %x\noutput %r\n");
         assert_eq!(out, ["0.6"]);
         assert_eq!(format!("{}", (0.1f64 + 0.2) + 0.3), "0.6000000000000001");
+    }
+
+    #[test]
+    fn reduces_along_an_axis_as_xetal_does() {
+        // M := 2 3 r_eshape r_ange 6: '+ r_/ M is 5 7 9, '+ r_/_2 M is 6 15, 'm_ax r_/_2 M is 3 6;
+        // T := 2 2 3 r_eshape r_ange 12: '+ r_/_2 T and '+ r_/_3 T as xetal prints them.
+        let out = eval("%m = const i64 [2 3] 1 2 3 4 5 6\n%c = reduce add axis=1 %m\n%r = reduce add axis=2 %m\n%x = reduce max axis=2 %m\n%t = const i64 [2 2 3] 1 2 3 4 5 6 7 8 9 10 11 12\n%t2 = reduce add axis=2 %t\n%t3 = reduce add axis=3 %t\n%t1 = reduce add axis=1 %t\noutput %c\noutput %r\noutput %x\noutput %t2\noutput %t3\noutput %t1\n");
+        assert_eq!(
+            out,
+            ["5 7 9", "6 15", "3 6", " 5  7  9\n17 19 21", " 6 15\n24 33", " 8 10 12\n14 16 18"]
+        );
     }
 
     #[test]

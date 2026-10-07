@@ -308,8 +308,9 @@ pub enum Op {
     Map { op: MapOp, args: Vec<ValueId> },
     /// `cond ? a : b`, item by item (each may be rank 0).
     Select { cond: ValueId, a: ValueId, b: ValueId },
-    /// A whole array folded to one number.
-    Reduce { op: ReduceOp, arg: ValueId },
+    /// A whole array folded to one number (`axis: None`), or folded
+    /// along one axis (1 is the first), which that axis leaves.
+    Reduce { op: ReduceOp, arg: ValueId, axis: Option<usize> },
     /// The items converted to another scalar type.
     Cast { op: CastOp, arg: ValueId },
 }

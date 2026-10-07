@@ -84,9 +84,13 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 b.group.push(id);
                 b.places.insert(id, Place::Register(format!("t_{}", v.name)));
             }
-            Op::Reduce { op, arg } => {
+            Op::Reduce { op, arg, axis } => {
                 b.flush(&outputs);
-                b.reduce(id, *op, *arg);
+                match axis {
+                    // Along an axis of a vector is the whole vector: the tree.
+                    Some(a) if checked.ty(*arg).shape.rank() > 1 => b.reduce_axis(id, *op, *arg, *a),
+                    _ => b.reduce(id, *op, *arg),
+                }
             }
         }
     }
@@ -284,6 +288,57 @@ impl<'a> Builder<'a> {
         }
     }
 
+    /// A reduction along an axis: one work-item per result item, each
+    /// folding its line from the right, as the evaluator does (so the
+    /// result is the evaluator's exactly, in the device's width).
+    fn reduce_axis(&mut self, id: ValueId, op: ReduceOp, arg: ValueId, axis: usize) {
+        let elem = self.elem_of(arg);
+        let Place::Buffer(src) = self.places[&arg].clone() else {
+            unreachable!("a reduce reads a buffer")
+        };
+        let (outer, len, inner) = xetal_gpu_xir::interp::axis_split(&self.ty(arg).shape, axis);
+        let kname = format!("reduce_axis_{}_{}", op, elem);
+        if !self.source.contains(&format!("__kernel void {kname}(")) {
+            self.source.push_str(&reduce_axis_kernel(&kname, op, elem));
+            self.kernels.push(KernelInfo {
+                name: kname.clone(),
+                computes: vec![],
+                writes: vec![],
+                elements: 0,
+            });
+        }
+        let n = outer * inner;
+        let result = self.buffer(Some(id), elem, n, Init::Device);
+        let local = self.schedule.work_group.min(n.max(1).next_power_of_two());
+        let global = n.max(1).div_ceil(local) * local;
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args: vec![
+                Arg::Buffer(src),
+                Arg::Buffer(result),
+                Arg::Long(outer as i64),
+                Arg::Long(len as i64),
+                Arg::Long(inner as i64),
+            ],
+            global,
+            local,
+            note: format!(
+                "%{}: {} along axis {}: {} line{} of {}, one work-item each",
+                self.checked.program.value(id).name,
+                op,
+                axis,
+                n,
+                if n == 1 { "" } else { "s" },
+                len
+            ),
+        });
+        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+            k.computes.push(id);
+            k.writes.push(id);
+        }
+        self.places.insert(id, Place::Buffer(result));
+    }
+
     /// A reduction: a tree in local memory per work-group, one partial
     /// per group, launched again on the partials until one is left.
     fn reduce(&mut self, id: ValueId, op: ReduceOp, arg: ValueId) {
@@ -433,6 +488,35 @@ fn float_literal(x: f64, elem: Elem) -> String {
     }
 }
 
+fn combine(op: ReduceOp, elem: Elem, x: &str, acc: &str) -> String {
+    let f = elem.is_float();
+    match op {
+        ReduceOp::Add => format!("{x} + {acc}"),
+        ReduceOp::Mul => format!("{x} * {acc}"),
+        ReduceOp::Min => format!("{}({x}, {acc})", if f { "fmin" } else { "min" }),
+        ReduceOp::Max => format!("{}({x}, {acc})", if f { "fmax" } else { "max" }),
+    }
+}
+
+fn reduce_axis_kernel(name: &str, op: ReduceOp, elem: Elem) -> String {
+    let step = combine(op, elem, "in[base + j * inner]", "acc");
+    format!(
+        "
+// {name}: along one axis, one work-item per result item; its line of
+// len items (stride inner) folded from the right, as X_eTaL's r_/ does.
+__kernel void {name}(__global const {elem}* in, __global {elem}* out, const long outer, const long len, const long inner) {{
+    long k = get_global_id(0);
+    if (k >= outer * inner) return;
+    long o = k / inner, i = k % inner;
+    long base = o * len * inner + i;
+    {elem} acc = in[base + (len - 1) * inner];
+    for (long j = len - 2; j >= 0; j--) acc = {step};
+    out[k] = acc;
+}}
+"
+    )
+}
+
 fn reduce_kernel(name: &str, op: ReduceOp, elem: Elem) -> String {
     let f = elem.is_float();
     let identity = match (op, elem) {
@@ -519,6 +603,28 @@ mod tests {
         // 70000 -> 274 partials -> 2 partials -> 1
         assert_eq!(passes, [(274 * 256, 256), (2 * 256, 256), (256, 256)]);
         assert_eq!(p.buffers.iter().filter(|b| b.value.is_none()).count(), 2);
+        assert!(p.source.contains("__kernel void reduce_add_long("));
+    }
+
+    #[test]
+    fn an_axis_reduce_is_one_work_item_per_result() {
+        let p = plan_of(
+            "%m = const f64 [3 5] 1.0\n%r = reduce add axis=2 %m\n%c = reduce max axis=1 %m\noutput %r\noutput %c\n",
+            &Schedule::default(),
+        );
+        assert_eq!(p.launches.len(), 2);
+        assert_eq!(p.launches[0].args[2..], [Arg::Long(3), Arg::Long(5), Arg::Long(1)]);
+        assert_eq!(p.launches[1].args[2..], [Arg::Long(1), Arg::Long(3), Arg::Long(5)]);
+        assert_eq!((p.launches[0].global, p.launches[0].local), (4, 4));
+        assert!(p
+            .source
+            .contains("for (long j = len - 2; j >= 0; j--) acc = in[base + j * inner] + acc;"));
+        assert!(p.source.contains("acc = fmax(in[base + j * inner], acc);"));
+        // Along the only axis of a vector: the tree.
+        let p = plan_of(
+            "%v = const i64 [4] 1 2 3 4\n%r = reduce add axis=1 %v\noutput %r\n",
+            &Schedule::default(),
+        );
         assert!(p.source.contains("__kernel void reduce_add_long("));
     }
 

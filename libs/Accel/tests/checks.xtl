@@ -19,3 +19,8 @@ g := (r_ange 16) - 8
 4.0 u:c_heck ac:l_argest f
 1496 u:c_heck x ac:d_ot x
 ('+ r_/ ac:r_elu x + x * g) u:c_heck x ac:p_ipeline g
+m := 4 4 r_eshape r_ange 16
+(10 26 42 58) u:c_heck ac:r_owSums m
+(28 32 36 40) u:c_heck ac:c_olSums m
+(4 8 12 16) u:c_heck ac:r_owMax m
+(ac:s_um ac:r_owSums m) u:c_heck ac:s_um ac:c_olSums m

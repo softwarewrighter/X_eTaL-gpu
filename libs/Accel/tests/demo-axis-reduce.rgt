@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run ../demos/axis-reduce.xtl"
+exit_code = 0

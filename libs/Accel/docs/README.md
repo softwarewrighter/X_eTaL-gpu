@@ -17,8 +17,9 @@ recommended alias.
 
 ## Conventions
 
-- Vectors, for now: the reductions collapse a vector to one number
-  (matrices along an axis come with saga 2).
+- `ac:s_um`, `ac:l_argest` and `ac:d_ot` collapse a vector to one
+  number; `ac:r_owSums`, `ac:c_olSums` and `ac:r_owMax` work along an
+  axis of a matrix (`r_/_2` along each row, `r_/` down the columns).
 - A function works on Ints or Floats alike where the type says
   `Num a`; `ac:t_hreshold` is Float-only because a Bool mask converts
   only to the type of the literal it meets (`x * f_loat x > t`), and
@@ -42,6 +43,9 @@ recommended alias.
 | `ac:s_um x` | `Num a => a -> a` | the sum of a vector |
 | `ac:l_argest x` | `Num a => a -> a` | the largest item |
 | `x ac:d_ot y` | `Num a => a -> a -> a` | the inner product of two vectors |
+| `ac:r_owSums m` | `Num a => a -> a` | the sum of each row (`'+ r_/_2 m`) |
+| `ac:c_olSums m` | `Num a => a -> a` | the sum of each column (`'+ r_/ m`) |
+| `ac:r_owMax m` | `Num a => a -> a` | the largest item of each row |
 | `x ac:p_ipeline w` | `Num a => a -> a -> a` | the sum of the positive items of x + x * w: multiply, add, select, reduce |
 
 ## Examples
@@ -67,6 +71,13 @@ From `../tests/basics.xtl`:
 32
       1 2 3 4 ac:p_ipeline 1 -2 1 -2
 8
+      m := 2 3 r_eshape 1 20 3 4 5 60
+      ac:r_owSums m
+24 69
+      ac:c_olSums m
+5 25 63
+      ac:r_owMax m
+20 60
 ```
 
 ## Demos
@@ -82,6 +93,9 @@ The example programs, each the reference for a GPU run:
 - [`demos/reduce-sum.xtl`](../demos/reduce-sum.xtl): research7's
   GPU PoC 0 (`a`, `b := 2 a`, `c := a + b`, `+/ c`), the largest
   item, an inner product.
+- [`demos/axis-reduce.xtl`](../demos/axis-reduce.xtl): row sums,
+  column sums and row maxima of a matrix, Ints and Floats; one GPU
+  work-item per result.
 - [`demos/pipeline.xtl`](../demos/pipeline.xtl): the acceptance
   pipeline, multiply, add, select, reduce, as one expression.
 
