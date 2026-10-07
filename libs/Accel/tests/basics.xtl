@@ -1,0 +1,19 @@
+#!/usr/bin/env xetal
+# Accel: every function on small arrays. Run with "just run-lib Accel basics".
+"ac:" u_se< "Accel"
+1 2 3 4 ac:v_add 10 20 30 40
+1.5 2.5 ac:v_add 0.25 0.5
+3 ac:s_cale 1 2 3
+0.5 ac:s_cale 1.0 2.0 3.0
+ac:r_elu 1 -2 3 -4
+ac:r_elu 1.5 -2.5 0.0
+0.5 ac:t_hreshold 0.25 0.5 0.75 1.0
+(1 0 1 0) ac:k_eep 5 6 7 8
+ac:s_um 1 2 3 4
+ac:s_um 0.5 0.25 0.125
+ac:l_argest 3 9 2
+ac:l_argest 1.5 -2.0
+1 2 3 ac:d_ot 4 5 6
+0.5 1.0 ac:d_ot 2.0 4.0
+1 2 3 4 ac:p_ipeline 1 -2 1 -2
+0.5 1.0 1.5 ac:p_ipeline -2.0 0.0 1.0

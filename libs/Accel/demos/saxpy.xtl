@@ -1,0 +1,7 @@
+#!/usr/bin/env xetal
+# SAXPY: y := a x + y, a scale then an add, fused into one kernel on a
+# GPU. Run with "just demo-lib Accel saxpy".
+"ac:" u_se< "Accel"
+x := (r_ange 8) / 4
+y := 1.0 ac:s_cale 1.0 0.5 0.25 0.125 0.0 -0.125 -0.25 -0.5
+(2.0 ac:s_cale x) ac:v_add y

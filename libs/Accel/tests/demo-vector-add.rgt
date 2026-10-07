@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run ../demos/vector-add.xtl"
+exit_code = 0

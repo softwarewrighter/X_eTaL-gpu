@@ -1,0 +1,9 @@
+l:v_add : Num a => a -> a -> a
+l:s_cale : Num a => a -> a -> a
+l:r_elu : Num a => a -> a
+l:t_hreshold : Float -> Float -> Float
+l:k_eep : Num a => a -> a -> a
+l:s_um : Num a => a -> a
+l:l_argest : Num a => a -> a
+l:d_ot : Num a => a -> a -> a
+l:p_ipeline : Num a => a -> a -> a

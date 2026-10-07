@@ -1,0 +1,13 @@
+#!/usr/bin/env xetal
+# Reductions: research7's GPU PoC 0 (a, b := 2 a, c := a + b, +/ c),
+# the largest item, an inner product. Run with "just demo-lib Accel reduce-sum".
+"ac:" u_se< "Accel"
+a := r_ange 8
+b := 2 ac:s_cale a
+c := a ac:v_add b
+ac:s_um c
+ac:l_argest c
+a ac:d_ot b
+f := (r_ange 8) / 8
+ac:s_um f
+f ac:d_ot f

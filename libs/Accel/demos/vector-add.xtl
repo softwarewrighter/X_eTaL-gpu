@@ -1,0 +1,10 @@
+#!/usr/bin/env xetal
+# Vector add: c := a + b, the first kernel (one work-item per element).
+# Run with "just demo-lib Accel vector-add".
+"ac:" u_se< "Accel"
+a := r_ange 8
+b := 10 * r_ange 8
+a ac:v_add b
+x := (r_ange 8) / 4
+y := 0.5 ac:s_cale x
+x ac:v_add y

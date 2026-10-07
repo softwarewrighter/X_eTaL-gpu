@@ -1,0 +1,10 @@
+#!/usr/bin/env xetal
+# The acceptance pipeline: multiply, add, select, reduce, as one
+# expression, on Ints and on Floats. Run with "just demo-lib Accel pipeline".
+"ac:" u_se< "Accel"
+x := r_ange 8
+w := 1 -1 1 -1 1 -1 1 -1
+x ac:p_ipeline w
+f := (r_ange 8) / 4
+g := -1.5 -1.0 -0.5 0.0 0.5 1.0 1.5 2.0
+f ac:p_ipeline g

@@ -1,0 +1,21 @@
+#!/usr/bin/env xetal
+# Accel: each function against a direct computation on larger
+# arrays; "ok" per check. Run with "just run-lib Accel checks".
+"ac:" u_se< "Accel"
+u:c_heck := { want got -> want m_atch got ? "ok"; "FAIL" }
+x := r_ange 16
+y := 100 * r_ange 16
+f := (r_ange 16) / 4
+g := (r_ange 16) - 8
+((100 * r_ange 16) + r_ange 16) u:c_heck x ac:v_add y
+(3 * r_ange 16) u:c_heck 3 ac:s_cale x
+(0 0 0 0 0 0 0 0 1 2 3 4 5 6 7 8) u:c_heck ac:r_elu g
+((g > 0) * g) u:c_heck ac:r_elu g
+(f * f_loat f > 2.0) u:c_heck 2.0 ac:t_hreshold f
+(0 0 0 0 0 0 0 0 9 10 11 12 13 14 15 16) u:c_heck (x > 8) ac:k_eep x
+136 u:c_heck ac:s_um x
+34.0 u:c_heck ac:s_um f
+16 u:c_heck ac:l_argest x
+4.0 u:c_heck ac:l_argest f
+1496 u:c_heck x ac:d_ot x
+('+ r_/ ac:r_elu x + x * g) u:c_heck x ac:p_ipeline g

@@ -1,0 +1,2 @@
+command = "../../../scripts/xt type ../src/Accel.xtl"
+exit_code = 0

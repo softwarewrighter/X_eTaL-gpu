@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run basics.xtl"
+exit_code = 0

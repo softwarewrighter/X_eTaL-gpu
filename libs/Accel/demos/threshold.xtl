@@ -1,0 +1,12 @@
+#!/usr/bin/env xetal
+# Threshold: a select by mask, item by item: x where x > t, else 0;
+# relu is the same with t = 0; k_eep takes any Int mask.
+# Run with "just demo-lib Accel threshold".
+"ac:" u_se< "Accel"
+x := ((r_ange 8) / 4) - 1.0
+x
+0.5 ac:t_hreshold x
+ac:r_elu x
+n := (r_ange 8) - 4
+ac:r_elu n
+(n m_od 2) ac:k_eep n

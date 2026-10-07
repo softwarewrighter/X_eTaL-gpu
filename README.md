@@ -55,10 +55,11 @@ twins go when X_eTaL's lowering lands.
 ## Status
 
 Saga 1 (gpu-foundation) in progress: the process, the pinned X_eTaL
-(75e6a5c) and the library tooling are in place (step 1). Next: the
-Accel library and its example programs (step 2), the provisional IR
-and interpreter (3), the OpenCL emitter (4), the runtime (5), the
-reduction on the device (6). See [`docs/plan.md`](docs/plan.md) for
+(75e6a5c) and the library tooling are in place (step 1); the Accel
+library, the acceleratable subset with its five example programs and
+their baselines, the reference the GPU must reproduce (step 2). Next:
+the provisional IR and interpreter (3), the OpenCL emitter (4), the
+runtime (5), the reduction on the device (6). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
 ## Build

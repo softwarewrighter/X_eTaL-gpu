@@ -1,0 +1,57 @@
+# Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions
+# Import it with an alias of your choice: "ac:" u_se< "Accel".
+# Put libs/Accel/src on XETAL_PATH ("just path"); the reference is libs/Accel/docs.
+# Names with l: are exported; the others are private to this file.
+#
+# Every function here is one whole-array expression in the subset a
+# GPU (or an FPGA) can take on directly: static scalar types, pure
+# functions, arithmetic and comparisons item by item with scalar
+# extension, a select by mask, and reductions. No recursion, no
+# nested arrays, no input or output. The X_eTaL evaluator is the
+# reference: X_eTaL-gpu runs the same functions on a GPU and must
+# give the same answers (the demos are the programs it checks).
+
+### Elementwise
+
+# x v_add y: the sum, item by item (the first kernel: one work-item
+# per element).
+l:v_add := { x y -> x + y }
+
+# a s_cale x: every item times a.
+l:s_cale := { a x -> a * x }
+
+# r_elu x: x where positive, 0 elsewhere (a select by comparison with
+# a constant), for Ints or Floats.
+l:r_elu := { x -> x m_ax 0 }
+
+### Masks and select
+
+# t t_hreshold x: x where x > t, 0.0 elsewhere, for Floats: the mask
+# `x > t` made Float and multiplied in, the select a GPU does with a
+# conditional move.
+l:t_hreshold := { t x -> x * f_loat x > t }
+
+# m k_eep x: x where the mask m is 1, 0 elsewhere, for Ints (an Int
+# mask times an Int array; see t_hreshold for Floats).
+l:k_eep := { m x -> x * m }
+
+### Reductions
+
+# s_um x: the sum of the items of a vector (a parallel reduction on
+# a GPU: work-group partials, then a second pass).
+l:s_um := { x -> '+ r_/ x }
+
+# l_argest x: the largest item.
+l:l_argest := { x -> 'm_ax r_/ x }
+
+# x d_ot y: the inner product of two vectors, a multiply then a
+# reduce.
+l:d_ot := { x y -> '+ r_/ x * y }
+
+### The acceptance pipeline
+
+# x p_ipeline w: multiply, add, select, reduce in one expression:
+# the sum of the positive items of x + x * w. The first end-to-end
+# test research7 asks for (arithmetic, map, zip, comparison,
+# selection, reduction), for Ints or Floats.
+l:p_ipeline := { x w -> l:s_um l:r_elu x + x * w }

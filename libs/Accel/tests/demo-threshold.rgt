@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run ../demos/threshold.xtl"
+exit_code = 0

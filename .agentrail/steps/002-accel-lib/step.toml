@@ -1,6 +1,6 @@
 number = 2
 slug = "accel-lib"
-status = "pending"
+status = "in-progress"
 description = "libs/Accel (alias ac:): the acceleratable subset of X_eTaL as exported functi..."
 role = "production"
 context_files = []

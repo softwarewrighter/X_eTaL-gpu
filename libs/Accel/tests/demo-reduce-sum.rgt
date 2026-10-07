@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run ../demos/reduce-sum.xtl"
+exit_code = 0
