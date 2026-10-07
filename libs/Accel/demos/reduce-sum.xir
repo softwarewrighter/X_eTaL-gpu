@@ -1,0 +1,21 @@
+# The twin of reduce-sum.xtl, lowered by hand (docs/xetal-asks.md, G2):
+# research7's GPU PoC 0, then the largest item and an inner product.
+%a = const i64 [8] 1 2 3 4 5 6 7 8     # a := r_ange 8
+%two = const i64 [] 2
+%b = map mul %two %a                    # b := 2 ac:s_cale a
+%c = map add %a %b                      # c := a ac:v_add b
+%sum = reduce add %c                    # ac:s_um c
+output %sum
+%max = reduce max %c                    # ac:l_argest c
+output %max
+%ab = map mul %a %b
+%dot = reduce add %ab                   # a ac:d_ot b: '+ r_/ x * y
+output %dot
+%af = cast f64 %a
+%eight = const f64 [] 8.0
+%f = map div %af %eight                 # f := (r_ange 8) / 8
+%fsum = reduce add %f                   # ac:s_um f
+output %fsum
+%ff = map mul %f %f
+%fdot = reduce add %ff                  # f ac:d_ot f
+output %fdot

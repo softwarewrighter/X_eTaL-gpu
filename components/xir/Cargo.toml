@@ -1,0 +1,13 @@
+[package]
+name = "xetal-gpu-xir"
+description = "The provisional accelerator IR of X_eTaL-gpu: typed arrays, elementwise maps, select, reductions; its text form, checker and reference interpreter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]

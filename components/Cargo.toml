@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["xir", "cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+repository = "https://github.com/softwarewrighter/X_eTaL-gpu"

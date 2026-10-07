@@ -57,9 +57,12 @@ twins go when X_eTaL's lowering lands.
 Saga 1 (gpu-foundation) in progress: the process, the pinned X_eTaL
 (75e6a5c) and the library tooling are in place (step 1); the Accel
 library, the acceleratable subset with its five example programs and
-their baselines, the reference the GPU must reproduce (step 2). Next:
-the provisional IR and interpreter (3), the OpenCL emitter (4), the
-runtime (5), the reduction on the device (6). See [`docs/plan.md`](docs/plan.md) for
+their baselines, the reference the GPU must reproduce (step 2); the
+provisional IR with its text form, checker and reference interpreter,
+the `xetal-gpu` tool (`check`, `run`, `print`), and the five examples'
+hand-lowered twins, each proved equal to the evaluator's output
+exactly (step 3). Next: the OpenCL emitter (4), the runtime (5), the
+reduction on the device (6). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
 ## Build
@@ -81,6 +84,8 @@ just xetal                           # clone and build the pinned X_eTaL (bin/xe
 just eval "'+ r_/_2 2 3 r_eshape r_ange 6"   # try it: row sums, 6 15
 just test                            # every library's baselines, the components, the equivalence checks
 just gate                            # the pre-commit gate
+just build                           # the xetal-gpu tool (target/release/xetal-gpu)
+target/release/xetal-gpu run libs/Accel/demos/reduce-sum.xir   # the IR twin of an example, interpreted
 ```
 
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit

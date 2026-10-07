@@ -1,0 +1,15 @@
+[package]
+name = "xetal-gpu-cli"
+description = "xetal-gpu: check, run and explain XIR programs, on the host or on an OpenCL device"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "xetal-gpu"
+path = "src/main.rs"
+
+[dependencies]
+xetal-gpu-xir = { path = "../xir" }

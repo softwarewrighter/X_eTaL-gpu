@@ -1,0 +1,25 @@
+# The twin of threshold.xtl, lowered by hand (docs/xetal-asks.md, G2).
+%r = const f64 [8] 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0
+%four = const f64 [] 4.0
+%one = const f64 [] 1.0
+%q = map div %r %four
+%x = map sub %q %one                    # x := ((r_ange 8) / 4) - 1.0
+output %x                               # x
+%t = const f64 [] 0.5
+%m = map gt %x %t                       # x > t
+%mf = cast f64 %m                       # f_loat ...
+%th = map mul %x %mf                    # 0.5 ac:t_hreshold x: x * f_loat x > t
+output %th
+%zero = const f64 [] 0.0
+%relu = map max %x %zero                # ac:r_elu x: x m_ax 0
+output %relu
+%n0 = const i64 [8] 1 2 3 4 5 6 7 8
+%fouri = const i64 [] 4
+%n = map sub %n0 %fouri                 # n := (r_ange 8) - 4
+%zeroi = const i64 [] 0
+%relun = map max %n %zeroi              # ac:r_elu n
+output %relun
+%twoi = const i64 [] 2
+%mask = map mod %n %twoi                # n m_od 2
+%kept = map mul %n %mask                # (n m_od 2) ac:k_eep n: x * m
+output %kept

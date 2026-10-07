@@ -1,6 +1,6 @@
 number = 3
 slug = "xir"
-status = "pending"
+status = "in-progress"
 description = "components/ Cargo workspace and components/xir (crate xetal-gpu-xir): the pro..."
 role = "production"
 context_files = []

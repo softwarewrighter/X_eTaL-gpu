@@ -1,0 +1,14 @@
+# The twin of vector-add.xtl, lowered by hand until X_eTaL's lowering
+# exists (docs/xetal-asks.md, G2). Each X_eTaL line is a comment.
+%a = const i64 [8] 1 2 3 4 5 6 7 8     # a := r_ange 8
+%ten = const i64 [] 10
+%b = map mul %ten %a                    # b := 10 * r_ange 8
+%c = map add %a %b                      # a ac:v_add b
+output %c
+%af = cast f64 %a
+%four = const f64 [] 4.0
+%x = map div %af %four                  # x := (r_ange 8) / 4
+%half = const f64 [] 0.5
+%y = map mul %half %x                   # y := 0.5 ac:s_cale x
+%z = map add %x %y                      # x ac:v_add y
+output %z
