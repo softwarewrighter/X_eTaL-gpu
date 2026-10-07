@@ -1,0 +1,4 @@
+#!/usr/bin/env xetal
+# __NAME__: the basics. Run with "just run __NAME__ basics".
+"__ALIAS__" u_se< "__NAME__"
+__ALIAS__i_dentity 1 2 3

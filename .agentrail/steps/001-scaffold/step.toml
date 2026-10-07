@@ -1,0 +1,8 @@
+number = 1
+slug = "scaffold"
+status = "in-progress"
+description = "Scaffold the repository on the sibling repos' precedents: agentrail saga, CLA..."
+role = "production"
+context_files = []
+created_at = "2026-10-06T18:03:03"
+commits = []

@@ -1,0 +1,28 @@
+# cargo (every workspace shares ./target via .cargo/config.toml)
+/target/
+**/target/
+**/*.rs.bk
+
+# reg-rs: .rgt + .out/.err baselines are committed; .tdb* files are caches
+*.tdb*
+
+# agentrail raw session transcripts (large, local only)
+.agentrail/sessions/*.jsonl
+.agentrail-archive/*/sessions/*.jsonl
+
+# Claude Code local state (shared slash commands may live in .claude/commands/)
+.claude/*
+!.claude/commands/
+
+# editors and OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# the X_eTaL clone (scripts/xetal.sh; XETAL_COMMIT is tracked), the
+# binary's symlink, local scratch, drawn pictures and generated kernels
+/tmp/
+work/
+bin/xetal

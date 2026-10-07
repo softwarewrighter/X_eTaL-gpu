@@ -1,0 +1,6 @@
+# __NAME__: __SUMMARY__
+# Import it with an alias of your choice: "__ALIAS__" u_se< "__NAME__".
+# Put libs/__NAME__/src on XETAL_PATH ("just path"); the reference is libs/__NAME__/docs.
+# Names with l: are exported; the others are private to this file.
+
+l:i_dentity := { x -> x }             # the value itself (replace me)

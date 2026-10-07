@@ -1,0 +1,1447 @@
+
+I have some ideas about future directions for softwarewrighter/X_eTaL.  (1) I want a way to generate FPGA programming files (verilog, etc.) to take some algorithm expressed in X_eTaL and implement dedicated circuits to do that calculation in FGPA instead of on CPU.  (2) I want to be able to compile some X_eTaL programs to run on older GPUs (not supported by latest CUDA).   The initial goal is to demonstrate the concept of offloading calculations from CPU to custom hardware and parallel hardware.  Overall speed up is not an immediate goal.  How can I do this?
+
+Worked for 16s
+Your two goals fit X_eTaL unusually well because whole-array operations already expose parallelism and dataflow. I would not try to compile arbitrary X_eTaL to either FPGA or GPU initially. Define a deliberately constrained accelerator subset, lower it to one common IR, and give that IR multiple backends.
+
+1. Architecture: one accelerator IR, several targets
+I would evolve the compiler approximately like this:
+
+                 X_eTaL source
+                       │
+                macros expanded
+                       │
+                  typed Core IR
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+        normal evaluator    accelerator extraction
+                                 │
+                          Hardware/Dataflow IR
+                            "XIR" perhaps
+                                 │
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+          CPU/reference      OpenCL 1.2          RTL/Verilog
+              │                  │                  │
+              │              old GPU              Yosys
+              │                                     │
+              │                                  nextpnr
+              │                                     │
+              └────────────── validation ─────── FPGA
+This fits the compiler you've already developed: lexer/parser → Core IR → static type inference → execution, rather than introducing a separate FPGA-oriented dialect.
+
+The important new component is not a Verilog generator. It's the middle representation.
+
+I'd tentatively call it XIR — X_eTaL Accelerator IR.
+
+2. What belongs in XIR?
+Make the first version tiny.
+
+Something like:
+
+enum Op {
+    Input,
+    Const,
+    Add,
+    Sub,
+    Mul,
+    Min,
+    Max,
+    Eq,
+    Lt,
+    Select,
+
+    Map,
+    Zip,
+    Reduce,
+}
+
+Values carry information such as:
+
+type:       i8 / i16 / i32 / f32
+shape:      [1024]
+operation:  add
+inputs:     a, b
+For example, conceptually:
+
+a + b
+might become:
+
+%0 = input<i16>[1024] a
+%1 = input<i16>[1024] b
+%2 = map add<i16> %0 %1
+return %2
+This representation is simultaneously:
+
+easy to interpret on the CPU;
+easy to turn into a GPU kernel;
+easy to turn into a hardware pipeline;
+easy to display in your visual debugger;
+easy to test against ordinary X_eTaL execution.
+That last point is particularly valuable.
+
+X_eTaL becomes the specification
+For every accelerator program:
+
+              X_eTaL
+                │
+          ┌─────┼──────┐
+          ▼     ▼      ▼
+       evaluator GPU   FPGA
+          │       │      │
+          └───────┼──────┘
+                  ▼
+            compare arrays
+The existing evaluator is the golden reference implementation.
+
+3. Don't compile all X_eTaL
+This is probably the most important design decision.
+
+FPGA synthesis wants static, bounded computation. GPUs want regular parallel work. So define an acceleratable region.
+
+Initially accept:
+
+statically known scalar types;
+statically known rank;
+preferably statically known dimensions;
+pure functions;
+arithmetic;
+comparisons;
+scalar extension/broadcasting;
+each/map;
+elementwise operations;
+reductions;
+perhaps inner shortly afterward.
+Initially reject:
+
+recursion;
+arbitrary dynamic allocation;
+arbitrary nested arrays;
+dynamically determined shapes;
+I/O;
+native extensions;
+most general higher-order functions;
+anything whose hardware resources cannot be bounded.
+That restriction isn't really alien to X_eTaL. Your static typing and explicit array/HOF vocabulary make it much easier to identify these computations than it would be in Python or C++.
+
+4. FPGA backend: start embarrassingly small
+Do not begin by trying to create an HLS compiler.
+
+Start with:
+
+X_eTaL
+  ↓
+Core
+  ↓
+XIR
+  ↓
+simple RTL generator
+  ↓
+Verilog
+  ↓
+Yosys
+  ↓
+nextpnr
+  ↓
+bitstream
+Yosys supports the synthesizable Verilog-2005 subset and performs RTL/logic synthesis. 
+ nextpnr then supplies portable place-and-route support for several FPGA families, including Gowin, which is interesting given your Tang Nano experimentation. 
+
+First FPGA experiment
+I'd make the first hardware function almost comically simple:
+
+c ← a + b
+where:
+
+a : i16[8]
+b : i16[8]
+c : i16[8]
+Generate eight adders.
+
+Conceptually:
+
+assign c0 = a0 + b0;
+assign c1 = a1 + b1;
+...
+assign c7 = a7 + b7;
+
+That demonstrates the key idea:
+
+An X_eTaL array expression describes a spatial computation.
+
+CPU interpretation:
+
+for i:
+    c[i] = a[i] + b[i]
+GPU:
+
+1024 work items
+FPGA:
+
+adder  adder  adder  adder
+  │      │      │      │
+ c[0]   c[1]   c[2]   c[3]
+Same semantics, radically different realization.
+
+That's a terrific X_eTaL demonstration.
+
+5. Then introduce spatial vs temporal lowering
+This becomes much more interesting when arrays are larger than available FPGA resources.
+
+Suppose X_eTaL says:
+
+c ← a + b
+for 1024 elements.
+
+The compiler could eventually choose:
+
+Spatial
+1024 adders
+Huge area, potentially enormous parallelism.
+
+Temporal
+       ┌─────────┐
+a ────►│         │
+       │ ADDER   ├──► c
+b ────►│         │
+       └─────────┘
+            ▲
+            │
+          counter
+One adder reused 1024 times.
+
+Tiled
+16 adders × 64 cycles
+That creates a fascinating compiler parameter:
+
+xetal hw --lanes 1
+xetal hw --lanes 4
+xetal hw --lanes 16
+xetal hw --lanes 1024
+Same X_eTaL program.
+
+Different physical implementation.
+
+For your goals, this is more interesting than simply making it fast because you can visualize the transformation from array semantics into physical resources.
+
+6. FPGA reductions become especially illustrative
+Consider something analogous to:
+
++/ x
+For eight values, the CPU implementation is approximately:
+
+(((((((a+b)+c)+d)+e)+f)+g)+h)
+But XIR can represent:
+
+reduce add x
+The FPGA backend can construct:
+
+x0 ─┐
+    +──┐
+x1 ─┘  │
+       +──┐
+x2 ─┐  │  │
+    +──┘  │
+x3 ─┘     │
+          +── result
+x4 ─┐     │
+    +──┐  │
+x5 ─┘  │  │
+       +──┘
+x6 ─┐  │
+    +──┘
+x7 ─┘
+Now X_eTaL's high-level array semantics directly produce a reduction tree.
+
+This is exactly the sort of thing I'd want in an X_eTaL hardware demo.
+
+7. Old GPU backend: target OpenCL C 1.2 first
+For your legacy GPU collection, I'd deliberately avoid making CUDA the abstraction.
+
+Use:
+
+XIR
+ ↓
+OpenCL C 1.2
+ ↓
+vendor OpenCL compiler/runtime
+ ↓
+GPU
+OpenCL C is specifically designed for kernels executing on OpenCL devices, and 1.2 remains part of the specification lineage. 
+
+So:
+
+c ← a + b
+could produce approximately:
+
+__kernel void xetal_kernel(
+    __global const short *a,
+    __global const short *b,
+    __global short *c)
+{
+    size_t i = get_global_id(0);
+    c[i] = a[i] + b[i];
+}
+
+The Rust host runtime then handles:
+
+X_eTaL array
+      ↓
+host buffer
+      ↓
+device buffer
+      ↓
+OpenCL kernel
+      ↓
+device buffer
+      ↓
+X_eTaL array
+This gives you exactly the conceptual demonstration you want without requiring the current CUDA ecosystem.
+
+8. CUDA can become backend #3
+I'd still add it eventually:
+
+             XIR
+              │
+       ┌──────┼──────┐
+       ▼      ▼      ▼
+    Verilog OpenCL  CUDA C
+But it is a worse first target for your "old hardware" objective because NVIDIA explicitly retires architectures from newer toolkits.
+
+For example, NVIDIA currently lists:
+
+Architecture	CC	Last CUDA toolkit
+Kepler	3.5/3.7	CUDA 11.x
+Maxwell	5.x	CUDA 12.x
+Pascal	6.x	CUDA 12.x
+Volta	7.0	CUDA 12.x
+CUDA also doesn't guarantee binary compatibility across different major compute capabilities. 
+
+So CUDA would force your X_eTaL project to know more about NVIDIA's historical toolchain matrix than I think you want.
+
+Keep that mess below XIR.
+
+9. Your actual GPU collection makes this worthwhile
+You have particularly interesting targets for this experiment:
+
+K80       Kepler
+M40       Maxwell
+P40       Pascal
+P100      Pascal
+GTX 1660  Turing
+RTX 2060  Turing
+RTX 3060  Ampere
+RTX 3090  Ampere
+RTX 5060  newer
+That gives you something better than merely saying "X_eTaL has GPU support."
+
+You can demonstrate:
+
+One X_eTaL program executes across multiple generations of parallel hardware.
+
+And because performance isn't initially the goal, even the older cards become scientifically interesting rather than annoyances.
+
+10. The killer demo: one source, three executions
+I would build the project around one command:
+
+xetal run demo.xtl
+xetal run --device opencl:0 demo.xtl
+xetal run --device fpga demo.xtl
+and perhaps:
+
+xetal explain --device fpga demo.xtl
+producing:
+
+Program
+    │
+    ▼
+map(add)
+    │
+    ├── CPU
+    │    sequential/host evaluator
+    │
+    ├── GPU
+    │    1024 OpenCL work items
+    │
+    └── FPGA
+         8 physical lanes
+         128 cycles
+This dovetails beautifully with your existing interest in visual execution/microscopes.
+
+11. I would make backend selection explicit initially
+Don't start with an optimizer trying to determine where operations should execute.
+
+Use something like:
+
+xetal run --target cpu foo.xtl
+xetal run --target opencl foo.xtl
+xetal build --target verilog foo.xtl
+Later you can introduce annotations/macros:
+
+hw:fpga { ... }
+hw:gpu  { ... }
+or perhaps more X_eTaL-ish compile-time macros.
+
+But I would resist adding these to the language now. Backend selection is initially a compiler/runtime concern, not language semantics.
+
+That preserves the nice property:
+
+X_eTaL meaning ≠ execution device
+12. Types become surprisingly valuable
+Static typing starts paying another dividend here.
+
+Consider:
+
+i8[16]
+i16[16]
+i32[16]
+f32[16]
+On CPU those distinctions matter somewhat.
+
+On FPGA they're fundamental:
+
+i8 + i8
+      ↓
+8-bit adder
+
+i16 + i16
+      ↓
+16-bit adder
+And eventually:
+
+ternary
+      ↓
+specialized ternary datapath
+That connects directly to your Tang Nano ternary-computer experiments and X_eTaL-ML ternary network.
+
+A future X_eTaL type such as:
+
+ternary[256]
+could have completely different implementations:
+
+CPU        packed representation
+GPU        packed SIMD operations
+FPGA       native -1/0/+1 datapath
+Same semantic type, backend-specific physical representation.
+
+That's much more compelling than merely emitting Verilog.
+
+13. Suggested implementation sequence
+I'd keep this aggressively incremental:
+
+Milestone	Capability	Demonstrates
+H0	Core → XIR dump	backend-neutral dataflow
+H1	XIR interpreter	correctness/reference
+G1	XIR → OpenCL map add	GPU offload
+G2	map/sub/mul/select	useful GPU subset
+G3	reduce	parallel algorithms
+F1	XIR → Verilog scalar add	actual generated circuit
+F2	fixed vector add	spatial array hardware
+F3	configurable lanes	space/time tradeoff
+F4	reduction tree	array semantics → topology
+F5	synthesize/program FPGA	real hardware
+H2	common CPU/GPU/FPGA tests	semantic equivalence
+H3	visual hardware explanation	X_eTaL differentiator
+I would not put matrix multiplication, CNNs, MoE, attention, etc. into the first milestone.
+
+Get:
+
+map
+zip
+reduce
+working extremely well first.
+
+Those three primitives already let X_eTaL express surprisingly rich hardware.
+
+14. A very X_eTaL-specific opportunity
+Eventually you can exploit something C/CUDA-derived HLS systems don't naturally have:
+
+Shape is architectural information.
+Given:
+
+A : i16[4,4]
+B : i16[4,4]
+and an inner product, X_eTaL knows you're describing array algebra.
+
+The backend can visualize alternative realizations:
+
+X_eTaL
+   │
+   │ inner product
+   ▼
+
+CPU                    GPU                  FPGA
+
+nested loops           work groups          ┌─×─┐
+                                             │   ├─+
+                       ● ● ● ●              ├─×─┤
+for                     ● ● ● ●              │   ├─+
+for                     ● ● ● ●              ├─×─┤
+ mul/add                ● ● ● ●              │   ├─+
+                                             └─×─┘
+That's where this stops being merely "I wrote another HLS frontend".
+
+The research/design question becomes:
+
+How should an array expression become space, time, memory, and parallelism?
+
+That's a very natural question for X_eTaL to explore.
+
+What I would build first
+I think this deserves a small adjacent repo—perhaps X_eTaL-hardware—rather than putting all of it into the compiler.
+
+Keep only the common boundary in X_eTaL:
+
+Core
+  ↓
+Accelerator eligibility analysis
+  ↓
+XIR
+Then:
+
+X_eTaL-hardware/
+    xir/
+    interpreter/
+    opencl/
+    rtl/
+    runtime/
+    examples/
+        vector-add.xtl
+        saxpy.xtl
+        reduce-sum.xtl
+        threshold.xtl
+The first end-to-end acceptance test I'd choose is actually not Life, CNN, or matrix multiplication. It would be:
+
+input arrays
+    ↓
+multiply
+    ↓
+add
+    ↓
+threshold/select
+    ↓
+reduce
+That exercises arithmetic, map, zip, comparison, selection, and reduction. Run exactly the same .xtl through the normal evaluator, an ancient GPU, and simulated Verilog; compare outputs bit-for-bit. Then program a real Tang Nano and replace simulation with physical hardware.
+
+Yosys is particularly appropriate for the intermediate stages because it can do generic/coarse synthesis before you even care about a particular FPGA, while Verilator can turn the generated Verilog/SystemVerilog into an executable C++ model for fast testing. 
+ Once that's solid, nextpnr already has Gowin support for taking the FPGA path further. 
+
+That gives you a very clean story:
+
+one typed array program → sequential software, massively parallel software, or spatial hardware.
+
+And importantly, you can get to that story with a surprisingly small compiler addition rather than trying to build a full HLS system.
+
+so practical steps?  which repo(s)?  which tools/dependencies?  What PoC?  Can we model a TI1000 calculator chip as X_eTaL library functions to generate Tang Nano 4K FPGA implementation?  Can we take one of our trained from scratch or fine-tuned reasoning models. express that as X_eTaL and schedule that to do inference on an old/small GPU?
+
+Worked for 20s
+Yes. I would turn this into two concrete PoCs sharing one new compiler component, and I would start with the calculator because it gives you the shortest path from X_eTaL source all the way to physical custom hardware.
+
+I checked the current X_eTaL repository. Its componentized architecture (core, types, eval, hof, macro, cli, etc.) and the rule that surface syntax desugars to Core are exactly what we want. I would not put FPGA/OpenCL code into core or eval.
+
+Repositories
+I'd use three repos, with only a small change to the main compiler:
+
+softwarewrighter/X_eTaL
+    components/
+        ...
+        accel/                 NEW
+            xetal-accel-ir
+            xetal-accel-lower
+
+softwarewrighter/X_eTaL-hardware       NEW
+    fpga/
+    gpu/
+    runtime/
+    examples/
+    tests/
+
+softwarewrighter/X_eTaL-demos         existing
+    hardware/                          later, polished demos
+xetal-accel-ir should contain no FPGA or GPU knowledge. It represents things like typed tensors/arrays, constants, elementwise operations, reductions, matrix multiplication, lookup, reshape, select and eventually state machines.
+
+xetal-accel-lower answers:
+
+Can this typed X_eTaL Core expression be represented by accelerator IR?
+
+Thus the main compiler owns meaning; X_eTaL-hardware owns realization.
+
+PoC 1: X_eTaL → Tang Nano 4K calculator
+And yes: a TMS1000-family calculator-style machine is an excellent first serious FPGA demonstration.
+
+One terminology caveat: I assume by "TI1000" you mean the TI TMS1000 family. I wouldn't initially attempt transistor- or gate-accurate reproduction of a particular historical chip. Model its architecture/behavior in X_eTaL and synthesize that.
+
+The Tang Nano 4K is specifically supported by Project Apicula as GW1NSR-LV4CQN48PC7/I6, and openFPGALoader recognizes tangnano4k. 
+
+Step 1 — Don't generate FPGA RTL yet
+First write an X_eTaL calculator machine:
+
+X_eTaL-hardware/
+  examples/
+    tms1000/
+      alu.xtl
+      registers.xtl
+      decode.xtl
+      machine.xtl
+      calculator.xtl
+      programs/
+        add.xtl
+        multiply.xtl
+Conceptually:
+
+state ─────┐
+opcode ────┼──► decode ─► ALU ─► next-state
+input ─────┘
+This is important: X_eTaL itself should execute the model first.
+
+You get tests such as:
+
+2 + 3 = 5
+12 + 34 = 46
+7 × 8 = 56
+123 - 27 = 96
+The normal X_eTaL evaluator becomes the reference machine.
+
+Step 2 — Lower the calculator to XIR
+For FPGA work, XIR needs a little more than the GPU subset I proposed previously:
+
+Value
+Const
+Add/Sub
+And/Or/Xor
+Shift
+Eq/Lt
+Select
+Lookup
+Concat/Slice
+
+Register
+ROM
+RAM
+
+Map
+Reduce
+
+StateMachine
+That last group distinguishes FPGA compilation from ordinary array acceleration.
+
+For example:
+
+next_acc =
+    select(op == ADD,
+           acc + operand,
+    select(op == SUB,
+           acc - operand,
+           acc))
+becomes a mux plus ALU in hardware.
+
+Step 3 — XIR → Verilog
+The first backend can be tiny:
+
+XIR                       Verilog
+
+Add          ──────────►  +
+Register     ──────────►  always @(posedge clk)
+Select       ──────────►  mux
+ROM          ──────────►  case/readmem
+StateMachine ──────────►  state register + combinational next state
+I would generate plain Verilog-2005, not fancy SystemVerilog and definitely not vendor primitives.
+
+That leaves synthesis to Yosys.
+
+The toolchain is:
+
+calculator.xtl
+      ↓
+X_eTaL Core
+      ↓
+XIR
+      ↓
+xetal-verilog
+      ↓
+calculator.v
+      ↓
+Verilator ───────────► simulation/tests
+      ↓
+Yosys
+      ↓
+nextpnr-himbaechel
+      ↓
+gowin_pack
+      ↓
+calculator.fs
+      ↓
+openFPGALoader
+      ↓
+Tang Nano 4K
+That is already a fully supported open-source Gowin flow: Yosys → nextpnr-himbaechel → Apicula/gowin_pack → openFPGALoader. 
+
+Dependencies
+On your Arch machine I'd use:
+
+Rust:
+    X_eTaL components
+    serde
+    serde_json
+
+External:
+    yosys
+    verilator
+    nextpnr-himbaechel
+    apycula / gowin_pack
+    openFPGALoader
+The open-source toolchain documentation specifically recommends Yosys, Verilator, openFPGALoader and a Gowin-enabled nextpnr-himbaechel; Apicula supplies gowin_pack. 
+
+I wouldn't add a Rust HDL library. Writing our own tiny Verilog emitter is the experiment.
+
+What should actually be on the Tang?
+I'd make the first physical version delightfully retro:
+
+                 Tang Nano 4K
+              ┌─────────────────┐
+buttons ─────►│ input register  │
+              │                 │
+buttons ─────►│ TMS-like        │
+              │ calculator      │
+              │ implemented     │
+              │ from X_eTaL     │
+              │                 │
+              │ BCD/display     │
+              └────────┬────────┘
+                       │
+                    LEDs/UART
+Don't initially bother reproducing an actual TI keyboard/display.
+
+Use UART:
+
+host: "12 + 34 ="
+           │
+           ▼
+       Tang Nano
+           │
+           ▼
+host: "46"
+Then add buttons/7-segment/LCD later.
+
+The milestone isn't calculator on FPGA.
+
+It's:
+
+This calculator's behavior is written in X_eTaL, executed by X_eTaL for the reference tests, transformed into RTL, synthesized, and is now physically executing as gates and registers.
+
+That's a much stronger demo.
+
+PoC 2: X_eTaL model → old GPU inference
+Yes, but don't start with one of the larger reasoning LLMs.
+
+Start with the smallest trained-from-scratch model you have for which you completely control:
+
+architecture;
+tokenizer;
+weights;
+quantization;
+reference inference.
+Your microgpt/small decision-model line of experiments is a much better first candidate than Qwen or Llama.
+
+The path becomes:
+
+model weights
+      +
+X_eTaL inference.xtl
+      │
+      ▼
+X_eTaL Core
+      │
+      ▼
+XIR
+      │
+      ├────────────► CPU reference
+      │
+      ▼
+OpenCL backend
+      │
+      ▼
+OpenCL C 1.2 kernels
+      │
+      ▼
+old GPU
+Important distinction
+We are not compiling the trained model in the same sense that we're synthesizing the calculator.
+
+The model is:
+
+architecture = X_eTaL program
+weights      = data
+So you might have:
+
+reasoner/
+    model.xtl
+    tokenizer.xtl
+    config.toml
+    weights.xtln       eventually
+And model.xtl describes inference.
+
+What XIR needs for the first neural model
+This is where the common IR becomes useful.
+
+Add operations in stages:
+
+Phase G0:
+    add
+    multiply
+    map
+    reduce
+
+Phase G1:
+    dot
+    matvec
+    matmul
+
+Phase G2:
+    exp
+    softmax
+    normalization
+
+Phase G3:
+    embedding lookup
+
+Phase G4:
+    attention
+    KV-cache operations
+
+Phase G5:
+    quantized matvec/matmul
+Do not put Attention into XIR initially.
+
+Attention should initially decompose into lower-level array operations. Only promote something to an intrinsic if measurement eventually demonstrates a reason.
+
+GPU PoC #0 should be ridiculously small
+Before the reasoning model:
+
+a ← 1 2 3 4 ...
+b ← 2 × a
+c ← a + b
++/c
+Run:
+
+xetal program.xtl
+xetal-hw run --device opencl program.xtl
+and require identical results.
+
+Then do matrix-vector multiplication.
+
+Then a tiny neural layer:
+
+y = relu(Wx + b)
+Then a complete tiny trained network.
+
+Only then do the reasoning model.
+
+How scheduling should work
+This is where I think your project gets especially interesting.
+
+Don't simply generate:
+
+kernel_matmul(...)
+
+Introduce a backend schedule separate from XIR semantics.
+
+For example:
+
+XIR:
+
+    y = matmul(W, x)
+can have:
+
+CPU schedule
+    rows = sequential
+    cols = SIMD
+
+GPU schedule
+    rows = workgroups
+    cols = workitems
+    tile = 16x16
+
+FPGA schedule
+    lanes = 4
+    MACs = 4
+    stream weights
+So:
+
+                 matmul
+                    │
+             semantic XIR
+                    │
+        ┌───────────┼────────────┐
+        ▼           ▼            ▼
+     CPU sched   GPU sched    FPGA sched
+        │           │            │
+     loops       OpenCL        RTL
+That scheduling layer is probably the architectural key to the entire project.
+
+It separates:
+
+what calculation is being performed
+
+from:
+
+how this particular machine performs it.
+
+That's very much in the spirit of an array language.
+
+And this connects directly to your old-GPU work
+Suppose your model contains:
+
+W : i8[4096,4096]
+x : i8[4096]
+The schedule could say:
+
+device = P40
+workgroup = 256
+rows-per-group = 4
+weight-storage = VRAM
+activation-storage = VRAM
+Or on an older 6 GB card:
+
+device = GTX1660
+workgroup = 128
+weight-storage = host
+weight-tile = 64MB
+double-buffer = true
+Eventually:
+
+device = K80
+weight-storage = host
+tile = ...
+The X_eTaL model doesn't change.
+
+Only the schedule does.
+
+That intersects strongly with what you've been exploring in moe-microscope and sw-os-ml: placement/scheduling of computation and model state across heterogeneous resources.
+
+I would therefore slightly change the repo design
+Rather than X_eTaL-hardware containing everything:
+
+X_eTaL
+  components/
+    accel/
+      xetal-accel-ir
+      xetal-accel-lower
+
+X_eTaL-hardware
+  components/
+    schedule
+    verilog
+    opencl
+    runtime
+    board-gowin
+
+  examples/
+    vector-add/
+    reduce/
+    calculator/
+    tiny-nn/
+    reasoner/
+And keep it under your existing component-size rules.
+
+Later, if it gets large:
+
+X_eTaL-hardware
+       │
+       ├──► X_eTaL-fpga
+       └──► X_eTaL-gpu
+But don't split yet.
+
+The sequence I'd actually hand to a coding agent
+I'd make this approximately 12 small Agentrail steps:
+
+Step	Deliverable	Hardware needed
+001	xetal-accel-ir typed DAG	none
+002	Core → XIR for integer arithmetic	none
+003	XIR interpreter + equivalence tests	none
+004	XIR → Verilog combinational arithmetic	none
+005	Verilator equivalence test	none
+006	registers/select/state-machine lowering	none
+007	calculator X_eTaL model	none
+008	Tang Nano 4K synthesis/programming	4K
+009	XIR → OpenCL elementwise ops	old GPU
+010	reduce + matvec/matmul	old GPU
+011	tiny NN entirely in X_eTaL	old GPU
+012	small reasoning-model inference	old GPU
+Step 003 is crucial:
+
+for every generated test input:
+
+    X_eTaL evaluator
+           │
+           ▼
+       expected[]
+           │
+           │ compare
+           ▼
+      XIR interpreter
+Step 005 extends that:
+
+ X_eTaL
+    │
+    ├────────────► evaluator ───┐
+    │                           │
+    ▼                           │
+   XIR ──► Verilog ─► Verilator ├── exact equality
+    │                           │
+    └────────────► interpreter ─┘
+And later:
+
+                    ┌─ CPU
+X_eTaL → Core → XIR ┼─ Verilator
+                    ├─ Tang Nano 4K
+                    └─ old NVIDIA GPU
+                         │
+                         ▼
+                    same answer
+The two showcase demos
+I'd explicitly target these as the first two things worth blogging about:
+
+Demo A — "X_eTaL becomes silicon." A small calculator architecture is described using ordinary typed X_eTaL functions. The same source executes in the interpreter, is compiled to Verilog, simulated, synthesized with Yosys, placed/routed for the GW1NSR-4C, packed with Apicula and physically runs on the ~$20 Tang Nano 4K. The open toolchain already supports this exact FPGA. 
+
+Demo B — "X_eTaL resurrects an obsolete GPU." Express the forward pass of one of your genuinely trained tiny models as X_eTaL array functions. Load the actual trained weights, verify inference with the ordinary evaluator, lower the computational portion to XIR, schedule it as OpenCL kernels, and execute it on something deliberately old—I'd choose the M40 or P40 before the K80. Then show the same prompt/input and model producing the same inference through CPU and legacy GPU execution.
+
+The K80 becomes a later trophy target because making that work is likely to involve enough historical-driver/toolchain friction to distract from proving the X_eTaL architecture.
+
+And there is a nice eventual third demo hiding here: take the same tiny neural layer from Demo B and schedule it onto the Tang Nano 4K. At that point the diagram becomes:
+
+                    X_eTaL model
+                         │
+                         ▼
+                   typed Core IR
+                         │
+                         ▼
+                        XIR
+                         │
+               ┌─────────┼──────────┐
+               │         │          │
+               ▼         ▼          ▼
+              CPU     old GPU      FPGA
+                       OpenCL       RTL
+               │         │          │
+               └─────────┼──────────┘
+                         ▼
+                   SAME SEMANTICS
+That, more than either backend individually, would demonstrate what I think is the important future direction: X_eTaL as a hardware-independent notation for describing computation, with array shape/types providing enough information to map that computation into sequential time, parallel threads, or physical space.
+
+So currently github.com/softwarewrighter/X_eTaL* repos. but note that I have github.com/hardwarewrighter/ org.  Now the GPU work is software for existing hardware and we are not modifying or creating hardwre.  The FPGA part, I would argue, is creating hardware (wrighting hardware) so I might want to split -hardware into <sw>/X_eTaL-gpu and <hw>/X_eTaL-fpga.   Also, for the first GPU PoC (or one of the first) we could do a Jev-like (Bert-like) demo?
+Yes. I think that split is cleaner conceptually and organizationally than X_eTaL-hardware.
+
+Your distinction is useful:
+
+GPU: X_eTaL software targeting an existing programmable processor.
+FPGA: X_eTaL is used to wright new hardware.
+
+So I would make the ownership boundary explicit.
+
+Repository architecture
+softwarewrighter/
+│
+├── X_eTaL
+│     language + compiler + common accelerator interface
+│
+├── X_eTaL-gpu
+│     GPU compiler/runtime/scheduling
+│
+├── X_eTaL-demos
+├── X_eTaL-ML
+│     ...
+│
+└── X_eTaL-games
+
+hardwarewrighter/
+│
+└── X_eTaL-fpga
+      X_eTaL → RTL → FPGA
+I like this substantially better than softwarewrighter/X_eTaL-hardware.
+
+The division of responsibility should be strict:
+
+softwarewrighter/X_eTaL
+        │
+        │ typed Core IR
+        ▼
+ accelerator representation/API
+        │
+        ├─────────────────────────────┐
+        ▼                             ▼
+softwarewrighter/X_eTaL-gpu    hardwarewrighter/X_eTaL-fpga
+        │                             │
+    scheduling                     scheduling
+        │                             │
+     OpenCL                         Verilog
+        │                             │
+    existing GPU                  synthesized
+                                  hardware
+One change from my previous proposal
+I'm now less enthusiastic about putting xetal-accel-ir inside the FPGA/GPU projects.
+
+The contract belongs to X_eTaL.
+
+Perhaps:
+
+X_eTaL/
+  components/
+    accel/
+      xetal-accel-ir
+      xetal-accel-lower
+But keep it very small. It should know nothing about:
+
+OpenCL;
+CUDA;
+Verilog;
+Yosys;
+Gowin;
+Tang Nano;
+NVIDIA.
+Its job is basically:
+
+typed X_eTaL Core
+       ↓
+"here is the computation"
+The downstream repositories answer:
+
+"here is how this device realizes that computation"
+That gives you a genuine extension point.
+
+Yes: Jev-like is probably the better first interesting GPU PoC
+I would actually do two GPU PoCs:
+
+PoC G0                         PoC G1
+
+vector arithmetic              Jev-like model
+      ↓                              ↓
+prove plumbing                 prove usefulness
+      ↓                              ↓
+OpenCL GPU                     old GPU
+G0 should take hours/days, not weeks. It's infrastructure validation.
+
+Then immediately build the thing that's actually interesting.
+
+Why Jev-like fits
+A Jev-like typed decision model is a particularly good target because it sits in a sweet spot between:
+
+vector add
+    ↓
+boring but easy
+
+Jev / small BERT-like
+    ↓
+interesting + manageable
+
+small generative transformer
+    ↓
+considerably harder
+
+LLM
+    ↓
+KV cache, autoregression,
+tokenizer, sampling, large weights...
+And you've already been exploring typed decision models, including a 1.58-bit model and their use as a fast decision/reasoning layer.
+
+More importantly, a BERT-like architecture maps beautifully onto array-language operations.
+
+What does BERT-like inference look like in X_eTaL?
+Conceptually, most of the computation reduces to things X_eTaL should be good at expressing:
+
+embedding lookup
+
+        ↓
+
+matrix multiplication
+
+        ↓
+
+Q = X Wq
+K = X Wk
+V = X Wv
+
+        ↓
+
+Q × transpose K
+
+        ↓
+
+scale
+
+        ↓
+
+softmax
+
+        ↓
+
+attention × V
+
+        ↓
+
+linear
+
+        ↓
+
+normalization
+
+        ↓
+
+feed-forward
+
+        ↓
+
+classifier
+Almost all of that is array algebra.
+
+That's exactly what you want for this experiment.
+
+I'd make it smaller than BERT
+Don't begin with BERT-base's familiar scale.
+
+Create something intentionally tiny, perhaps:
+
+vocabulary:       1K–4K
+sequence:         32 or 64
+embedding:        64
+attention heads:  2 or 4
+layers:           2
+FF dimension:     128
+output classes:   typed decisions
+Maybe only a few hundred thousand parameters.
+
+Call it something descriptive in the experiment rather than claiming it's BERT:
+
+xetal-jev
+or:
+
+typed-decision.xtl
+Then the demo becomes:
+
+A transformer-like typed decision model, trained from scratch, whose complete inference algorithm is written in X_eTaL and executed on an obsolete GPU.
+
+That's a much stronger demonstration than running somebody else's BERT.
+
+Even better: use the same model for CPU and GPU
+I would make the weights data, not generated code:
+
+examples/jev/
+    model.xtl
+    config.toml
+    tokenizer.xtl
+    weights/
+        embedding.bin
+        layer0.bin
+        layer1.bin
+        classifier.bin
+
+    tests/
+        cases.toml
+model.xtl should genuinely contain the inference computation.
+
+Something conceptually like:
+
+embed_
+attention_
+normalize_
+feed_forward_
+transformer_layer_
+classify_
+with the real implementations expressed using X_eTaL array operations.
+
+Then:
+
+xetal model.xtl test-input
+does CPU inference.
+
+While:
+
+xetal-gpu model.xtl test-input
+does:
+
+X_eTaL
+   ↓
+Core
+   ↓
+accelerator IR
+   ↓
+GPU schedule
+   ↓
+OpenCL kernels
+   ↓
+M40/P40/etc.
+Same .xtl.
+
+Same weights.
+
+Same expected typed decision.
+
+The typed output makes the demo much more interesting
+Rather than train it merely for sentiment:
+
+"This movie is great."
+       ↓
+positive
+train it for something related to X_eTaL itself.
+
+For example, classify requests into tool/action types:
+
+"plot the distribution"
+
+→ DRAW
+"what is the shape of this array?"
+
+→ ARRAY_QUERY
+"explain this expression"
+
+→ EXPLAIN
+"run this example"
+
+→ EXECUTE
+"find documentation about trains"
+
+→ DOC_SEARCH
+Now it's recognizably Jev-like:
+
+text
+ │
+ ▼
+small transformer
+ │
+ ▼
+typed decision
+ │
+ ├── Explain
+ ├── Execute
+ ├── Search
+ ├── Draw
+ └── Answer
+And it connects naturally to your existing docent/tool-routing/typed-decision-model investigations rather than being an arbitrary ML benchmark.
+
+Quantization comes later
+For G1 I'd use:
+
+f32
+even though that's wasteful.
+
+That's intentional.
+
+We want to prove:
+
+X_eTaL semantics
+       ↓
+GPU lowering
+       ↓
+correct inference
+not:
+
+quantization + packing +
+GPU backend + transformer +
+model conversion + tokenizer +
+driver archaeology
+all simultaneously.
+
+Then:
+
+G1   f32 Jev
+G2   f16 Jev
+G3   i8 Jev
+G4   ternary / 1.58-bit Jev
+G4 is where this becomes especially X_eTaL-ish.
+
+1.58-bit becomes a terrific later experiment
+Suppose X_eTaL eventually knows something like:
+
+Trit = -1 | 0 | +1
+Then a weight matrix isn't conceptually:
+
+f32[64,64]
+but:
+
+trit[64,64]
+The GPU backend can decide how to physically represent it:
+
+X_eTaL
+
+W : trit[64,64]
+
+          │
+          ▼
+
+X_eTaL-gpu schedule
+
+logical:     ternary
+storage:     packed 2-bit
+workgroup:   128
+unpack:      registers
+accumulate:  i32
+While someday:
+
+X_eTaL-fpga
+could take the exact same semantic operation and produce native ternary-ish hardware.
+
+That creates a wonderful bridge between the two organizations:
+
+             X_eTaL
+
+       W : trit[64,64]
+              │
+       ┌──────┴──────┐
+       │             │
+       ▼             ▼
+
+softwarewrighter   hardwarewrighter
+
+X_eTaL-gpu         X_eTaL-fpga
+     │                  │
+packed 2-bit       ternary datapath
+GPU operations     LUTs / adders
+     │                  │
+existing HW        new HW
+That is a very compelling long-term demonstration.
+
+Practical backlog
+I would therefore structure the work this way:
+
+Phase	Repo	PoC
+A0	X_eTaL	accelerator IR
+A1	X_eTaL	Core → accelerator IR
+G0	X_eTaL-gpu	vector map/reduce via OpenCL
+G1	X_eTaL-gpu	matrix-vector/matrix multiply
+G2	X_eTaL-gpu	tiny Jev-like f32 model
+G3	X_eTaL-gpu	run it on M40/P40
+G4	X_eTaL-gpu	quantized/ternary Jev
+F0	X_eTaL-fpga	arithmetic → Verilog
+F1	X_eTaL-fpga	state/register/ROM
+F2	X_eTaL-fpga	calculator model
+F3	X_eTaL-fpga	Tang Nano 4K
+F4	X_eTaL-fpga	tiny NN layer
+X0	both	same X_eTaL operation → GPU and FPGA
+And I wouldn't serialize the G and F tracks. Once A1 exists:
+
+                         A0/A1
+                            │
+                 ┌──────────┴──────────┐
+                 ▼                     ▼
+              GPU lane              FPGA lane
+              G0→G4                 F0→F4
+They can progress independently.
+
+The three PoCs I'd target
+PoC #1 — GPU plumbing: one X_eTaL map/reduce expression executes through OpenCL on an M40 or P40. CPU and GPU results match.
+
+PoC #2 — "Jev on Jurassic hardware": a tiny transformer-like typed-decision model is trained from scratch; its inference implementation is ordinary X_eTaL array code; the exact same model and weights execute on CPU and an old GPU. Then visualize which X_eTaL operations became which GPU kernels.
+
+PoC #3 — "Wrighting a calculator": calculator behavior is ordinary X_eTaL library code; hardwarewrighter/X_eTaL-fpga transforms that computation into Verilog, Verilator proves equivalence, Yosys/nextpnr/Apicula produce the bitstream, and a Tang Nano 4K physically becomes that calculator.
+
+I particularly like #2 followed by #3 as demonstrations of the distinction you're making with the two GitHub organizations:
+
+Softwarewrighter: take an array program and map it onto parallel hardware someone else designed.
+Hardwarewrighter: take an array program and use it to describe the hardware itself.
+
+Then the eventual #4 almost writes itself: take one layer of that same Jev-like model and ask X_eTaL-fpga to wright a physical accelerator for it. That closes the loop between the two projects.
+
+
+
+

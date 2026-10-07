@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# The pinned xetal with every library on the search path: each
+# libs/<Name>/src on XETAL_PATH, written relative to the current
+# directory so messages and baselines do not depend on where the
+# repository is checked out. "xt run FILE" adds --seed 1 --ascii and
+# --draw work/draw (as the tests run); any other command passes
+# through. XETAL_LIBS_ROOT overrides where libs/ is
+# (scripts/selftest-libs.sh).
+#   scripts/xt run prog.xtl
+#   scripts/xt type ../src/Accel.xtl
+#   scripts/xt eval -e "'+ r_/ 1 2 3"
+set -euo pipefail
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+xetal="$root/target/xetal/release/xetal"
+libs="${XETAL_LIBS_ROOT:-$root}"
+[ -x "$xetal" ] || xetal="$("$root/scripts/xetal.sh")"
+XETAL_PATH="$(python3 - "$libs" <<'PY'
+import os, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+dirs = sorted(str(d) for d in root.glob("libs/*/src") if d.is_dir())
+print(":".join(os.path.relpath(d) for d in dirs))
+PY
+)"
+export XETAL_PATH
+# Pictures ([]S_HOW) go to work/draw/ (git-ignored), named relative to
+# the current directory so a baseline's "drawn ..." line is stable.
+draw="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1]))' "$root/work/draw")"
+mkdir -p "$root/work/draw"
+if [ "${1:-}" = run ]; then shift; exec "$xetal" run --seed 1 --ascii --draw "$draw" "$@"; fi
+exec "$xetal" "$@"

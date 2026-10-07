@@ -1,0 +1,8 @@
+number = 3
+slug = "xir"
+status = "pending"
+description = "components/ Cargo workspace and components/xir (crate xetal-gpu-xir): the pro..."
+role = "production"
+context_files = []
+created_at = "2026-10-06T18:03:03"
+commits = []

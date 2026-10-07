@@ -1,0 +1,6 @@
+# Every Cargo workspace in this repo (components/, tools/) builds into
+# the one ./target: cargo finds this file by walking up from where it
+# runs. The pinned X_eTaL CLI builds into target/xetal/
+# (scripts/xetal.sh sets CARGO_TARGET_DIR).
+[build]
+target-dir = "target"

@@ -1,0 +1,8 @@
+number = 5
+slug = "opencl-run"
+status = "pending"
+description = "components/runtime (crate xetal-gpu-runtime) on the opencl3 crate: enumerate ..."
+role = "production"
+context_files = []
+created_at = "2026-10-06T18:03:03"
+commits = []
