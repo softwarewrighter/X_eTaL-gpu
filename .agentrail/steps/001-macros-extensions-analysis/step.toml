@@ -1,8 +1,9 @@
 number = 1
 slug = "macros-extensions-analysis"
-status = "in-progress"
+status = "completed"
 description = "docs/macros-and-extensions.md: a detailed analysis of how this repo should us..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T09:19:38"
-commits = []
+completed_at = "2026-10-07T10:46:14"
+commits = ["bfc69316b6bfd4c46f1e7082c77f8ee89d6256b7"]

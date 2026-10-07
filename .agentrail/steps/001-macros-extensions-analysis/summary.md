@@ -1,0 +1,1 @@
+docs/macros-and-extensions.md: ten candidates judged by concision, speed and C-ABI need, with measurements (bridge 401 ms per million Floats round trip vs 152 ms X_eTaL pipeline; 256x256 product 1.54 s in X_eTaL). One extension justified (Gpu package, new saga gpu-extension); no new macro; ffi:b_ind<, c_fg<, k:c_ases< reused. Arch move recorded; ask G8. Gate passes.
