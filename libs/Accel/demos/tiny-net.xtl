@@ -1,0 +1,13 @@
+#!/usr/bin/env xetal
+# A tiny network: four examples of three inputs, a dense layer of four
+# with ReLU, a dense layer of two with softmax; the weights (with their
+# bias rows) read from data files. Each row of the output is a
+# probability per class. Run with "just demo-lib Accel tiny-net".
+"ac:" u_se< "Accel"
+w1 := 4 5 r_eshape n_umbers []N_GET "../data/w1.txt"
+w2 := 6 2 r_eshape n_umbers []N_GET "../data/w2.txt"
+x := 4 3 r_eshape 0.5 -1.0 0.25 1.0 0.0 -0.5 -0.75 0.5 1.0 0.2 0.4 -0.6
+h := ac:r_elu x ac:d_ense w1
+p := ac:s_oftmax h ac:d_ense w2
+p
+ac:r_owSums p

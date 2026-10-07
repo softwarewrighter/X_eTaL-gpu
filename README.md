@@ -74,9 +74,10 @@ evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
 Saga 2 (gpu-algebra) in progress: the macros-and-extensions analysis
 and reductions along an axis of a matrix (row sums, column sums, row
 maxima) and inner products (`'+ '* i_nner`, untiled and in tiles; a
-512 by 512 product in 0.13 s against the evaluator's 29 s) on the GPU
-are done; next a dense layer, schedules as files; then the GPU
-as a native extension X_eTaL programs call themselves (saga 3). The
+512 by 512 product in 0.13 s against the evaluator's 29 s), and a
+tiny two-layer network (dense, ReLU, dense, softmax) whose output on
+the GPU matches the evaluator's are done; next schedules as files;
+then the GPU as a native extension X_eTaL programs call themselves (saga 3). The
 work moves to an Arch machine with a newer GPU soon; nothing in the
 code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.

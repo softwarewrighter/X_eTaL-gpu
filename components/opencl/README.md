@@ -60,6 +60,11 @@ Bool is `int` (1 or 0, what a C comparison gives).
   work-group computes a T by T block, staging blocks of a and b in
   local memory; the blocks go from the last to the first and each
   block's products likewise, so the fold order is the same.
+- **Structure.** A `take` or `drop` keeps contiguous rows, so it is
+  one copy kernel (`copy_float`) from an offset; a `ravel` is the same
+  buffer read as a vector, with no launch; a `table` is a kernel of
+  its own, one work-item per result item reading `a[k / nb]` and
+  `b[k % nb]` (a literal for a single value).
 - **Semantics kept.** `idiv` and `mod` are floored
   (`xetal_idiv_long`, `xetal_imod_long`), Float to Int casts take
   `floor`, a number to Bool is `!= 0`, `abs` of a `long` avoids the

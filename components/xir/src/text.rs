@@ -224,6 +224,48 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 },
             ))
         }
+        "take" | "drop" => {
+            if rest.len() != 2 {
+                return err(format!(
+                    "{kind} takes a count and a value: {kind} 2 %m (a negative count from the end)"
+                ));
+            }
+            let n: i64 = rest[0]
+                .parse()
+                .map_err(|_| crate::Error(format!("{kind}: a count is a whole number, got `{}`", rest[0])))?;
+            let arg = reference(program, rest[1])?;
+            Ok((None, if kind == "take" { Op::Take { n, arg } } else { Op::Drop { n, arg } }))
+        }
+        "ravel" => {
+            if rest.len() != 1 {
+                return err("ravel takes one value: ravel %m");
+            }
+            Ok((
+                None,
+                Op::Ravel {
+                    arg: reference(program, rest[0])?,
+                },
+            ))
+        }
+        "table" => {
+            if rest.len() != 3 {
+                return err("table takes an operation and two values: table mul %a %b, table left %a %b");
+            }
+            let op = TableOp::parse(rest[0]).ok_or_else(|| {
+                crate::Error(format!(
+                    "unknown table operation `{}` (a two-argument map operation, left or right)",
+                    rest[0]
+                ))
+            })?;
+            Ok((
+                None,
+                Op::Table {
+                    op,
+                    a: reference(program, rest[1])?,
+                    b: reference(program, rest[2])?,
+                },
+            ))
+        }
         "matmul" => {
             if rest.len() != 2 {
                 return err("matmul takes two values: matmul %a %b");
@@ -237,7 +279,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         other => err(format!(
-            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul)"
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table)"
         )),
     }
 }
@@ -299,6 +341,10 @@ pub fn print(program: &Program) -> String {
             },
             Op::Cast { op, arg } => out.push_str(&format!("cast {} {}", op.to, name(*arg))),
             Op::Matmul { a, b } => out.push_str(&format!("matmul {} {}", name(*a), name(*b))),
+            Op::Take { n, arg } => out.push_str(&format!("take {n} {}", name(*arg))),
+            Op::Drop { n, arg } => out.push_str(&format!("drop {n} {}", name(*arg))),
+            Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
+            Op::Table { op, a, b } => out.push_str(&format!("table {op} {} {}", name(*a), name(*b))),
         }
         out.push('\n');
     }
@@ -326,6 +372,10 @@ mod tests {
 %rs = reduce max axis=2 %mm
 %v = const i64 [3] 1 0 2
 %mv = matmul %mm %v
+%tk = take -1 %mm
+%dr = drop 1 %mm
+%rv = ravel %tk
+%tb = table left %v %rv
 output %c
 output %f
 ";
@@ -379,7 +429,7 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table)"
         );
         assert_eq!(e("%a = const bool [1] 2\n"), "line 1: not a Bool (0, 1, false, true): `2`");
     }

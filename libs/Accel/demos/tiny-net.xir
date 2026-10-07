@@ -1,0 +1,34 @@
+# The twin of tiny-net.xtl, lowered by hand (docs/xetal-asks.md, G2);
+# the weights are data/w1.txt and data/w2.txt, written in as constants.
+%w1 = const f64 [4 5] 0.5 -0.25 0.75 0.1 -0.6 -0.3 0.8 0.2 -0.5 0.4 0.6 0.1 -0.7 0.3 0.2 0.05 -0.1 0.2 0.0 0.1
+%w2 = const f64 [6 2] 0.7 -0.4 -0.2 0.9 0.5 0.3 -0.6 0.2 0.3 -0.8 0.1 -0.1
+%x = const f64 [4 3] 0.5 -1.0 0.25 1.0 0.0 -0.5 -0.75 0.5 1.0 0.2 0.4 -0.6
+# x ac:d_ense w1: (x '+ '* i_nner -1 d_rop w1) + (o_ffsets 4) 'r_ight t_able r_avel -1 t_ake w1
+%w1w = drop -1 %w1
+%w1b = take -1 %w1
+%w1r = ravel %w1b
+%o4 = const i64 [4] 0 1 2 3
+%b1 = table right %o4 %w1r
+%xw1 = matmul %x %w1w
+%z1 = map add %xw1 %b1
+%zero = const f64 [] 0.0
+%h = map max %z1 %zero                  # h := ac:r_elu ...: z m_ax 0
+# h ac:d_ense w2
+%w2w = drop -1 %w2
+%w2b = take -1 %w2
+%w2r = ravel %w2b
+%b2 = table right %o4 %w2r
+%hw2 = matmul %h %w2w
+%z2 = map add %hw2 %b2
+# ac:s_oftmax z2, c := o_ffsets 2
+%c = const i64 [2] 0 1
+%mx = reduce max axis=2 %z2
+%mxs = table left %mx %c
+%d = map sub %z2 %mxs
+%e = map exp %d
+%s = reduce add axis=2 %e
+%ss = table left %s %c
+%p = map div %e %ss
+output %p
+%ps = reduce add axis=2 %p              # ac:r_owSums p
+output %ps

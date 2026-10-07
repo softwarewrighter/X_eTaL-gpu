@@ -68,6 +68,25 @@ l:r_owMax := { m -> 'm_ax r_/_2 m }
 # GPU work-item each (or a tile of them, as the schedule says).
 l:m_atmul := { x w -> x '+ '* i_nner w }
 
+### A layer of a network
+
+# x d_ense wb: the layer x W + b for a batch x (one example per row),
+# the weights W (a row per input, a column per output) with the bias b
+# as one more row at the bottom of wb, as X_eTaL-ML's NN has it. The
+# bias row is spread down the batch by a table (r_ight), the product
+# is m_atmul's.
+l:d_ense := { x wb -> (x '+ '* i_nner -1 d_rop wb) + (o_ffsets t_ally x) 'r_ight t_able r_avel -1 t_ake wb }
+
+# s_oftmax m: each row of a matrix into probabilities: the row's
+# largest taken off (the same result, no overflow), e to each, each
+# divided by its row's sum; a row's value spread across the row by a
+# table (l_eft).
+l:s_oftmax := { m ->
+  c := o_ffsets f_irst -1 t_ake s_hape m
+  e := e_xp m - ('m_ax r_/_2 m) 'l_eft t_able c
+  e / ('+ r_/_2 e) 'l_eft t_able c
+}
+
 ### The acceptance pipeline
 
 # x p_ipeline w: multiply, add, select, reduce in one expression:

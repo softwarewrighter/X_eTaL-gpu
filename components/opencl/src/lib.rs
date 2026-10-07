@@ -202,8 +202,10 @@ pub struct KernelInfo {
     pub computes: Vec<ValueId>,
     /// The values it writes to buffers.
     pub writes: Vec<ValueId>,
-    /// Elements, one work-item each (0 for a reduction kernel).
+    /// Elements, one work-item each (0 for a kernel shared by several values).
     pub elements: usize,
+    /// What a shared kernel does, for `explain` (empty for an elementwise one).
+    pub about: String,
 }
 
 /// The whole plan: source, buffers, launches, outputs.

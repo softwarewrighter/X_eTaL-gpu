@@ -148,6 +148,22 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
             Op::Reduce { op, arg, axis } => reduce(*op, &values[arg.0], *axis, ty)?,
             Op::Cast { op, arg } => cast(&values[arg.0], op.to)?,
             Op::Matmul { a, b } => matmul(&values[a.0], &values[b.0], ty)?,
+            Op::Take { arg, .. } | Op::Drop { arg, .. } => {
+                let a = &values[arg.0];
+                let (offset, _) = slice_of(&v.op, &a.shape);
+                let count = ty.shape.len();
+                let data = match &a.data {
+                    Data::Int(x) => Data::Int(x[offset..offset + count].to_vec()),
+                    Data::Float(x) => Data::Float(x[offset..offset + count].to_vec()),
+                    Data::Bool(x) => Data::Bool(x[offset..offset + count].to_vec()),
+                };
+                Array::new(ty.scalar, ty.shape.clone(), data)?
+            }
+            Op::Ravel { arg } => {
+                let a = &values[arg.0];
+                Array::new(ty.scalar, ty.shape.clone(), a.data.clone())?
+            }
+            Op::Table { op, a, b } => table(*op, &values[a.0], &values[b.0], ty)?,
         };
         values.push(array);
     }
@@ -393,6 +409,58 @@ fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array
     Array::new(ty.scalar, Shape::scalar(), data)
 }
 
+/// Where a take or a drop starts in the ravel of its argument, and how
+/// many items it keeps (rows along the first axis are contiguous).
+pub fn slice_of(op: &Op, shape: &Shape) -> (usize, usize) {
+    let d0 = shape.0[0];
+    let row = shape.len() / d0.max(1);
+    let (start, rows) = match *op {
+        Op::Take { n, .. } if n >= 0 => (0, n as usize),
+        Op::Take { n, .. } => (d0 - n.unsigned_abs() as usize, n.unsigned_abs() as usize),
+        Op::Drop { n, .. } if n >= 0 => (n as usize, d0 - n as usize),
+        Op::Drop { n, .. } => (0, d0 - n.unsigned_abs() as usize),
+        _ => unreachable!("a take or a drop"),
+    };
+    (start * row, rows * row)
+}
+
+/// `a 'f t_able b`: item (i, j) is f(a[i], b[j]), a's items in row
+/// order along the leading axes, b's along the trailing ones.
+fn table(op: TableOp, a: &Array, b: &Array, ty: &Ty) -> Result<Array> {
+    let (na, nb) = (a.shape.len(), b.shape.len());
+    match op {
+        TableOp::Left | TableOp::Right => {
+            let left = op == TableOp::Left;
+            let src = if left { a } else { b };
+            let idx: Vec<usize> = (0..na * nb).map(|k| if left { k / nb.max(1) } else { k % nb.max(1) }).collect();
+            let data = match &src.data {
+                Data::Int(x) => Data::Int(idx.iter().map(|&i| x[i]).collect()),
+                Data::Float(x) => Data::Float(idx.iter().map(|&i| x[i]).collect()),
+                Data::Bool(x) => Data::Bool(idx.iter().map(|&i| x[i]).collect()),
+            };
+            Array::new(ty.scalar, ty.shape.clone(), data)
+        }
+        TableOp::Map(m) => {
+            // Spread both to the result's shape, then map item by item.
+            let spread = |x: &Array, left: bool| -> Array {
+                let idx: Vec<usize> = (0..na * nb).map(|k| if left { k / nb.max(1) } else { k % nb.max(1) }).collect();
+                let data = match &x.data {
+                    Data::Int(v) => Data::Int(idx.iter().map(|&i| v[i]).collect()),
+                    Data::Float(v) => Data::Float(idx.iter().map(|&i| v[i]).collect()),
+                    Data::Bool(v) => Data::Bool(idx.iter().map(|&i| v[i]).collect()),
+                };
+                Array {
+                    scalar: x.scalar,
+                    shape: ty.shape.clone(),
+                    data,
+                }
+            };
+            let (sa, sb) = (spread(a, true), spread(b, false));
+            map("table", m, &[&sa, &sb], ty)
+        }
+    }
+}
+
 /// The lengths of an inner product: a's leading items (m), the axis
 /// contracted (n), b's trailing items (p); item (i, j) of the result
 /// is the sum over k of a[i * n + k] * b[k * p + j].
@@ -538,6 +606,25 @@ mod tests {
         let out = eval("%m = const f64 [2 3] 0.1 0.2 0.3 0.4 0.5 0.6\n%s = reduce add %m\noutput %s\n");
         let cols = [0.1 + 0.4, 0.2 + 0.5, 0.3 + 0.6];
         assert_eq!(out, [crate::format::float(cols[0] + (cols[1] + cols[2]))]);
+    }
+
+    #[test]
+    fn take_drop_ravel_table_as_xetal() {
+        // wb := 4 2 r_eshape ...; -1 d_rop wb; r_avel -1 t_ake wb; 1 2 3 '* t_able 10 20;
+        // (o_ffsets 2) 'r_ight t_able 5 6 7; 5 6 'l_eft t_able o_ffsets 3.
+        let out = eval("%wb = const i64 [4 2] 1 2 3 4 5 6 7 8\n%w = drop -1 %wb\n%b = take -1 %wb\n%br = ravel %b\n%t2 = take 2 %wb\n%d1 = drop 1 %wb\n%x = const i64 [3] 1 2 3\n%y = const i64 [2] 10 20\n%m = table mul %x %y\n%o = const i64 [2] 0 1\n%r = const i64 [3] 5 6 7\n%rt = table right %o %r\n%lt = table left %y %r\noutput %w\noutput %br\noutput %t2\noutput %d1\noutput %m\noutput %rt\noutput %lt\n");
+        assert_eq!(
+            out,
+            [
+                "1 2\n3 4\n5 6",
+                "7 8",
+                "1 2\n3 4",
+                "3 4\n5 6\n7 8",
+                "10 20\n20 40\n30 60",
+                "5 6 7\n5 6 7",
+                "10 10 10\n20 20 20"
+            ]
+        );
     }
 
     #[test]

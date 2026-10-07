@@ -11,10 +11,10 @@ buffers:
   b_fs: float 1 item, %fs f64 []; written on the device
 kernels:
   k0: 12 elements, one work-item each; computes %m1; writes %m1
-  reduce_axis_add_long: a tree reduction in local memory, one partial per work-group; computes %rs %cs
-  reduce_axis_max_long: a tree reduction in local memory, one partial per work-group; computes %rm
+  reduce_axis_add_long: along one axis, one work-item per result item folding its line from the right; computes %rs %cs
+  reduce_axis_max_long: along one axis, one work-item per result item folding its line from the right; computes %rm
   k1: 12 elements, one work-item each; computes %mf %f; writes %f
-  reduce_axis_add_float: a tree reduction in local memory, one partial per work-group; computes %frs %fcs
+  reduce_axis_add_float: along one axis, one work-item per result item folding its line from the right; computes %frs %fcs
   reduce_add_float: a tree reduction in local memory, one partial per work-group; computes %fs
 launches:
   1: k0(b_m, b_m1) global 16 local 16: 12 elements (1 group of 16)

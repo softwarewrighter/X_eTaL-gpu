@@ -30,3 +30,10 @@ m u:c_heck i ac:m_atmul m
 (ac:r_owSums m) u:c_heck m ac:m_atmul 1 1 1 1
 (ac:c_olSums m) u:c_heck 1 1 1 1 ac:m_atmul m
 (1 2 3 4 ac:d_ot 1 2 3 4) u:c_heck 1 2 3 4 ac:m_atmul 1 2 3 4
+x := 2 3 r_eshape 1.0 2.0 3.0 -1.0 0.5 0.0
+w := 3 2 r_eshape 0.5 -1.0 1.0 0.25 -0.5 2.0
+b := 0.1 0.2
+wb := w c_at 1 2 r_eshape b
+((x ac:m_atmul w) + 2 2 r_eshape b) u:c_heck x ac:d_ense wb
+(1.0 1.0) u:c_heck f_loat f_loor 0.5 + ac:r_owSums ac:s_oftmax x
+(ac:s_oftmax x) u:c_heck ac:s_oftmax x + 100.0

@@ -28,6 +28,10 @@ becomes an adapter and the twins go.
 %q = reduce max axis=2 %m            # along one axis (1 is the first): rank n to n - 1
 %f = cast f64 %r                     # between scalar types, same shape
 %p = matmul %a %w                    # a's last axis with w's first ('+ '* i_nner)
+%t = take -1 %wb                     # n t_ake along the first axis (negative: from the end)
+%d = drop -1 %wb                     # n d_rop along the first axis
+%v = ravel %t                        # r_avel: every item as one vector
+%s = table right %o %v               # a 'f t_able b: every pairing; f a two-argument map, left or right
 output %c                            # what the program prints, in order
 output %f
 ```
@@ -38,6 +42,7 @@ output %f
 | shape | `[]` one value, `[8]` a vector, `[2 3]` a matrix (rows first) |
 | map operations | `add sub mul min max neg abs` (any number); `div exp log` (Floats only: X_eTaL's `/` gives a Float, so an Int is cast first); `idiv mod` (Ints, floored as `d_iv` and `m_od`); `eq ne` (any one type, give bool); `lt le gt ge` (numbers, give bool); `and or not` (bool) |
 | reduce operations | `add mul min max`, folded from the right as `r_/` is; the whole array (`r_/_12`, or `r_/` of a vector) without `axis=`, one axis with it (`axis=2` is `r_/_2`, `axis=1` is `r_/` of a matrix) |
+| structure | `take n`, `drop n` (rows along the first axis, a negative n from the end; no padding), `ravel`, `table f` (APL's outer product; `left` and `right` spread a vector along a new axis, as `'l_eft t_able` and `'r_ight t_able` do in X_eTaL-ML's NN) |
 | cast | Int to Float exactly, Float to Int toward negative infinity (`f_loor`), Bool to 0 or 1, a number to bool when not 0 |
 
 Rules: a value is defined once, before it is used; a map's arguments

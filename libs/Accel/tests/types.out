@@ -10,4 +10,6 @@ l:r_owSums : Num a => a -> a
 l:c_olSums : Num a => a -> a
 l:r_owMax : Num a => a -> a
 l:m_atmul : Num a => a -> a -> a
+l:d_ense : Num a => a -> a -> a
+l:s_oftmax : Num a => a -> Float
 l:p_ipeline : Num a => a -> a -> a

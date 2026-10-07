@@ -1,0 +1,58 @@
+schedule: Float as float, Int as long, work-group 256, products untiled
+buffers:
+  b_w1: float 20 items, %w1 f64 [4 5]; constant, uploaded by the host
+  b_w2: float 12 items, %w2 f64 [6 2]; constant, uploaded by the host
+  b_x: float 12 items, %x f64 [4 3]; constant, uploaded by the host
+  b_w1w: float 15 items, %w1w f64 [3 5]; written on the device
+  b_w1b: float 5 items, %w1b f64 [1 5]; written on the device
+  b_o4: long 4 items, %o4 i64 [4]; constant, uploaded by the host
+  b_b1: float 20 items, %b1 f64 [4 5]; written on the device
+  b_xw1: float 20 items, %xw1 f64 [4 5]; written on the device
+  b_h: float 20 items, %h f64 [4 5]; written on the device
+  b_w2w: float 10 items, %w2w f64 [5 2]; written on the device
+  b_w2b: float 2 items, %w2b f64 [1 2]; written on the device
+  b_b2: float 8 items, %b2 f64 [4 2]; written on the device
+  b_hw2: float 8 items, %hw2 f64 [4 2]; written on the device
+  b_c: long 2 items, %c i64 [2]; constant, uploaded by the host
+  b_z2: float 8 items, %z2 f64 [4 2]; written on the device
+  b_mx: float 4 items, %mx f64 [4]; written on the device
+  b_mxs: float 8 items, %mxs f64 [4 2]; written on the device
+  b_e: float 8 items, %e f64 [4 2]; written on the device
+  b_s: float 4 items, %s f64 [4]; written on the device
+  b_ss: float 8 items, %ss f64 [4 2]; written on the device
+  b_p: float 8 items, %p f64 [4 2]; written on the device
+  b_ps: float 4 items, %ps f64 [4]; written on the device
+kernels:
+  copy_float: a contiguous copy (a take or a drop along the first axis), one work-item per item; computes %w1w %w1b %w2w %w2b
+  table2: 20 elements, one work-item each; computes %b1; writes %b1
+  matmul_float: sums of products, one work-item per result item, folded from the right; computes %xw1 %hw2
+  k1: 20 elements, one work-item each; computes %z1 %h; writes %h
+  table7: 8 elements, one work-item each; computes %b2; writes %b2
+  k3: 8 elements, one work-item each; computes %z2; writes %z2
+  reduce_axis_max_float: along one axis, one work-item per result item folding its line from the right; computes %mx
+  table11: 8 elements, one work-item each; computes %mxs; writes %mxs
+  k5: 8 elements, one work-item each; computes %d %e; writes %e
+  reduce_axis_add_float: along one axis, one work-item per result item folding its line from the right; computes %s %ps
+  table14: 8 elements, one work-item each; computes %ss; writes %ss
+  k7: 8 elements, one work-item each; computes %p; writes %p
+launches:
+  1: copy_float(b_w1, b_w1w, 0, 15) global 16 local 16: %w1w: 15 items from item 0
+  2: copy_float(b_w1, b_w1b, 15, 5) global 8 local 8: %w1b: 5 items from item 15
+  3: table2(b_o4, b_w1b, b_b1) global 32 local 32: %b1: right table, 4 by 5 items
+  4: matmul_float(b_x, b_w1w, b_xw1, 4, 3, 5) global 32 local 32: %xw1: 4 by 3 times 3 by 5, 20 sums of 3 products, one work-item each
+  5: k1(b_xw1, b_b1, b_h) global 32 local 32: 20 elements (1 group of 32)
+  6: copy_float(b_w2, b_w2w, 0, 10) global 16 local 16: %w2w: 10 items from item 0
+  7: copy_float(b_w2, b_w2b, 10, 2) global 2 local 2: %w2b: 2 items from item 10
+  8: table7(b_o4, b_w2b, b_b2) global 8 local 8: %b2: right table, 4 by 2 items
+  9: matmul_float(b_h, b_w2w, b_hw2, 4, 5, 2) global 8 local 8: %hw2: 4 by 5 times 5 by 2, 8 sums of 5 products, one work-item each
+  10: k3(b_hw2, b_b2, b_z2) global 8 local 8: 8 elements (1 group of 8)
+  11: reduce_axis_max_float(b_z2, b_mx, 4, 2, 1) global 4 local 4: %mx: max along axis 2: 4 lines of 2, one work-item each
+  12: table11(b_mx, b_c, b_mxs) global 8 local 8: %mxs: left table, 4 by 2 items
+  13: k5(b_z2, b_mxs, b_e) global 8 local 8: 8 elements (1 group of 8)
+  14: reduce_axis_add_float(b_e, b_s, 4, 2, 1) global 4 local 4: %s: add along axis 2: 4 lines of 2, one work-item each
+  15: table14(b_s, b_c, b_ss) global 8 local 8: %ss: left table, 4 by 2 items
+  16: k7(b_e, b_ss, b_p) global 8 local 8: 8 elements (1 group of 8)
+  17: reduce_axis_add_float(b_p, b_ps, 4, 2, 1) global 4 local 4: %ps: add along axis 2: 4 lines of 2, one work-item each
+outputs:
+  %p from b_p, read back by the host
+  %ps from b_ps, read back by the host

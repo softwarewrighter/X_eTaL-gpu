@@ -1,0 +1,2 @@
+command = "../../../scripts/xt run ../demos/tiny-net.xtl"
+exit_code = 0

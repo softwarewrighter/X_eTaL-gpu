@@ -50,8 +50,9 @@ pub fn explain(checked: &Checked, plan: &Plan) -> String {
             ));
         } else {
             out.push_str(&format!(
-                "  {}: a tree reduction in local memory, one partial per work-group; computes {}\n",
+                "  {}: {}; computes {}\n",
                 k.name,
+                k.about,
                 k.computes.iter().map(|v| name(*v)).collect::<Vec<_>>().join(" ")
             ));
         }

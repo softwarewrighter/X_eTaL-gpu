@@ -264,6 +264,36 @@ impl fmt::Display for ReduceOp {
     }
 }
 
+/// The function of a table: a binary map operation, or X_eTaL's
+/// `l_eft` and `r_ight` (the left or the right item, whatever the
+/// other's type), which spread a vector along a new axis.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TableOp {
+    Map(MapOp),
+    Left,
+    Right,
+}
+
+impl TableOp {
+    pub fn parse(s: &str) -> Option<TableOp> {
+        match s {
+            "left" => Some(TableOp::Left),
+            "right" => Some(TableOp::Right),
+            _ => MapOp::parse(s).filter(|op| op.arity() == 2).map(TableOp::Map),
+        }
+    }
+}
+
+impl fmt::Display for TableOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TableOp::Map(op) => write!(f, "{op}"),
+            TableOp::Left => f.write_str("left"),
+            TableOp::Right => f.write_str("right"),
+        }
+    }
+}
+
 /// A cast between scalar types, keeping the shape.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CastOp {
@@ -316,6 +346,16 @@ pub enum Op {
     /// The inner product `a '+ '* i_nner b`: a's last axis with b's
     /// first, each sum folded from the right.
     Matmul { a: ValueId, b: ValueId },
+    /// `n t_ake a` along the first axis: the first n items (rows), or
+    /// the last -n for a negative n.
+    Take { n: i64, arg: ValueId },
+    /// `n d_rop a` along the first axis: all but the first n (the last -n).
+    Drop { n: i64, arg: ValueId },
+    /// `r_avel a`: every item as one vector, row after row.
+    Ravel { arg: ValueId },
+    /// `a 'f t_able b`: every pairing of an item of a with one of b
+    /// (APL's outer product); the result has both shapes.
+    Table { op: TableOp, a: ValueId, b: ValueId },
 }
 
 impl Op {
@@ -326,7 +366,8 @@ impl Op {
             Op::Map { args, .. } => args.clone(),
             Op::Select { cond, a, b } => vec![*cond, *a, *b],
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],
-            Op::Matmul { a, b } => vec![*a, *b],
+            Op::Matmul { a, b } | Op::Table { a, b, .. } => vec![*a, *b],
+            Op::Take { arg, .. } | Op::Drop { arg, .. } | Op::Ravel { arg } => vec![*arg],
         }
     }
 }

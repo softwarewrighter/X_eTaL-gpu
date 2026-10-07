@@ -47,6 +47,8 @@ recommended alias.
 | `ac:c_olSums m` | `Num a => a -> a` | the sum of each column (`'+ r_/ m`) |
 | `ac:r_owMax m` | `Num a => a -> a` | the largest item of each row |
 | `x ac:m_atmul w` | `Num a => a -> a -> a` | the inner product of x's last axis with w's first: matrix by matrix, matrix by vector, vector by matrix |
+| `x ac:d_ense wb` | `Num a => a -> a -> a` | the layer x W + b for a batch x (a row per example), W with the bias b as its last row (X_eTaL-ML's NN convention) |
+| `ac:s_oftmax m` | `Num a => a -> Float` | each row of a matrix into probabilities (its largest taken off first) |
 | `x ac:p_ipeline w` | `Num a => a -> a -> a` | the sum of the positive items of x + x * w: multiply, add, select, reduce |
 
 ## Examples
@@ -100,6 +102,9 @@ The example programs, each the reference for a GPU run:
 - [`demos/matmul.xtl`](../demos/matmul.xtl): inner products at
   every rank pairing, Ints and Floats; one GPU work-item (or a tile)
   per result item.
+- [`demos/tiny-net.xtl`](../demos/tiny-net.xtl): a two-layer network
+  (dense and ReLU, dense and softmax) on four examples, its weights
+  read from `data/w1.txt` and `data/w2.txt`.
 - [`demos/pipeline.xtl`](../demos/pipeline.xtl): the acceptance
   pipeline, multiply, add, select, reduce, as one expression.
 

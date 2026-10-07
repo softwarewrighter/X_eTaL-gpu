@@ -28,3 +28,8 @@ a ac:m_atmul b
 a ac:m_atmul 1 0 2
 1 0 2 ac:m_atmul b
 (2 2 r_eshape 0.5 1.0 1.5 2.0) ac:m_atmul 2 2 r_eshape 1.0 0.0 0.0 1.0
+x := 2 3 r_eshape 1.0 2.0 3.0 -1.0 0.5 0.0
+wb := 4 2 r_eshape 0.5 -1.0 1.0 0.25 -0.5 2.0 0.1 0.2
+x ac:d_ense wb
+ac:s_oftmax x ac:d_ense wb
+ac:s_oftmax 2 3 r_eshape 0.0 0.0 0.0 1.0 2.0 3.0

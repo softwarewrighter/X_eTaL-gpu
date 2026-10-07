@@ -212,6 +212,10 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Reduce { op, arg, axis: Some(a) } => format!("reduce {op} axis={a} {}", name(*arg)),
         Op::Cast { op, arg } => format!("cast {} {}", op.to, name(*arg)),
         Op::Matmul { a, b } => format!("matmul {} {}", name(*a), name(*b)),
+        Op::Take { n, arg } => format!("take {n} {}", name(*arg)),
+        Op::Drop { n, arg } => format!("drop {n} {}", name(*arg)),
+        Op::Ravel { arg } => format!("ravel {}", name(*arg)),
+        Op::Table { op, a, b } => format!("table {op} {} {}", name(*a), name(*b)),
     }
 }
 

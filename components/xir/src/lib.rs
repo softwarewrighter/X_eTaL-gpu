@@ -25,7 +25,7 @@ pub mod text;
 
 pub use check::{check, Checked};
 pub use interp::{run, Array, Data};
-pub use ir::{CastOp, Const, MapOp, Op, Program, ReduceOp, Scalar, Shape, Ty, Value, ValueId};
+pub use ir::{CastOp, Const, MapOp, Op, Program, ReduceOp, Scalar, Shape, TableOp, Ty, Value, ValueId};
 
 /// An error from any phase: a message, meant to be printed as is.
 #[derive(Debug, Clone, PartialEq, Eq)]

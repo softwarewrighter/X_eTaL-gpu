@@ -151,6 +151,64 @@ pub fn check(program: Program) -> Result<Checked> {
                     shape: Shape(dims),
                 }
             }
+            Op::Take { n, arg } | Op::Drop { n, arg } => {
+                let t = ty_of(*arg);
+                let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
+                if t.shape.is_scalar() {
+                    return err(format!("%{name}: {what} needs an array of rank 1 or more, got a single value"));
+                }
+                let d0 = t.shape.0[0];
+                let k = n.unsigned_abs() as usize;
+                if k > d0 {
+                    return err(format!(
+                        "%{name}: {what} {n} of {} items along the first axis (no padding here)",
+                        d0
+                    ));
+                }
+                let mut dims = t.shape.0.clone();
+                dims[0] = if what == "take" { k } else { d0 - k };
+                Ty {
+                    scalar: t.scalar,
+                    shape: Shape(dims),
+                }
+            }
+            Op::Ravel { arg } => {
+                let t = ty_of(*arg);
+                Ty {
+                    scalar: t.scalar,
+                    shape: Shape(vec![t.shape.len()]),
+                }
+            }
+            Op::Table { op, a, b } => {
+                let (ta, tb) = (ty_of(*a), ty_of(*b));
+                let scalar = match op {
+                    TableOp::Left => ta.scalar,
+                    TableOp::Right => tb.scalar,
+                    TableOp::Map(m) => {
+                        if ta.scalar != tb.scalar {
+                            return err(format!(
+                                "%{name}: table {m} needs arguments of one scalar type, got {} and {}",
+                                ta.scalar, tb.scalar
+                            ));
+                        }
+                        let sc = ta.scalar;
+                        match m.kind() {
+                            MapKind::Num => require(name, m, sc.is_num(), sc, "a number").map(|_| sc)?,
+                            MapKind::Float => require(name, m, sc.is_float(), sc, "a Float (f32 or f64; cast an Int first)").map(|_| sc)?,
+                            MapKind::Int => require(name, m, sc.is_int(), sc, "an Int (i32 or i64)").map(|_| sc)?,
+                            MapKind::EqCompare => Scalar::Bool,
+                            MapKind::OrdCompare => require(name, m, sc.is_num(), sc, "a number").map(|_| Scalar::Bool)?,
+                            MapKind::Logic => require(name, m, sc == Scalar::Bool, sc, "a Bool").map(|_| Scalar::Bool)?,
+                        }
+                    }
+                };
+                let mut dims = ta.shape.0.clone();
+                dims.extend_from_slice(&tb.shape.0);
+                Ty {
+                    scalar,
+                    shape: Shape(dims),
+                }
+            }
             Op::Cast { op, arg } => Ty {
                 scalar: op.to,
                 shape: ty_of(*arg).shape.clone(),
@@ -285,6 +343,32 @@ mod tests {
         assert_eq!(
             error_of("%a = const f64 [2] 1.0\n%b = const i64 [2] 1\n%c = matmul %a %b\noutput %c\n"),
             "%c: matmul needs numbers of one scalar type, got f64 and i64"
+        );
+    }
+
+    #[test]
+    fn structure() {
+        let t = types_of("%m = const f64 [4 3] 1.0\n%a = take -1 %m\n%b = drop -1 %m\n%c = take 2 %m\n%r = ravel %a\n%i = const i64 [5] 0\n%l = table left %r %i\n%rt = table right %i %r\n%o = table mul %r %r\noutput %o\n");
+        assert_eq!(
+            t[1..],
+            [
+                "f64 [1 3]",
+                "f64 [3 3]",
+                "f64 [2 3]",
+                "f64 [3]",
+                "i64 [5]",
+                "f64 [3 5]",
+                "f64 [5 3]",
+                "f64 [3 3]"
+            ]
+        );
+        assert_eq!(
+            error_of("%m = const f64 [4 3] 1.0\n%a = take 5 %m\noutput %a\n"),
+            "%a: take 5 of 4 items along the first axis (no padding here)"
+        );
+        assert_eq!(
+            error_of("%r = const f64 [2] 1.0\n%i = const i64 [2] 0\n%o = table add %r %i\noutput %o\n"),
+            "%o: table add needs arguments of one scalar type, got f64 and i64"
         );
     }
 

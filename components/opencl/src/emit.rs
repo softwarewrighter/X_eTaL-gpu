@@ -4,7 +4,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use xetal_gpu_xir::{Checked, Const, MapOp, Op, ReduceOp, Scalar, Shape, Ty, ValueId};
+use xetal_gpu_xir::{Checked, Const, MapOp, Op, ReduceOp, Scalar, Shape, TableOp, Ty, ValueId};
 
 use crate::{Arg, Buffer, BufferId, Elem, Init, KernelInfo, Launch, Plan, Schedule};
 
@@ -83,6 +83,21 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 }
                 b.group.push(id);
                 b.places.insert(id, Place::Register(format!("t_{}", v.name)));
+            }
+            Op::Take { arg, .. } | Op::Drop { arg, .. } => {
+                b.flush(&outputs);
+                let (offset, count) = xetal_gpu_xir::interp::slice_of(&v.op, &checked.ty(*arg).shape);
+                b.copy(id, *arg, offset, count);
+            }
+            Op::Ravel { arg } => {
+                // Row order is the ravel: the same buffer, read as a vector.
+                b.flush(&outputs);
+                let place = b.places[arg].clone();
+                b.places.insert(id, place);
+            }
+            Op::Table { op, a, b: rhs } => {
+                b.flush(&outputs);
+                b.table(id, *op, *a, *rhs);
             }
             Op::Matmul { a, b: rhs } => {
                 b.flush(&outputs);
@@ -280,6 +295,7 @@ impl<'a> Builder<'a> {
             computes: group,
             writes: writes.clone(),
             elements: n,
+            about: String::new(),
         });
         // The values written now live in buffers; the rest were registers and are gone.
         for (id, buf) in writes.iter().zip(write_bufs) {
@@ -290,6 +306,124 @@ impl<'a> Builder<'a> {
                 self.places.remove(&id);
             }
         }
+    }
+
+    /// A take or a drop: the rows it keeps are contiguous, so a copy of
+    /// `count` items from `offset`, one work-item each.
+    fn copy(&mut self, id: ValueId, arg: ValueId, offset: usize, count: usize) {
+        let elem = self.elem_of(arg);
+        let Place::Buffer(src) = self.places[&arg].clone() else {
+            unreachable!("a copy reads a buffer")
+        };
+        let kname = format!("copy_{elem}");
+        if !self.source.contains(&format!("__kernel void {kname}(")) {
+            self.source.push_str(&format!(
+                "
+// {kname}: count items from offset, one work-item each (a take or a
+// drop along the first axis keeps contiguous rows).
+__kernel void {kname}(__global const {elem}* in, __global {elem}* out, const long offset, const long count) {{
+    long k = get_global_id(0);
+    if (k < count) out[k] = in[offset + k];
+}}
+"
+            ));
+            self.kernels.push(KernelInfo {
+                name: kname.clone(),
+                computes: vec![],
+                writes: vec![],
+                elements: 0,
+                about: about(&kname),
+            });
+        }
+        let result = self.buffer(Some(id), elem, count, Init::Device);
+        let local = self.schedule.work_group.min(count.max(1).next_power_of_two());
+        let global = count.max(1).div_ceil(local) * local;
+        let name = self.checked.program.value(id).name.clone();
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args: vec![
+                Arg::Buffer(src),
+                Arg::Buffer(result),
+                Arg::Long(offset as i64),
+                Arg::Long(count as i64),
+            ],
+            global,
+            local,
+            note: format!("%{name}: {count} items from item {offset}"),
+        });
+        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+            k.computes.push(id);
+            k.writes.push(id);
+        }
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A table: one work-item per result item (i, j), the function of
+    /// a's item i and b's item j.
+    fn table(&mut self, id: ValueId, op: TableOp, a: ValueId, b: ValueId) {
+        let (na, nb) = (self.ty(a).shape.len(), self.ty(b).shape.len());
+        let elem = self.elem_of(id);
+        let read = |s: &Self, v: ValueId, idx: &str| -> String {
+            match &s.places[&v] {
+                Place::Buffer(buf) => format!("{}[{idx}]", s.buffers[buf.0].name),
+                Place::Literal(l) => l.clone(),
+                Place::Register(_) => unreachable!("flushed before a table"),
+            }
+        };
+        let (xa, xb) = (read(self, a, "k / nb"), read(self, b, "k % nb"));
+        let expr = match op {
+            TableOp::Left => xa.clone(),
+            TableOp::Right => xb.clone(),
+            TableOp::Map(m) => map_expr(m, &[xa.clone(), xb.clone()], self.elem_of(a)),
+        };
+        let kname = format!("table{}", self.launches.len());
+        let mut params = Vec::new();
+        let mut args = Vec::new();
+        for v in [a, b] {
+            if let Place::Buffer(buf) = self.places[&v].clone() {
+                let bb = &self.buffers[buf.0];
+                let p = format!("__global const {}* {}", bb.elem, bb.name);
+                if !params.contains(&p) {
+                    params.push(p);
+                    args.push(Arg::Buffer(buf));
+                }
+            }
+        }
+        let result = self.buffer(Some(id), elem, na * nb, Init::Device);
+        let out_name = self.buffers[result.0].name.clone();
+        params.push(format!("__global {elem}* {out_name}"));
+        args.push(Arg::Buffer(result));
+        let name = self.checked.program.value(id).name.clone();
+        self.source.push_str(&format!(
+            "
+// {kname}: %{name} := a '{op} t_able b, {na} by {nb} items, one work-item each.
+__kernel void {kname}({}) {{
+    long k = get_global_id(0);
+    const long nb = {nb};
+    if (k >= {total}) return;
+    {out_name}[k] = {expr};
+}}
+",
+            params.join(", "),
+            total = na * nb
+        ));
+        let total = (na * nb).max(1);
+        let local = self.schedule.work_group.min(total.next_power_of_two());
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args,
+            global: total.div_ceil(local) * local,
+            local,
+            note: format!("%{name}: {op} table, {na} by {nb} items"),
+        });
+        self.kernels.push(KernelInfo {
+            name: kname,
+            computes: vec![id],
+            writes: vec![id],
+            elements: na * nb,
+            about: String::new(),
+        });
+        self.places.insert(id, Place::Buffer(result));
     }
 
     /// An inner product: one work-item per result item, its sum folded
@@ -324,6 +458,7 @@ impl<'a> Builder<'a> {
                 computes: vec![],
                 writes: vec![],
                 elements: 0,
+                about: about(&kname),
             });
         }
         let result = self.buffer(Some(id), elem, m * p, Init::Device);
@@ -390,6 +525,7 @@ impl<'a> Builder<'a> {
                 computes: vec![],
                 writes: vec![],
                 elements: 0,
+                about: about(&kname),
             });
         }
         let n = outer * inner;
@@ -440,6 +576,7 @@ impl<'a> Builder<'a> {
                 computes: vec![],
                 writes: vec![],
                 elements: 0,
+                about: about(&kname),
             });
         }
         let local = self.schedule.work_group;
@@ -493,6 +630,23 @@ impl<'a> Builder<'a> {
             k.writes.push(id);
         }
         self.places.insert(id, Place::Buffer(result));
+    }
+}
+
+/// What a shared kernel does, by its name, for `explain`.
+fn about(kname: &str) -> String {
+    if kname.starts_with("reduce_axis_") {
+        "along one axis, one work-item per result item folding its line from the right".into()
+    } else if kname.starts_with("reduce_") {
+        "a tree reduction in local memory, one partial per work-group".into()
+    } else if kname.starts_with("matmul_tiled") {
+        "sums of products in tiles staged in local memory, folded from the right".into()
+    } else if kname.starts_with("matmul_") {
+        "sums of products, one work-item per result item, folded from the right".into()
+    } else if kname.starts_with("copy_") {
+        "a contiguous copy (a take or a drop along the first axis), one work-item per item".into()
+    } else {
+        String::new()
     }
 }
 
@@ -789,6 +943,20 @@ mod tests {
         assert_eq!((p.launches[0].global, p.launches[0].local), (64, 16));
         assert!(p.source.contains("__kernel void matmul_tiled4_float("));
         assert!(p.source.contains("__local float sa[4][4];"));
+    }
+
+    #[test]
+    fn structure_kernels() {
+        let p = plan_of(
+            "%wb = const f64 [4 2] 1.0\n%w = drop -1 %wb\n%b = take -1 %wb\n%br = ravel %b\n%o = const i64 [3] 0 1 2\n%bias = table right %o %br\n%sc = const f64 [] 2.0\n%t = table mul %br %sc\noutput %w\noutput %bias\noutput %t\n",
+            &Schedule::default(),
+        );
+        assert_eq!(p.launches[0].args[2..], [Arg::Long(0), Arg::Long(6)]);
+        assert_eq!(p.launches[1].args[2..], [Arg::Long(6), Arg::Long(2)]);
+        assert!(p.source.contains("b_bias[k] = b_b[k % nb];"));
+        assert!(p.source.contains("b_t[k] = (b_b[k / nb] * 2.0f);"));
+        // ravel is the same buffer: no launch of its own.
+        assert_eq!(p.launches.len(), 4);
     }
 
     #[test]

@@ -12,10 +12,10 @@ buffers:
   b_g: float 12 items, %g f64 [4 3]; written on the device
   b_fg: float 9 items, %fg f64 [3 3]; written on the device
 kernels:
-  matmul_long: a tree reduction in local memory, one partial per work-group; computes %ab %av %ua
+  matmul_long: sums of products, one work-item per result item, folded from the right; computes %ab %av %ua
   k0: 12 elements, one work-item each; computes %af %f; writes %f
   k1: 12 elements, one work-item each; computes %g; writes %g
-  matmul_float: a tree reduction in local memory, one partial per work-group; computes %fg
+  matmul_float: sums of products, one work-item per result item, folded from the right; computes %fg
 launches:
   1: matmul_long(b_a, b_b, b_ab, 3, 4, 2) global 8 local 8: %ab: 3 by 4 times 4 by 2, 6 sums of 4 products, one work-item each
   2: matmul_long(b_a, b_v, b_av, 3, 4, 1) global 4 local 4: %av: 3 by 4 times 4 by 1, 3 sums of 4 products, one work-item each
