@@ -1,0 +1,1 @@
+XETAL_EXTENSIONS_COMMIT 7bdd827, scripts/xetal-extensions.sh (clone, own X_eTaL, xetal-x + hello + clock built into target/xetal-extensions, bin/xetal-x wrapper because symlinks are not resolved), just recipes, check-xetal-x.sh in the gate (version, hello via bridge, all 10 Accel programs identical under v0.1.0). Gate passes.
