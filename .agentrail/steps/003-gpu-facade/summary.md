@@ -1,0 +1,1 @@
+Gpu.xtl facade: nine ffi:b_ind< lines plus p_roductProgram, d_enseProgram, p_roduct, d_ense, n_ear; scripts/xx; scripts/test-ext.sh with reg-rs baselines (types, basics exact, bad-shape, products-device all ok on the M1 Max; device tests skipped without a device); in the gate. Gate passes.
