@@ -1,8 +1,9 @@
 number = 4
 slug = "offload-demo"
-status = "in-progress"
+status = "completed"
 description = "extensions/gpu/demos/offload.xtl: one X_eTaL program computing a 512 by 512 p..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T15:18:59"
-commits = []
+completed_at = "2026-10-07T17:41:03"
+commits = ["438669d07e238a45344b3e02624da909e0535112"]

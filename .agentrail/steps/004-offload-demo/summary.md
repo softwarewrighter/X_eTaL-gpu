@@ -1,0 +1,1 @@
+Offload demo: 512x512 product 14545 ms evaluator vs 462 ms GPU via extension (31x), million elementwise 188 vs 2447 ms (13x slower), as predicted; offload-device test pins stable facts; demos on XETAL_DEMOS=1; saga retrospective. Saga gpu-extension done. Gate passes.
