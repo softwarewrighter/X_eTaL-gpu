@@ -203,6 +203,7 @@ then on the old cards.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
+| 0 | doc-site | DONE (2026-10-08, inserted at the user's request, after X_eTaL's live `/doc`): Accel and Gpu documented with `##` blocks, `###` sections and `## >>` examples (43, run by `scripts/doc-test.sh` in the gate); `scripts/doc-site.sh` builds `pages/doc` with `xetal-x doc --out` (the one host that can expand the facade's binding macro; relative paths so no page names the checkout); `scripts/build-pages.py` the landing page (decorated key lines, the measured results, links); `pages/` untracked; `just pages`, `just publish` (the `gh-pages` branch, one commit), `just check-live`. |
 | 1 | tiny-nn | a complete tiny trained network (two dense layers, from X_eTaL-ML's trainers or a std-only trainer here) in X_eTaL, weights as data files, on the GPU; the same decision on CPU and GPU |
 | 2 | jev-model | `examples/jev/`: `model.xtl` (embedding lookup, attention as array operations, normalization, feed-forward, classifier), `tokenizer.xtl`, `config.toml`, weights; the needed XIR operations added only when measurement says so (research7: attention decomposes, it is not an intrinsic) |
 | 3 | jev-train | a trainer for the typed-decision task (requests classified as DRAW, ARRAY_QUERY, EXPLAIN, EXECUTE, DOC_SEARCH), f32 |

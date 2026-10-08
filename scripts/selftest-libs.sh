@@ -19,7 +19,7 @@ expect() { # expect pass|fail DESCRIPTION
 }
 bless() { XETAL_BLESS=1 "$t" Probe >/dev/null 2>&1 || true; }
 "$root/scripts/new-lib.sh" Probe pr: "A probe & co" >/dev/null
-grep -q '^# Probe: A probe & co$' "$d/src/Probe.xtl"
+grep -q '^## Probe: A probe & co$' "$d/src/Probe.xtl"
 [ -f "$d/tests/basics.rgt" ] && [ -f "$d/tests/types.rgt" ] && [ -f "$d/tests/demo-example.rgt" ]
 expect pass "a fresh library"
 echo 56 > "$d/tests/basics.out"

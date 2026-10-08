@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-08
+
+- 11:30 `docs` The live site with its `/doc`, as X_eTaL has (saga gpu-models, inserted step): the Accel library and the Gpu facade documented with `##` blocks above each definition, `###` sections and `## >>` examples (33 and 10, run by `scripts/doc-test.sh` in the gate, `just doc-test`); `libs.py` and the library template take `## Name: summary` as line 1; `scripts/doc-site.sh` builds `pages/doc` with the pinned `xetal-x doc --out` (the libraries, the eight example programs, the facade and its demo, Ffi and Clock; relative paths, checked, so no page names the checkout); `scripts/build-pages.py` writes the landing page (what this is, the three executions, key lines drawn by `xetal render --html`, the measured offload results, links, the commits it was built from; checked at desktop and phone widths); `pages/` is not tracked; `just pages`, `just publish` (the `gh-pages` branch, one commit, as X_eTaL-demos), `just check-live` (the landing page names the commit, the doc pages show the doc comments). README links the site; CLAUDE.md rule 5.
+
 ## 2026-10-07
 
 - 14:45 `plan` Saga gpu-extension archived; saga gpu-models started (tiny-nn, jev-model, jev-train, jev-gpu), as `docs/plan.md` plans it.

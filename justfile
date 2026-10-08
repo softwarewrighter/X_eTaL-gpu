@@ -106,6 +106,22 @@ test:
 sizes *n:
     scripts/check-sizes.py --table "$@"
 
+# Run every library's ## >> examples (xetal doc --test)
+doc-test:
+    scripts/doc-test.sh
+
+# Build the live site into pages/ (not tracked): the docs (pages/doc) and the landing page
+pages:
+    scripts/build-pages.sh
+
+# Publish the site: build pages/ from this commit and make it the gh-pages branch's only commit (needs a clean work tree)
+publish:
+    scripts/publish-pages.sh
+
+# Check the published site: the landing page names this commit, the doc pages show the doc comments
+check-live:
+    scripts/check-live.sh
+
 # Build the GPU tool, xetal-gpu (components/cli), in release mode
 build:
     cd components && cargo build -q --release -p xetal-gpu-cli

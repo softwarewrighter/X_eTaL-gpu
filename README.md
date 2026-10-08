@@ -1,5 +1,11 @@
 # X_eTaL-gpu
 
+<p align="center">
+  <b><a href="https://softwarewrighter.github.io/X_eTaL-gpu/">The live site</a></b>
+  -- what this is, the measured results, and <a href="https://softwarewrighter.github.io/X_eTaL-gpu/doc/">the documentation</a>
+  of every library, example and the GPU facade
+</p>
+
 X_eTaL programs on GPUs, old ones included.
 
 [X_eTaL](https://github.com/softwarewrighter/X_eTaL), the eXperimental
@@ -152,6 +158,12 @@ example programs the GPU runs) and `docs/README.md` (the reference).
 
 ## Documentation
 
+- [The live site](https://softwarewrighter.github.io/X_eTaL-gpu/) and
+  its [`doc/`](https://softwarewrighter.github.io/X_eTaL-gpu/doc/):
+  `xetal doc` of the libraries, the example programs and the GPU
+  facade, their `##` comments and running examples, every name
+  linked (`just pages` builds it into `pages/`, `just publish`
+  publishes it, `just check-live` checks it)
 - [`docs/plan.md`](docs/plan.md) -- architecture decisions, the
   subset, the roadmap
 - [`docs/xetal-asks.md`](docs/xetal-asks.md) -- what this repo needs

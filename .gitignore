@@ -28,3 +28,7 @@
 work/
 bin/xetal
 bin/xetal-x
+
+# the built site: published as the gh-pages branch (just publish), never
+# tracked on main
+/pages/

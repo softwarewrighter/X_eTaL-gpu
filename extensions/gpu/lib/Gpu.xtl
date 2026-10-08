@@ -1,53 +1,71 @@
-# Gpu: XIR programs run on OpenCL devices (or the reference interpreter) from X_eTaL
-# Import: "gp:" u_se< "Gpu"
-# Run with xetal-x (X_eTaL-extensions' bridge host): "scripts/xx run prog.xtl"
-# puts this package and this repository's libraries in reach.
-#
-# The first half binds the native functions (extensions/gpu/rust),
-# one line each, with X_eTaL-extensions' binding macro (Ffi.xtlm):
-# a session per thread, loaded, bound, run, read. The second half is
-# ordinary X_eTaL over them: functions that write XIR programs (the
-# text is data, so these are functions, not macros:
-# docs/macros-and-extensions.md, X4), a product and a dense layer in
-# one call each, and a check for f32 results.
+## Gpu: XIR programs run on OpenCL devices (or the reference interpreter) from X_eTaL
+##
+## Import: "gp:" u_se< "Gpu"
+## Run with xetal-x (X_eTaL-extensions' bridge host): "scripts/xx run prog.xtl"
+## puts this package and this repository's libraries in reach.
+##
+## The first half binds the native functions (extensions/gpu/rust),
+## one line each, with X_eTaL-extensions' binding macro (Ffi.xtlm):
+## a session per thread, loaded, bound, run, read. The second half is
+## ordinary X_eTaL over them: functions that write XIR programs (the
+## text is data, so these are functions, not macros:
+## docs/macros-and-extensions.md, X4), a product and a dense layer in
+## one call each, and a check for f32 results.
 "ffi:" u_se< "Ffi"
 
 ### Native functions
 
-# The OpenCL devices, one line each (opencl:N).
+## The OpenCL devices, one line each (opencl:N).
 "d_evices : unit -> text"      ffi:b_ind< "gpu/devices"
-# Load an XIR program, by its text; the number of inputs.
+## Load an XIR program, by its text; the number of inputs.
 "l_oad : text -> int"          ffi:b_ind< "gpu/load"
-# n gp:b_ind a: input n (from 1) gets the array a, of its declared shape.
+## n gp:b_ind a: input n (from 1) gets the array a, of its declared shape.
 "b_ind : int float -> int"     ffi:b_ind< "gpu/bind"
-# The schedule for later runs, as a schedules/*.toml text ("" for the defaults).
+## The schedule for later runs, as a schedules/*.toml text ("" for the defaults).
 "s_chedule : text -> int"      ffi:b_ind< "gpu/schedule"
-# Run on opencl:d, or on the reference interpreter for -1; the number of outputs.
+## Run on opencl:d, or on the reference interpreter for -1; the number of outputs.
+## >> "gp:" u_se< "Gpu"
+## >> gp:l_oad "%a = input i64 [3]\n%k = const i64 [] 2\n%b = map mul %k %a\noutput %b\n"
+## 1
+## >> 1 gp:b_ind 1 2 3
+## 1
+## >> gp:r_un -1
+## 1
+## >> gp:o_utputInts 1
+## 2 4 6
 "r_un : int -> int"            ffi:b_ind< "gpu/run"
-# Output i (from 1) of the last run, as Floats.
+## Output i (from 1) of the last run, as Floats.
 "o_utput : int -> floats"      ffi:b_ind< "gpu/output"
-# Output i (from 1) of the last run, as Ints (exact to 2^53).
+## Output i (from 1) of the last run, as Ints (exact to 2^53).
 "o_utputInts : int -> ints"    ffi:b_ind< "gpu/output"
-# The last run's plan in words.
+## The last run's plan in words.
 "e_xplain : unit -> text"      ffi:b_ind< "gpu/explain"
-# The last run's OpenCL C.
+## The last run's OpenCL C.
 "k_ernel : unit -> text"       ffi:b_ind< "gpu/kernel"
 
 ### Programs, as text
 
+## A newline (private).
 n_l := { @ -> f_irst "\n" }
 
-# sa l:p_roductProgram sb: the XIR text of a times b ('+ '* i_nner)
-# for an a of the shape sa and a b of the shape sb (Floats).
+## sa gp:p_roductProgram sb: the XIR text of a times b ('+ '* i_nner)
+## for an a of the shape sa and a b of the shape sb (Floats).
+## >> "gp:" u_se< "Gpu"
+## >> (2 3) gp:p_roductProgram 3
+## %a = input f64 [2 3]
+## %b = input f64 [3]
+## %c = matmul %a %b
+## output %c
+##
 l:p_roductProgram := { sa sb ->
   a := "%a = input f64 [" c_at (f_ormat sa) c_at "]" c_at n_l @
   b := "%b = input f64 [" c_at (f_ormat sb) c_at "]" c_at n_l @
   a c_at b c_at "%c = matmul %a %b" c_at (n_l @) c_at "output %c" c_at n_l @
 }
 
-# sx l:d_enseProgram swb: the XIR text of the layer x W + b (Accel's
-# ac:d_ense, the bias the last row of wb) for an x of the shape sx and
-# a wb of the shape swb.
+## sx gp:d_enseProgram swb: the XIR text of the layer x W + b (Accel's
+## ac:d_ense, the bias the last row of wb) for an x of the shape sx and
+## a wb of the shape swb.
 l:d_enseProgram := { sx swb ->
   nl := n_l @
   rows := f_irst sx
@@ -61,7 +79,7 @@ l:d_enseProgram := { sx swb ->
 
 ### In one call
 
-# a l:p_roduct b: a '+ '* i_nner b computed on opencl:0.
+## a gp:p_roduct b: a '+ '* i_nner b computed on opencl:0.
 l:p_roduct := { a b ->
   n := l:l_oad (s_hape a) l:p_roductProgram s_hape b
   n := 1 l:b_ind a
@@ -70,7 +88,7 @@ l:p_roduct := { a b ->
   l:o_utput 1
 }
 
-# x l:d_ense wb: the layer x W + b (ac:d_ense) computed on opencl:0.
+## x gp:d_ense wb: the layer x W + b (ac:d_ense) computed on opencl:0.
 l:d_ense := { x wb ->
   n := l:l_oad (s_hape x) l:d_enseProgram s_hape wb
   n := 1 l:b_ind x
@@ -79,9 +97,14 @@ l:d_ense := { x wb ->
   l:o_utput 1
 }
 
-# want l:n_ear got: "ok" when the shapes match and every item agrees
-# within a relative 1e-5 (absolute below 1), as an f32 device's result
-# agrees with the evaluator's f64; else what differs.
+## want gp:n_ear got: "ok" when the shapes match and every item agrees
+## within a relative 1e-5 (absolute below 1), as an f32 device's result
+## agrees with the evaluator's f64; else what differs.
+## >> "gp:" u_se< "Gpu"
+## >> (1 2 3) gp:n_ear 1.000001 2.000001 3.000001
+## ok
+## >> (1 2 3) gp:n_ear 1 2
+## FAIL: shapes 3 and 2
 l:n_ear := { w g ->
   n_ot (s_hape w) m_atch s_hape g ? "FAIL: shapes " c_at (f_ormat s_hape w) c_at " and " c_at f_ormat s_hape g
   d := a_bs (f_loat w) - f_loat g
@@ -89,6 +112,6 @@ l:n_ear := { w g ->
   "FAIL: the largest difference is " c_at f_ormat 'm_ax r_/ r_avel d
 }
 
-# The native package behind these functions (a literal l: name also
-# makes this file a library to "xetal type": X_eTaL-extensions' ask E7).
+## The native package behind these functions (a literal l: name also
+## makes this file a library to "xetal type": X_eTaL-extensions' ask E7).
 l:package := "gpu"

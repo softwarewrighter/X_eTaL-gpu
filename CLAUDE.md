@@ -339,33 +339,40 @@ Read before working:
 4. A schedule is data: `schedules/<device>.toml`, read with
    `--schedule FILE`; a template not yet run on its device says
    `tested = false`.
-5. Rust lives in one workspace, `components/` (crates `xetal-gpu-*`,
+5. Library code is documented with `##` blocks above each definition
+   (`##` at the top documents the file, `###` is a section heading)
+   and `## >>` examples, which `scripts/doc-test.sh` runs in the gate;
+   plain `#` comments are not documentation. The live site is built
+   locally into `pages/` (never tracked on main) and published as the
+   `gh-pages` branch (`just publish`, then `just check-live`) after a
+   step that changes what it shows.
+6. Rust lives in one workspace, `components/` (crates `xetal-gpu-*`,
    one directory each with a README); the gate runs `cargo fmt
    --check`, `clippy -D warnings` and the tests. GPU tests run when a
    device is present and say so when skipped. The IR
    (`components/xir`) knows nothing of OpenCL; the emitter and runtime
    know nothing of X_eTaL syntax.
-6. Schedule is separate from semantics (plan A6): nothing about
+7. Schedule is separate from semantics (plan A6): nothing about
    devices, work-groups, element widths or fusion goes into an
    `.xtl` or into the IR; it is data the emitter and runtime read.
-7. Missing X_eTaL features and X_eTaL bugs go in `docs/xetal-asks.md`
+8. Missing X_eTaL features and X_eTaL bugs go in `docs/xetal-asks.md`
    (status, kind, what needs it, why, minimal repro, workaround). Do
    not fix X_eTaL from this repo and do not hide a workaround: name
    it in the ask and where it is used. Nothing here waits on `.xtlm`
    macro libraries (plan A9).
-8. `just` is the entry point (recipes call `scripts/*.sh`). New tasks
+9. `just` is the entry point (recipes call `scripts/*.sh`). New tasks
    get a recipe.
-9. American spellings only, everywhere (docs, comments, code
+10. American spellings only, everywhere (docs, comments, code
    identifiers, commit messages): color, center, neighbor, gray,
    modeled, -ize. The user is American; `scripts/check-spelling.py`
    (in the gate, with its self-test) fails on British forms. Docs are
    ASCII-only markdown (`sw-markdown-checker`). User-facing docs
    (README, library and component pages) say what and how; saga/step
    talk lives only in `docs/plan.md`.
-10. `CHANGES.md` gets a line for every commit (newest first, grouped
+11. `CHANGES.md` gets a line for every commit (newest first, grouped
    by day, Pacific time, a category), as in `../X_eTaL`.
-11. NEVER run `sw-install` unless the user explicitly asks.
-12. Work is committed directly to `main` and pushed (the user's
+12. NEVER run `sw-install` unless the user explicitly asks.
+13. Work is committed directly to `main` and pushed (the user's
     choice); the feat/ -> pr/ branch handoff in the briefing above
     applies only to a parallel lane on its own branch.
 
@@ -381,7 +388,8 @@ Read before working:
    unexpected).
 4. A detailed commit to `main`, including `.agentrail/`.
 5. `agentrail complete`, commit the `.agentrail/` change it makes,
-   push.
+   push; `just publish` when the site's content changed, then
+   `just check-live`.
 6. Report: what was pushed, the next step(s) and choices, blockers,
    questions, and asks for the user or the other X_eTaL repos.
 

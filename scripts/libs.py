@@ -15,7 +15,8 @@
   scripts/libs.py check    # every library is complete and well-formed
   scripts/libs.py path     # the src/ directories, joined with ':'
 
-A library's header: line 1 is "# Name: summary", and a comment line
+A library's header: line 1 is "## Name: summary" (a doc comment, so
+xetal doc shows it; "# Name: summary" is accepted too), and a comment line
 holds its import line, '"alias:" u_se< "Name"' (the recommended alias).
 XETAL_LIBS_ROOT overrides the repository root (scripts/selftest-libs.sh).
 """
@@ -44,7 +45,7 @@ def header(name):
         return None, None
     text = s[0].read_text()
     lines = text.splitlines()
-    m = re.match(rf"# {re.escape(name)}: (.+)", lines[0] if lines else "")
+    m = re.match(rf"##? {re.escape(name)}: (.+)", lines[0] if lines else "")
     a = re.search(rf'"([a-z]+:)" u_se< "{re.escape(name)}"', text)
     return (m.group(1) if m else None), (a.group(1) if a else None)
 
@@ -74,7 +75,7 @@ def check():
             errors.append(f"{where}/src/: only {name}.xtl and {name}.xtlm belong here, not {', '.join(extra)}")
         summary, alias = header(name)
         if not summary:
-            errors.append(f"{where}/src: line 1 must be '# {name}: what it is'")
+            errors.append(f"{where}/src: line 1 must be '## {name}: what it is'")
         if not alias:
             errors.append(f"{where}/src: no import line '\"x:\" u_se< \"{name}\"' in its header")
         if not (d / "README.md").exists():
