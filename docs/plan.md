@@ -162,7 +162,7 @@ X_eTaL's (G1); (3) pinned explain output caught nothing about its own
 wording, so a wrong description sat pinned for two steps: the
 pinning tests the plan, a reader still has to read it.
 
-### Saga 3 -- gpu-extension  [ACTIVE]
+### Saga 3 -- gpu-extension  [DONE]
 
 Goal: X_eTaL programs call the GPU themselves, through
 X_eTaL-extensions' ABI V1 and its `xetal-x` bridge (justified in
@@ -175,7 +175,24 @@ text bridge). Testable on this Mac.
 | 1 | pin-extensions | DONE: `XETAL_EXTENSIONS_COMMIT` (7bdd827), `scripts/xetal-extensions.sh` (clone, its own X_eTaL from the sibling checkout, `xetal-x`, hello and clock built into `target/xetal-extensions/`, `bin/xetal-x` a wrapper: a symlink is not followed when xetal-x looks for libraries beside itself), `just xetal-x`, `just extensions-pin`, `scripts/check-xetal-x.sh` in the gate (its commit, hello through the bridge, every Accel test and demo identical under xetal-x's X_eTaL v0.1.0, which differs from this repo's 75e6a5c). Planned: | `XETAL_EXTENSIONS_COMMIT`, `scripts/xetal-extensions.sh` (clone into `work/xetal-extensions/`, build `xetal-x`), a gate check that `xetal-x` loads hello |
 | 2 | gpu-package | DONE: `extensions/gpu/` (`extension.toml`, `rust/` the `xetal-ext-gpu` cdylib, its own workspace on the pinned SDK and this repo's runtime): devices, load, bind, schedule, run, output, explain, kernel, one session per thread; 5 tests through the raw ABI (interpreter and device sessions, Ints kept, errors); `scripts/gpu-ext.sh` (`just gpu-ext`; `--check` in the gate). Planned: | `extensions/gpu/`: `extension.toml`, `rust/` (a cdylib on `xetal-ext-sdk` and this repo's runtime: devices, load, bind, run, output, explain, one session per thread), Rust tests |
 | 3 | gpu-facade | DONE: `extensions/gpu/lib/Gpu.xtl` (nine `ffi:b_ind<` lines; the X_eTaL half: `p_roductProgram`, `d_enseProgram`, `p_roduct`, `d_ense`, `n_ear`), `scripts/xx` (xetal-x with the package and the libraries), `scripts/test-ext.sh` (reg-rs: types, basics on the interpreter, bad-shape, products-device skipped without a device; in the gate), `just test-ext`, `just run-x`. Planned: | `lib/Gpu.xtl` by `ffi:b_ind<`, its X_eTaL half (program writers for products and layers, `gp:r_un1`, `gp:n_ear`), reg-rs tests with `xetal-x`, types pinned |
-| 4 | offload-demo | one X_eTaL program computing a 512 by 512 product with the evaluator and on the GPU, compared and timed; the bridge's cost stated |
+| 4 | offload-demo | DONE: `extensions/gpu/demos/offload.xtl` (`just offload`): 512 by 512 product 14545 ms in the evaluator, 462 ms on the GPU through the extension (31 times; the bridge 416 ms of it); a million elementwise items 188 ms against 2447 ms; `tests/offload-device.xtl` pins the stable facts at 256; demos run with `XETAL_DEMOS=1`; `scripts/xx` loads clock too. Planned: | one X_eTaL program computing a 512 by 512 product with the evaluator and on the GPU, compared and timed; the bridge's cost stated |
+
+### Saga 3 retrospective
+
+Delivered: X_eTaL-extensions pinned like X_eTaL, the GPU as an ABI V1
+package (a cdylib with a per-thread session, tested through the raw
+ABI), its facade by the existing binding macro plus ordinary X_eTaL
+(program writers, one-call products and layers, an f32 check), reg-rs
+tests run through `xetal-x`, and the offload demo, whose numbers
+confirmed the analysis: products 31 times faster through the bridge,
+elementwise work 13 times slower. Learned: (1) `xetal-x` embeds
+X_eTaL-extensions' own X_eTaL (v0.1.0), so the gate now checks every
+library program prints the same under it; (2) `xetal-x` does not
+follow a symlink to find libraries beside itself (an ask of
+X_eTaL-extensions; a wrapper here); (3) piping a version to `head`
+under `pipefail` is a flaky gate; (4) the bridge's text, not the
+device, is the cost: G8 (binary arrays through a native hook) is now
+the ask with the clearest payoff.
 
 ### Saga 4 -- gpu-models
 

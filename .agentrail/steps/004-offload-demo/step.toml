@@ -1,6 +1,6 @@
 number = 4
 slug = "offload-demo"
-status = "pending"
+status = "in-progress"
 description = "extensions/gpu/demos/offload.xtl: one X_eTaL program computing a 512 by 512 p..."
 role = "production"
 context_files = []

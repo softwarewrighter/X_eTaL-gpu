@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Test the gpu extension's facade with reg-rs (extensions/gpu/tests is
 # the data directory): types.rgt pins the facade's types; NAME.rgt runs
-# each tests/NAME.xtl, demo-D.rgt each demos/D.xtl, with scripts/xx
+# each tests/NAME.xtl with scripts/xx
 # (xetal-x, the package, the libraries). A program named *-device.xtl
 # needs an OpenCL device: without one it is skipped, and the script
 # says so. A FAIL line in a baseline's output fails the test.
@@ -17,7 +17,6 @@ has_device=1
 xx="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$root/scripts/xx" "$d")"
 wanted=("types|$xx type ../lib/Gpu.xtl|")
 for p in "$d"/*.xtl; do wanted+=("$(basename "$p" .xtl)|$xx run $(basename "$p")|$p"); done
-for p in "$root"/extensions/gpu/demos/*.xtl; do [ -e "$p" ] && wanted+=("demo-$(basename "$p" .xtl)|$xx run ../demos/$(basename "$p")|$p"); done
 export REG_RS_DATA_DIR="$d"
 cd "$d"
 fail=0; skipped=0
@@ -35,5 +34,17 @@ for w in "${wanted[@]}"; do
   fi
 done
 [ "$skipped" = 0 ] || echo "test-ext: no OpenCL device here; $skipped device test(s) skipped"
+# The demos print timings, so they have no baselines: with XETAL_DEMOS=1
+# each must run to the end with no FAIL line (the offload demo takes
+# about 40 s, most of it the evaluator's 512 by 512 product).
+if [ "${XETAL_DEMOS:-}" = 1 ] && [ "$has_device" = 1 ]; then
+  for p in "$root"/extensions/gpu/demos/*.xtl; do
+    [ -e "$p" ] || continue
+    if out="$("$root/scripts/xx" run "$p" 2>&1)" && ! grep -q '^FAIL' <<<"$out"; then echo "ok: demo $(basename "$p")"
+    else echo "FAIL: demo $(basename "$p"):"; echo "$out" | tail -5; fail=1; fi
+  done
+else
+  echo "test-ext: demos not run (XETAL_DEMOS=1 runs them)"
+fi
 echo "test-ext: gpu, ${#wanted[@]} baselines$([ $fail = 0 ] && echo ', all passed' || echo ', FAILURES')"
 exit $fail

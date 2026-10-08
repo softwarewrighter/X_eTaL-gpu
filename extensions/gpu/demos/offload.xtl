@@ -1,0 +1,36 @@
+#!/usr/bin/env xetal
+# Offload: the same products and the same elementwise work computed by
+# the X_eTaL evaluator and, through the gpu extension, on opencl:0;
+# compared, and timed. Products gain on the GPU even through the text
+# bridge; elementwise work does not (docs/macros-and-extensions.md).
+# Prints its timings, so it has no baseline. Run with
+# "scripts/xx run extensions/gpu/demos/offload.xtl" (or "just offload").
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+"ck:" u_se< "Clock"
+
+"A 512 by 512 product:"
+a := 512 512 r_eshape (r_ange 262144) / 262144
+cpu := '{ m -> m ac:m_atmul m } ck:t_ime a
+gpu := '{ m -> m gp:p_roduct m } ck:t_ime a
+(a ac:m_atmul a) gp:n_ear a gp:p_roduct a
+"  evaluator (ms), GPU through the extension (ms), how many times faster:"
+f_loor cpu
+f_loor gpu
+f_loor cpu / gpu m_ax 1.0
+
+"Where the GPU's time goes: load and bind (ms), run (ms), read back (ms):"
+f_loor '{ m -> n := gp:l_oad (s_hape m) gp:p_roductProgram s_hape m; n := 1 gp:b_ind m; 2 gp:b_ind m } ck:t_ime a
+f_loor '{ d -> gp:r_un d } ck:t_ime 0
+f_loor '{ i -> gp:o_utput i } ck:t_ime 1
+
+"A million items, elementwise and summed, x + x * w, positive parts:"
+x := (r_ange 1048576) / 1048576
+w := 1048576 r_eshape 1.0 -1.0
+cpu := '{ v -> v ac:p_ipeline w } ck:t_ime x
+p := "%x = input f64 [1048576]\n%w = input f64 [1048576]\n%xw = map mul %x %w\n%s = map add %x %xw\n%z = const f64 [] 0.0\n%r = map max %s %z\n%t = reduce add %r\noutput %t\n"
+gpu := '{ v -> n := gp:l_oad p; n := 1 gp:b_ind v; n := 2 gp:b_ind w; n := gp:r_un 0; gp:o_utput 1 } ck:t_ime x
+(x ac:p_ipeline w) gp:n_ear gp:o_utput 1
+"  evaluator (ms), GPU through the extension (ms): the bridge's text costs more than the work"
+f_loor cpu
+f_loor gpu

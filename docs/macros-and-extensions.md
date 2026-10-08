@@ -132,6 +132,20 @@ Test (c) holds for X1 regardless of speed: OpenCL is a C-ABI library
 (Apple's `OpenCL.framework`; on Linux the ICD loader `libOpenCL.so`
 and a vendor driver), and X_eTaL has no way to call it.
 
+### Checked after building it
+
+The `Gpu` extension (saga gpu-extension) measured on this Mac, in one
+X_eTaL program (`extensions/gpu/demos/offload.xtl`):
+
+| Work | Evaluator | GPU through the bridge |
+| ---- | --------- | ---------------------- |
+| 512 by 512 product | 14545 ms | 462 ms (load and bind 289, run 12, read back 127) |
+| a million items, elementwise and summed | 188 ms | 2447 ms |
+
+Both verdicts hold: the product is 31 times faster even through the
+text bridge, the elementwise work 13 times slower, and the bridge is
+nearly all of the GPU side's time.
+
 ## X1 in detail: the `Gpu` extension
 
 What a program would look like:

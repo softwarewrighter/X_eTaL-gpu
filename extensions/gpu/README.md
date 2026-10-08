@@ -79,6 +79,28 @@ Values cross the bridge as text, so a device's f32 result comes back
 widened (`1.100000023841858` for 1.1): compare it with `gp:n_ear`,
 not by printing it.
 
+## The offload demo
+
+`demos/offload.xtl` (`just offload`) computes the same work with the
+evaluator and through this extension on `opencl:0`, checks they
+agree, and times both. On the Apple M1 Max:
+
+| Work | Evaluator | GPU through the extension | |
+| ---- | --------- | ------------------------- | - |
+| 512 by 512 product | 14545 ms | 462 ms | 31 times faster |
+| a million items, `x + x * w`, positive parts summed | 188 ms | 2447 ms | 13 times slower |
+
+Of the product's 462 ms on the GPU side, loading the program and
+binding the two inputs took 289 ms, the run 12 ms (compiling the
+kernels included), reading the result back 127 ms: the bridge's text
+is nearly all of it. That is the prediction of
+`docs/macros-and-extensions.md`: products gain even through the
+bridge, elementwise work loses, and a native hook with binary arrays
+(ask G8) would remove most of the cost. The demo prints its timings,
+so it has no baseline; `tests/offload-device.xtl` pins what holds on
+any machine with a GPU (the results agree, and a 256 by 256 product
+is faster on the GPU).
+
 ## Tests
 
 `rust/tests/session.rs` calls every function through the raw ABI, as
@@ -94,5 +116,7 @@ program writers and sessions on the interpreter, exactly; `bad-shape`
 pins the error for an input of the wrong shape; `products-device`
 compares products at every rank pairing, a 64 by 64 product untiled
 and in 16 by 16 tiles, and a dense layer on `opencl:0` with Accel's
-results (each line `ok`). A `*-device` test is skipped, with a
+results (each line `ok`); `offload-device` checks the GPU's 256 by
+256 product agrees and is faster than the evaluator's. The demos run
+with `XETAL_DEMOS=1 scripts/test-ext.sh`. A `*-device` test is skipped, with a
 message, where there is no device.

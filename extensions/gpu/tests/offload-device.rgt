@@ -1,0 +1,2 @@
+command = "../../../scripts/xx run offload-device.xtl"
+exit_code = 0

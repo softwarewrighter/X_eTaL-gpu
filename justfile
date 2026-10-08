@@ -44,6 +44,10 @@ gpu-ext:
 test-ext:
     scripts/test-ext.sh
 
+# The offload demo: a 512 by 512 product and a million elementwise items, evaluator against GPU through the extension, timed (about 40 s)
+offload:
+    @scripts/xx run extensions/gpu/demos/offload.xtl
+
 # Run a program with xetal-x, the gpu extension and this repository's libraries: just run-x prog.xtl
 run-x file:
     @scripts/xx run "$1"

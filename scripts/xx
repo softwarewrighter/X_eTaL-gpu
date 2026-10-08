@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# The pinned xetal-x with the gpu extension loaded and this repository's
+# The pinned xetal-x with the gpu extension (and X_eTaL-extensions'
+# clock) loaded and this repository's
 # libraries on XETAL_PATH, written relative to the current directory so
 # baselines do not depend on the checkout. "xx run FILE" adds --seed 1
 # --ascii, as the tests run; any other command passes through.
@@ -11,6 +12,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rel() { python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1]))' "$1"; }
 XETAL_PATH="$(for d in "$root"/libs/*/src; do rel "$d"; done | paste -sd: -)"
 export XETAL_PATH
-ext="$(rel "$root/extensions/gpu")"
-if [ "${1:-}" = run ]; then shift; exec "$root/bin/xetal-x" --ext "$ext" run --seed 1 --ascii "$@"; fi
-exec "$root/bin/xetal-x" --ext "$ext" "$@"
+# The gpu package, and X_eTaL-extensions' clock (ck:t_ime, for timing).
+exts=(--ext "$(rel "$root/extensions/gpu")" --ext "$(rel "$root/work/xetal-extensions/extensions/clock")")
+if [ "${1:-}" = run ]; then shift; exec "$root/bin/xetal-x" "${exts[@]}" run --seed 1 --ascii "$@"; fi
+exec "$root/bin/xetal-x" "${exts[@]}" "$@"

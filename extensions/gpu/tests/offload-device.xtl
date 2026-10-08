@@ -1,0 +1,14 @@
+#!/usr/bin/env xetal
+# Offload, the facts that hold on any machine with a GPU: the GPU's
+# product agrees with the evaluator's, and a 256 by 256 product is
+# faster on the GPU through the extension than in the evaluator (the
+# demo, demos/offload.xtl, prints the times). Needs an OpenCL device.
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+"ck:" u_se< "Clock"
+a := 256 256 r_eshape (r_ange 65536) / 65536
+(a ac:m_atmul a) gp:n_ear a gp:p_roduct a
+cpu := '{ m -> m ac:m_atmul m } ck:t_ime a
+gpu := '{ m -> m gp:p_roduct m } ck:t_ime a
+"the GPU is faster for the product:"
+gpu < cpu

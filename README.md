@@ -79,8 +79,12 @@ maxima) and inner products (`'+ '* i_nner`, untiled and in tiles; a
 512 by 512 product in 0.13 s against the evaluator's 29 s), and a
 tiny two-layer network (dense, ReLU, dense, softmax) whose output on
 the GPU matches the evaluator's, and schedules as files per device
-are done (saga 2, finished 2026-10-07). Next, saga 3: the GPU as a
-native extension X_eTaL programs call themselves (saga 3). The
+are done (saga 2, finished 2026-10-07). Saga 3 made the GPU a native
+extension that X_eTaL programs call themselves, through
+X_eTaL-extensions' `xetal-x`: a 512 by 512 product runs 31 times
+faster than in the evaluator, even through the bridge (`just
+offload`). Next, saga 4: a tiny Jev-like model's whole inference on
+the GPU. The
 work moves to an Arch machine with a newer GPU soon; nothing in the
 code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
@@ -111,6 +115,8 @@ target/release/xetal-gpu explain libs/Accel/demos/pipeline.xir # which values be
 target/release/xetal-gpu devices                               # the OpenCL devices here
 target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   # the same program on the GPU
 just sizes                           # a million-item reduction: evaluator, interpreter, GPU, timed
+just xetal-x && just gpu-ext         # X_eTaL-extensions' xetal-x and the gpu extension beside it
+just offload                         # X_eTaL calling the GPU itself: a 512 by 512 product, timed
 ```
 
 X_eTaL-extensions is pinned the same way (`XETAL_EXTENSIONS_COMMIT`,
