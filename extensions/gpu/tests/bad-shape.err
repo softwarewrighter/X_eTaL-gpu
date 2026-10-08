@@ -1,0 +1,1 @@
+error[io]: []N_GET: ext:gpu/bind: input 1 (%a) is f64 [2 3], given shape [3 2] at ../lib/Gpu.xtl:22:1

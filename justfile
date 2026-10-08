@@ -40,6 +40,14 @@ extensions-pin ref="HEAD":
 gpu-ext:
     @scripts/gpu-ext.sh
 
+# The gpu extension's facade tests (reg-rs with xetal-x; device tests skipped without a device)
+test-ext:
+    scripts/test-ext.sh
+
+# Run a program with xetal-x, the gpu extension and this repository's libraries: just run-x prog.xtl
+run-x file:
+    @scripts/xx run "$1"
+
 # Check the pinned xetal-x: it reports its commit, hello answers through the bridge, every library program gives its baseline under its X_eTaL
 check-xetal-x:
     scripts/check-xetal-x.sh

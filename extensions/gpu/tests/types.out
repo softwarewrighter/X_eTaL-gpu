@@ -1,0 +1,15 @@
+l:d_evices : Unit -> Char
+l:l_oad : Char -> Int
+l:b_ind : (Num a, Num b) => a -> b -> Int
+l:s_chedule : Char -> Int
+l:r_un : Num a => a -> Int
+l:o_utput : Num a => a -> Float
+l:o_utputInts : Num a => a -> Int
+l:e_xplain : Unit -> Char
+l:k_ernel : Unit -> Char
+l:p_roductProgram : a -> b -> Char
+l:d_enseProgram : Int -> a -> Char
+l:p_roduct : (Num a, Num b) => a -> b -> Float
+l:d_ense : (Num a, Num b) => a -> b -> Float
+l:n_ear : (Num a, Num b) => a -> b -> Char
+l:package : Char

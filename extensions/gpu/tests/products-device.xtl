@@ -1,0 +1,20 @@
+#!/usr/bin/env xetal
+# Gpu on opencl:0 against the evaluator (Accel): products of every
+# rank pairing, a 64 by 64 product untiled and tiled, a dense layer;
+# each "ok" within f32's tolerance. Needs an OpenCL device (the tests
+# skip it, saying so, without one). Run with "scripts/xx run products-device.xtl".
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+a := 3 4 r_eshape r_ange 12
+b := 4 2 r_eshape 1 0 0 1 1 1 2 -1
+(a ac:m_atmul b) gp:n_ear a gp:p_roduct b
+(a ac:m_atmul 1 -1 1 -1) gp:n_ear a gp:p_roduct 1 -1 1 -1
+(1 2 3 ac:m_atmul a) gp:n_ear 1 2 3 gp:p_roduct a
+m := 64 64 r_eshape (r_ange 4096) / 4096
+(m ac:m_atmul m) gp:n_ear m gp:p_roduct m
+gp:s_chedule "tile = 16"
+(m ac:m_atmul m) gp:n_ear m gp:p_roduct m
+gp:s_chedule ""
+x := 4 3 r_eshape 0.5 -1.0 0.25 1.0 0.0 -0.5 -0.75 0.5 1.0 0.2 0.4 -0.6
+wb := 4 5 r_eshape n_umbers []N_GET "../../../libs/Accel/data/w1.txt"
+(x ac:d_ense wb) gp:n_ear x gp:d_ense wb

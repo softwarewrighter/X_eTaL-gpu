@@ -1,0 +1,19 @@
+#!/usr/bin/env xetal
+# Gpu on the reference interpreter (device -1): the program writers and
+# a session, exact, whatever the machine. Run with "scripts/xx run basics.xtl".
+"gp:" u_se< "Gpu"
+(2 3) gp:p_roductProgram 3 2
+(2 3) gp:d_enseProgram 4 2
+gp:l_oad (2 3) gp:p_roductProgram 3
+1 gp:b_ind 2 3 r_eshape r_ange 6
+2 gp:b_ind 1 0 2
+gp:r_un -1
+gp:o_utput 1
+gp:l_oad "%a = input i64 [3]\n%k = const i64 [] 2\n%b = map mul %k %a\noutput %b\n"
+1 gp:b_ind 1 2 3
+gp:r_un -1
+gp:o_utputInts 1
+s_hape gp:o_utputInts 1
+(1 2 3) gp:n_ear 1.000001 2.000001 3.000001
+(1 2 3) gp:n_ear 1.1 2.0 3.0      # shows failures: n_ear reports the difference
+(1 2 3) gp:n_ear 1 2

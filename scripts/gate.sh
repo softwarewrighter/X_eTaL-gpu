@@ -14,6 +14,7 @@ cd "$root"
 "$root/scripts/check-xetal.sh"
 "$root/scripts/check-xetal-x.sh"
 "$root/scripts/gpu-ext.sh" --check
+"$root/scripts/test-ext.sh"
 "$root/scripts/selftest-libs.sh"
 "$root/scripts/test-libs.sh"
 if [ -f "$root/components/Cargo.toml" ]; then

@@ -1,0 +1,5 @@
+#!/usr/bin/env xetal
+# Gpu: an input of the wrong shape stops the program, naming it.
+"gp:" u_se< "Gpu"
+gp:l_oad (2 3) gp:p_roductProgram 3
+1 gp:b_ind 3 2 r_eshape r_ange 6

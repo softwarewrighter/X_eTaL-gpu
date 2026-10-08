@@ -1,0 +1,2 @@
+command = "../../../scripts/xx type ../lib/Gpu.xtl"
+exit_code = 0

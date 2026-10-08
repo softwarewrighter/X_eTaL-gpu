@@ -1,0 +1,29 @@
+%a = input f64 [2 3]
+%b = input f64 [3 2]
+%c = matmul %a %b
+output %c
+
+%x = input f64 [2 3]
+%wb = input f64 [4 2]
+%w = drop -1 %wb
+%t = take -1 %wb
+%v = ravel %t
+%o = const i64 [2] 0 1
+%bias = table right %o %v
+%xw = matmul %x %w
+%y = map add %xw %bias
+output %y
+
+2
+1
+2
+1
+7.0 16.0
+1
+1
+1
+2 4 6
+3
+ok
+FAIL: the largest difference is 0.10000000000000009
+FAIL: shapes 3 and 2

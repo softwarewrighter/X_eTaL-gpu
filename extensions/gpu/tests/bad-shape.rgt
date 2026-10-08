@@ -1,0 +1,2 @@
+command = "../../../scripts/xx run bad-shape.xtl"
+exit_code = 1

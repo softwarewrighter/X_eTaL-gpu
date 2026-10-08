@@ -1,6 +1,6 @@
 number = 3
 slug = "gpu-facade"
-status = "pending"
+status = "in-progress"
 description = "extensions/gpu/lib/Gpu.xtl: one ffi:b_ind< line per native function, and the ..."
 role = "production"
 context_files = []

@@ -39,6 +39,46 @@ inputs one by one, run it, read its outputs one by one.
 Errors name what is wrong: the program's line, the input and its
 shape, the schedule's field, the device's limit.
 
+## The facade
+
+```
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+a := 64 64 r_eshape (r_ange 4096) / 4096
+c := a gp:p_roduct a                   # on opencl:0
+(a ac:m_atmul a) gp:n_ear c            # ok: the evaluator agrees within f32
+```
+
+Run it with `scripts/xx run prog.xtl` (or `just run-x prog.xtl`):
+`xetal-x` with this package loaded and this repository's libraries
+on `XETAL_PATH`.
+
+| Function | Type | What |
+| -------- | ---- | ---- |
+| `gp:d_evices @` | `Unit -> Char` | the devices |
+| `gp:l_oad t` | `Char -> Int` | load an XIR program's text |
+| `n gp:b_ind a` | `(Num a, Num b) => a -> b -> Int` | bind input n |
+| `gp:s_chedule t` | `Char -> Int` | a schedule's TOML text, `""` for the defaults |
+| `gp:r_un d` | `Num a => a -> Int` | run on `opencl:d`, -1 the interpreter |
+| `gp:o_utput i` | `Num a => a -> Float` | output i as Floats |
+| `gp:o_utputInts i` | `Num a => a -> Int` | output i as Ints (exact to 2^53) |
+| `gp:e_xplain @` | `Unit -> Char` | the last plan in words |
+| `gp:k_ernel @` | `Unit -> Char` | the last plan's OpenCL C |
+| `sa gp:p_roductProgram sb` | `a -> b -> Char` | the XIR text of a product for those shapes |
+| `sx gp:d_enseProgram swb` | `Int -> a -> Char` | the XIR text of a dense layer (Accel's `ac:d_ense`) |
+| `a gp:p_roduct b` | `(Num a, Num b) => a -> b -> Float` | `a '+ '* i_nner b` on `opencl:0` |
+| `x gp:d_ense wb` | `(Num a, Num b) => a -> b -> Float` | the layer x W + b on `opencl:0` |
+| `w gp:n_ear g` | `(Num a, Num b) => a -> b -> Char` | `ok` when g agrees with w within a relative 1e-5 |
+
+The first nine are one line each of X_eTaL-extensions' binding macro
+(`"r_un : int -> int" ffi:b_ind< "gpu/run"`); the rest are ordinary
+X_eTaL. The program writers are functions, not macros: an XIR
+program is data handed to the device, not code for the evaluator.
+
+Values cross the bridge as text, so a device's f32 result comes back
+widened (`1.100000023841858` for 1.1): compare it with `gp:n_ear`,
+not by printing it.
+
 ## Tests
 
 `rust/tests/session.rs` calls every function through the raw ABI, as
@@ -47,3 +87,12 @@ the loader does: the descriptor; a session on the interpreter
 errors; and a session on device 0 with a tiled schedule, skipped
 with a message when there is no device. The gate runs them with
 format and clippy (`scripts/gpu-ext.sh --check`).
+
+`tests/` holds the facade's reg-rs baselines (`scripts/test-ext.sh`,
+`just test-ext`): `types` pins the facade's types; `basics` runs the
+program writers and sessions on the interpreter, exactly; `bad-shape`
+pins the error for an input of the wrong shape; `products-device`
+compares products at every rank pairing, a 64 by 64 product untiled
+and in 16 by 16 tiles, and a dense layer on `opencl:0` with Accel's
+results (each line `ok`). A `*-device` test is skipped, with a
+message, where there is no device.
