@@ -1,6 +1,6 @@
-number = 2
+number = 3
 slug = "tiny-nn"
-status = "pending"
+status = "in-progress"
 description = "A complete tiny trained network: a small classification task (for example poi..."
 role = "production"
 context_files = []

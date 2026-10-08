@@ -45,7 +45,8 @@
 
 ### Programs, as text
 
-## A newline (private).
+## A newline (private; bare, not h:n_l, because xetal-x's X_eTaL
+## v0.1.0 has no h: namespace: docs/macros-and-extensions.md).
 n_l := { @ -> f_irst "\n" }
 
 ## sa gp:p_roductProgram sb: the XIR text of a times b ('+ '* i_nner)

@@ -117,7 +117,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 </div>
 </main>
 <footer>
-Built from <a href="{repo}/commit/{commit}">X_eTaL-gpu {commit}</a>, with X_eTaL {xetal} and X_eTaL-extensions {ext} (whose xetal-x, with X_eTaL v0.1.0, wrote the docs).
+Built from <a href="{repo}/commit/{commit}">X_eTaL-gpu {commit}</a>, with X_eTaL {xetal} (whose xetal doc wrote the docs) and X_eTaL-extensions {ext}.
 <br>Copyright (c) 2026 Michael A Wright. MIT License.
 <br><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> &middot; <a href="https://softwarewrighter.github.io/X_eTaL/">its live demo</a> &middot; <a href="https://softwarewrighter.github.io/X_eTaL-demos/">X_eTaL-demos</a> &middot; <a href="https://softwarewrighter.github.io/X_eTaL-ML/">X_eTaL-ML</a>
 </footer>

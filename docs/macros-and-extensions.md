@@ -209,6 +209,12 @@ To X_eTaL-extensions (recorded here; this repo does not change it):
   so an Int array goes out without passing through `f_loat`;
 - results of more than one array per call, or the session pattern
   above documented as the way to return several;
+- a newer X_eTaL pin: `xetal-x` embeds X_eTaL v0.1.0, which predates
+  `h:` file-private names (X_eTaL Saga 38), so the Gpu facade keeps
+  its one private helper bare (deprecated in X_eTaL d284a8c, still
+  accepted) and cannot move it to `h:` until X_eTaL-extensions pins a
+  newer X_eTaL (found 2026-10-08: `h:n_l` gives `unknown-namespace`
+  under `xetal-x`);
 - `xetal-x` looks for native libraries beside the path it was started
   from without resolving a symlink, so a repository that links
   `bin/xetal-x` to the binary finds none (found 2026-10-07; this repo

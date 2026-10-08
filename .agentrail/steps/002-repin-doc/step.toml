@@ -1,0 +1,8 @@
+number = 2
+slug = "repin-doc"
+status = "in-progress"
+description = "Pin X_eTaL's current main (d284a8c: the doc site's sidebar by directory, h: p..."
+role = "production"
+context_files = []
+created_at = "2026-10-08T13:46:58"
+commits = []
