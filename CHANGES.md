@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-08
 
+- 15:20 `build` X_eTaL pinned at 1998414 (was d284a8c): the doc site's sidebar sorted (directories and files alphabetical), a file's header recognized with or without a blank line after it, stray doc blocks warned (none here); the gate passes unchanged.
 - 13:10 `build` X_eTaL pinned at d284a8c (was 75e6a5c; 51 commits: the doc site's sidebar grouped by directory, `h:` file-private names with bare library helpers deprecated, tuples): every baseline, doc example, twin and size check unchanged; the gate passes.
 - 11:55 `fix` No pipe into `grep -q` under `pipefail` in the scripts: `check-live.sh` reported two live pages as missing their doc comments (they were there; `grep -q` stopped reading and curl's broken pipe failed the pipeline), and `check-xetal.sh`, `test-ext.sh` (which could skip the device tests on a machine with several devices) and `test-libs.sh` had the same pattern; each now reads the whole output first. The live site passes `just check-live`.
 - 11:40 `test` The gpu facade's bad-shape baseline rebased: its error points at `Gpu.xtl:23`, one line later since the file's doc header gained a blank `##` line. The previous commit was made and published with this one test failing: the gate's output was piped to `tail`, which hid its exit status; gates are now run with their status checked.
