@@ -1,0 +1,8 @@
+number = 1
+slug = "tiny-nn"
+status = "pending"
+description = "A complete tiny trained network: a small classification task (for example poi..."
+role = "production"
+context_files = []
+created_at = "2026-10-07T17:43:00"
+commits = []

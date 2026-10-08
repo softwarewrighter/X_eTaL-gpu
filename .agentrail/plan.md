@@ -1,22 +1,26 @@
-# Saga: gpu-extension
+# Saga: gpu-models
 
-Goal: X_eTaL programs call the GPU themselves, through
-X_eTaL-extensions' ABI V1 and its xetal-x bridge, as
-docs/macros-and-extensions.md justifies (X1: OpenCL is a C-ABI
-library; products and models gain on the device even through the
-text bridge; elementwise work does not, and the docs say so).
-Testable on this Mac. Nothing in X_eTaL-extensions changes: it is
-pinned like X_eTaL and its SDK used by path from a clone in work/.
+Goal: research7's PoC G2: a tiny Jev-like typed-decision model (a
+small transformer-like classifier, trained from scratch, its inference
+written as X_eTaL array code) whose complete inference runs on a GPU,
+with the same decision from the evaluator, the interpreter and the
+device. The model is the architecture as X_eTaL code and the weights
+as data. XIR operations are added only when the model needs them and
+stay general X_eTaL primitives (attention decomposes; it is not an
+intrinsic). Testable on this Mac; the Arch machine's newer GPU later.
 
-1. pin-extensions: XETAL_EXTENSIONS_COMMIT, scripts/xetal-extensions.sh
-   (clone into work/xetal-extensions, build xetal-x and hello), a
-   gate check that xetal-x answers and loads hello.
-2. gpu-package: extensions/gpu/ (extension.toml, rust/ a cdylib on
-   xetal-ext-sdk and this repo's runtime: devices, load, bind, run,
-   output, explain; one session per thread), Rust tests.
-3. gpu-facade: extensions/gpu/lib/Gpu.xtl by ffi:b_ind<, its X_eTaL
-   half (program writers for products and layers, r_un1, n_ear), reg-rs
-   tests run with xetal-x, types pinned.
-4. offload-demo: one X_eTaL program computing a 512 by 512 product with
-   the evaluator and on the GPU through the extension, compared and
-   timed; the bridge's cost stated; docs and retrospective.
+1. tiny-nn: a complete tiny trained network (two dense layers on a
+   small task, a std-only Rust trainer with a fixed seed), weights as
+   data files, inference in X_eTaL with Accel, its twin, the same
+   decisions on CPU and GPU, also through the gpu extension.
+2. jev-model: examples/jev/ model.xtl (embedding lookup, attention as
+   array operations, normalization, feed-forward, classifier),
+   tokenizer.xtl, config.toml, weights (random until trained); the
+   XIR operations it needs, general ones only.
+3. jev-train: a trainer for the typed-decision task (requests
+   classified as DRAW, ARRAY_QUERY, EXPLAIN, EXECUTE, DOC_SEARCH), f32,
+   std-only Rust, fixed seed, the data set generated and committed
+   small.
+4. jev-gpu: the whole inference scheduled as OpenCL kernels; the same
+   prompt, model and weights giving the same decision on CPU and GPU;
+   explain shows which X_eTaL operations became which kernels.

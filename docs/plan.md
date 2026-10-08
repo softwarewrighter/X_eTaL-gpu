@@ -194,7 +194,7 @@ under `pipefail` is a flaky gate; (4) the bridge's text, not the
 device, is the cost: G8 (binary arrays through a native hook) is now
 the ask with the clearest payoff.
 
-### Saga 4 -- gpu-models
+### Saga 4 -- gpu-models  [ACTIVE]
 
 Goal: research7's PoC G2, a tiny Jev-like typed-decision model (a
 small transformer-like classifier, trained from scratch, inference
