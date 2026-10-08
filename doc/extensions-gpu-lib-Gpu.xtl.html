@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>extensions/gpu/lib/Gpu.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li><a href="#section-1">Native functions</a></li>
+<li class="item"><a href="#l.d_evices"><span class="c-libfunc">ˡd̲evices</span></a></li>
+<li class="item"><a href="#l.l_oad"><span class="c-libfunc">ˡl̲oad</span></a></li>
+<li class="item"><a href="#l.b_ind"><span class="c-libfunc">ˡb̲ind</span></a></li>
+<li class="item"><a href="#l.s_chedule"><span class="c-libfunc">ˡs̲chedule</span></a></li>
+<li class="item"><a href="#l.r_un"><span class="c-libfunc">ˡr̲un</span></a></li>
+<li class="item"><a href="#l.o_utput"><span class="c-libfunc">ˡo̲utput</span></a></li>
+<li class="item"><a href="#l.o_utputInts"><span class="c-libfunc">ˡo̲utputInts</span></a></li>
+<li class="item"><a href="#l.e_xplain"><span class="c-libfunc">ˡe̲xplain</span></a></li>
+<li class="item"><a href="#l.k_ernel"><span class="c-libfunc">ˡk̲ernel</span></a></li>
+<li><a href="#section-2">Programs, as text</a></li>
+<li class="item"><a href="#n_l"><span class="c-builtin">n̲l</span></a></li>
+<li class="item"><a href="#l.p_roductProgram"><span class="c-libfunc">ˡp̲roductProgram</span></a></li>
+<li class="item"><a href="#l.d_enseProgram"><span class="c-libfunc">ˡd̲enseProgram</span></a></li>
+<li><a href="#section-3">In one call</a></li>
+<li class="item"><a href="#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a></li>
+<li class="item"><a href="#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a></li>
+<li class="item"><a href="#l.n_ear"><span class="c-libfunc">ˡn̲ear</span></a></li>
+<li class="item"><a href="#l.package">ˡpackage</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">library</span>extensions/gpu/lib/Gpu.xtl</h1>
+<div class="doc">
+<p>Gpu: XIR programs run on OpenCL devices (or the reference interpreter) from X_eTaL</p>
+<p>Import: &quot;gp:&quot; u_se&lt; &quot;Gpu&quot;
+Run with xetal-x (X_eTaL-extensions' bridge host): &quot;scripts/xx run prog.xtl&quot;
+puts this package and this repository's libraries in reach.</p>
+<p>The first half binds the native functions (extensions/gpu/rust),
+one line each, with X_eTaL-extensions' binding macro (Ffi.xtlm):
+a session per thread, loaded, bound, run, read. The second half is
+ordinary X_eTaL over them: functions that write XIR programs (the
+text is data, so these are functions, not macros:
+docs/macros-and-extensions.md, X4), a product and a dense layer in
+one call each, and a check for f32 results.</p>
+</div>
+<p class="meta"><a href="extensions-gpu-lib-Gpu.xtl.src.html">source</a> &middot; imports <code><span class="c-error">ffi:</span></code> <a href="work-xetal-extensions-lib-Ffi.xtlm.html">work/xetal-extensions/lib/Ffi.xtlm</a></p>
+<h2 class="section" id="section-1">Native functions</h2>
+<div class="item" id="l.d_evices">
+<h3><a href="#l.d_evices"><span class="c-libfunc">ˡd̲evices</span></a> <span class="type">: Unit -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L19">line 19</a></div>
+<div class="doc">
+<p>The OpenCL devices, one line each (opencl:N).</p>
+</div>
+<pre class="code"><span class="c-string">&quot;d_evices : unit -&gt; text&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/devices&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡd̲evices</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/devices&quot;</span>
+}</pre></details>
+</div>
+<div class="item" id="l.l_oad">
+<h3><a href="#l.l_oad"><span class="c-libfunc">ˡl̲oad</span></a> <span class="type">: Char -&gt; Int</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L21">line 21</a></div>
+<div class="doc">
+<p>Load an XIR program, by its text; the number of inputs.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;l_oad : text -&gt; int&quot;</span>          <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/load&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡl̲oad</span> ← { a →
+  pa ← a <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/load?text&quot;</span>
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/load&quot;</span>
+}</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L23">extensions/gpu/demos/offload.xtl:23</a>, <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a></div>
+</div>
+<div class="item" id="l.b_ind">
+<h3><a href="#l.b_ind"><span class="c-libfunc">ˡb̲ind</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Int</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L23">line 23</a></div>
+<div class="doc">
+<p>n gp:b_ind a: input n (from 1) gets the array a, of its declared shape.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;b_ind : int float -&gt; int&quot;</span>     <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/bind&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡb̲ind</span> ← { a b →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/bind?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  pb ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> b) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/bind?float=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> b
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/bind&quot;</span>
+}</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L23">extensions/gpu/demos/offload.xtl:23</a>, <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a></div>
+</div>
+<div class="item" id="l.s_chedule">
+<h3><a href="#l.s_chedule"><span class="c-libfunc">ˡs̲chedule</span></a> <span class="type">: Char -&gt; Int</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L25">line 25</a></div>
+<div class="doc">
+<p>The schedule for later runs, as a schedules/*.toml text (&quot;&quot; for the defaults).</p>
+</div>
+<pre class="code"><span class="c-string">&quot;s_chedule : text -&gt; int&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/schedule&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡs̲chedule</span> ← { a →
+  pa ← a <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/schedule?text&quot;</span>
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/schedule&quot;</span>
+}</pre></details>
+</div>
+<div class="item" id="l.r_un">
+<h3><a href="#l.r_un"><span class="c-libfunc">ˡr̲un</span></a> <span class="type">: Num a =&gt; a -&gt; Int</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L36">line 36</a></div>
+<div class="doc">
+<p>Run on opencl:d, or on the reference interpreter for -1; the number of outputs.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵍᵖ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="extensions-gpu-lib-Gpu.xtl.html" class="c-string">&quot;Gpu&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ᵍᵖl̲oad</a> <span class="c-string">&quot;%a = input i64 [3]\n%k = const i64 [] 2\n%b = map mul %k %a\noutput %b\n&quot;</span>
+1</pre>
+<pre class="example"><span class="prompt">      </span><span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> <span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span>
+1</pre>
+<pre class="example"><span class="prompt">      </span><a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ᵍᵖr̲un</a> <span class="c-number">-1</span>
+1</pre>
+<pre class="example"><span class="prompt">      </span><a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utputInts" class="c-libfunc">ᵍᵖo̲utputInts</a> <span class="c-number">1</span>
+2 4 6</pre>
+</div>
+<pre class="code"><span class="c-string">&quot;r_un : int -&gt; int&quot;</span>            <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/run&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡr̲un</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/run?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/run&quot;</span>
+}</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L24">extensions/gpu/demos/offload.xtl:24</a>, <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a></div>
+</div>
+<div class="item" id="l.o_utput">
+<h3><a href="#l.o_utput"><span class="c-libfunc">ˡo̲utput</span></a> <span class="type">: Num a =&gt; a -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L38">line 38</a></div>
+<div class="doc">
+<p>Output i (from 1) of the last run, as Floats.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;o_utput : int -&gt; floats&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/output&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡo̲utput</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/output?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  v ← <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output&quot;</span>
+  (<a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output?shape&quot;</span>) <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> v
+}</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L25">extensions/gpu/demos/offload.xtl:25</a>, <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L33">extensions/gpu/demos/offload.xtl:33</a></div>
+</div>
+<div class="item" id="l.o_utputInts">
+<h3><a href="#l.o_utputInts"><span class="c-libfunc">ˡo̲utputInts</span></a> <span class="type">: Num a =&gt; a -&gt; Int</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L40">line 40</a></div>
+<div class="doc">
+<p>Output i (from 1) of the last run, as Ints (exact to 2^53).</p>
+</div>
+<pre class="code"><span class="c-string">&quot;o_utputInts : int -&gt; ints&quot;</span>    <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/output&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡo̲utputInts</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/output?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  v ← <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output&quot;</span>
+  (<a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output?shape&quot;</span>) <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> v
+}</pre></details>
+</div>
+<div class="item" id="l.e_xplain">
+<h3><a href="#l.e_xplain"><span class="c-libfunc">ˡe̲xplain</span></a> <span class="type">: Unit -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L42">line 42</a></div>
+<div class="doc">
+<p>The last run's plan in words.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;e_xplain : unit -&gt; text&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/explain&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡe̲xplain</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/explain&quot;</span>
+}</pre></details>
+</div>
+<div class="item" id="l.k_ernel">
+<h3><a href="#l.k_ernel"><span class="c-libfunc">ˡk̲ernel</span></a> <span class="type">: Unit -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L44">line 44</a></div>
+<div class="doc">
+<p>The last run's OpenCL C.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;k_ernel : unit -&gt; text&quot;</span>       <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/kernel&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡk̲ernel</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/kernel&quot;</span>
+}</pre></details>
+</div>
+<h2 class="section" id="section-2">Programs, as text</h2>
+<div class="item" id="n_l">
+<h3><a href="#n_l"><span class="c-builtin">n̲l</span></a> <span class="type">: Unit -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L50">line 50</a></div>
+<div class="doc">
+<p>A newline (private; bare, not h:n_l, because xetal-x's X_eTaL
+v0.1.0 has no h: namespace: docs/macros-and-extensions.md).</p>
+</div>
+<pre class="code"><span class="c-builtin">n̲l</span> ← { @ → <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot;\n&quot;</span> }</pre>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roductProgram"><span class="c-libfunc">ˡp̲roductProgram</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_enseProgram"><span class="c-libfunc">ˡd̲enseProgram</span></a></div>
+</div>
+<div class="item" id="l.p_roductProgram">
+<h3><a href="#l.p_roductProgram"><span class="c-libfunc">ˡp̲roductProgram</span></a> <span class="type">: a -&gt; b -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L61">line 61</a></div>
+<div class="doc">
+<p>sa gp:p_roductProgram sb: the XIR text of a times b ('+ '* i_nner)
+for an a of the shape sa and a b of the shape sb (Floats).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵍᵖ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="extensions-gpu-lib-Gpu.xtl.html" class="c-string">&quot;Gpu&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span>(<span class="c-number">2</span> <span class="c-number">3</span>) <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roductProgram" class="c-libfunc">ᵍᵖp̲roductProgram</a> <span class="c-number">3</span>
+%a = input f64 [2 3]
+%b = input f64 [3]
+%c = matmul %a %b
+output %c</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡp̲roductProgram</span> ← { sa sb →
+  a ← <span class="c-string">&quot;%a = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> sa) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @
+  b ← <span class="c-string">&quot;%b = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> sb) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @
+  a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> b <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%c = matmul %a %b&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;output %c&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @
+}</pre>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L23">extensions/gpu/demos/offload.xtl:23</a></div>
+</div>
+<div class="item" id="l.d_enseProgram">
+<h3><a href="#l.d_enseProgram"><span class="c-libfunc">ˡd̲enseProgram</span></a> <span class="type">: Int -&gt; a -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L70">line 70</a></div>
+<div class="doc">
+<p>sx gp:d_enseProgram swb: the XIR text of the layer x W + b (Accel's
+ac:d_ense, the bias the last row of wb) for an x of the shape sx and
+a wb of the shape swb.</p>
+</div>
+<pre class="code"><span class="c-libfunc">ˡd̲enseProgram</span> ← { sx swb →
+  nl ← <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @
+  rows ← <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> sx
+  t ← <span class="c-string">&quot;%x = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> sx) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl
+  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%wb = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> swb) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl
+  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%w = drop -1 %wb&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%t = take -1 %wb&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%v = ravel %t&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl
+  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%o = const i64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> rows) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;] &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#o_ffsets" class="c-builtin">o̲ffsets</a> rows) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl
+  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%bias = table right %o %v&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%xw = matmul %x %w&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl
+  t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%y = map add %xw %bias&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;output %y&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl
+}</pre>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a></div>
+</div>
+<h2 class="section" id="section-3">In one call</h2>
+<div class="item" id="l.p_roduct">
+<h3><a href="#l.p_roduct"><span class="c-libfunc">ˡp̲roduct</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L84">line 84</a></div>
+<div class="doc">
+<p>a gp:p_roduct b: a '+ '* i_nner b computed on opencl:0.</p>
+</div>
+<pre class="code"><span class="c-libfunc">ˡp̲roduct</span> ← { a b →
+  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ˡl̲oad</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a) <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roductProgram" class="c-libfunc">ˡp̲roductProgram</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> b
+  n ← <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> a
+  n ← <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> b
+  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ˡr̲un</a> <span class="c-number">0</span>
+  <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ˡo̲utput</a> <span class="c-number">1</span>
+}</pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L16">extensions/gpu/demos/offload.xtl:16</a></div>
+</div>
+<div class="item" id="l.d_ense">
+<h3><a href="#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L93">line 93</a></div>
+<div class="doc">
+<p>x gp:d_ense wb: the layer x W + b (ac:d_ense) computed on opencl:0.</p>
+</div>
+<pre class="code"><span class="c-libfunc">ˡd̲ense</span> ← { x wb →
+  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ˡl̲oad</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> x) <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_enseProgram" class="c-libfunc">ˡd̲enseProgram</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> wb
+  n ← <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> x
+  n ← <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> wb
+  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ˡr̲un</a> <span class="c-number">0</span>
+  <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ˡo̲utput</a> <span class="c-number">1</span>
+}</pre>
+</div>
+<div class="item" id="l.n_ear">
+<h3><a href="#l.n_ear"><span class="c-libfunc">ˡn̲ear</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L109">line 109</a></div>
+<div class="doc">
+<p>want gp:n_ear got: &quot;ok&quot; when the shapes match and every item agrees
+within a relative 1e-5 (absolute below 1), as an f32 device's result
+agrees with the evaluator's f64; else what differs.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵍᵖ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="extensions-gpu-lib-Gpu.xtl.html" class="c-string">&quot;Gpu&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span>(<span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span>) <a href="extensions-gpu-lib-Gpu.xtl.html#l.n_ear" class="c-libfunc">ᵍᵖn̲ear</a> <span class="c-number">1.000001</span> <span class="c-number">2.000001</span> <span class="c-number">3.000001</span>
+ok</pre>
+<pre class="example"><span class="prompt">      </span>(<span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span>) <a href="extensions-gpu-lib-Gpu.xtl.html#l.n_ear" class="c-libfunc">ᵍᵖn̲ear</a> <span class="c-number">1</span> <span class="c-number">2</span>
+FAIL: shapes 3 and 2</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡn̲ear</span> ← { w g →
+  <a href="builtins.html#n_ot" class="c-builtin">n̲ot</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> g ? <span class="c-string">&quot;FAIL: shapes &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; and &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> g
+  d ← <a href="builtins.html#a_bs" class="c-builtin">a̲bs</a> (<a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> w) <a href="builtins.html#-2d" class="c-symbol">−</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> g
+  <span class="c-symbol">'</span><a href="builtins.html#-26" class="c-symbol">∧</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> d <a href="builtins.html#-3c-3d" class="c-symbol">≤</a> <span class="c-number">0.00001</span> <a href="builtins.html#-2a" class="c-symbol">×</a> <span class="c-number">1.0</span> <a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#a_bs" class="c-builtin">a̲bs</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> w ? <span class="c-string">&quot;ok&quot;</span>
+  <span class="c-string">&quot;FAIL: the largest difference is &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <span class="c-builtin">'</span><a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> d
+}</pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-offload.xtl.src.html#L16">extensions/gpu/demos/offload.xtl:16</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L33">extensions/gpu/demos/offload.xtl:33</a></div>
+</div>
+<div class="item" id="l.package">
+<h3><a href="#l.package">ˡpackage</a> <span class="type">: Char</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-lib-Gpu.xtl.src.html#L118">line 118</a></div>
+<div class="doc">
+<p>The native package behind these functions (a literal l: name also
+makes this file a library to &quot;xetal type&quot;: X_eTaL-extensions' ask E7).</p>
+</div>
+<pre class="code">ˡpackage ← <span class="c-string">&quot;gpu&quot;</span></pre>
+</div>
+</main>
+</body>
+</html>

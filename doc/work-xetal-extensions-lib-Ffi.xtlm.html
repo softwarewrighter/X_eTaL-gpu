@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>work/xetal-extensions/lib/Ffi.xtlm - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#w_ords"><span class="c-builtin">w̲ords</span></a></li>
+<li class="item"><a href="#w_ord"><span class="c-builtin">w̲ord</span></a></li>
+<li class="item"><a href="#v_alue"><span class="c-builtin">v̲alue</span></a></li>
+<li class="item"><a href="#q_uery"><span class="c-builtin">q̲uery</span></a></li>
+<li class="item"><a href="#p_ut"><span class="c-builtin">p̲ut</span></a></li>
+<li class="item"><a href="#g_et"><span class="c-builtin">g̲et</span></a></li>
+<li class="item"><a href="#p_arams"><span class="c-builtin">p̲arams</span></a></li>
+<li class="item"><a href="#p_uts"><span class="c-builtin">p̲uts</span></a></li>
+<li class="item"><a href="#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">macro library</span>work/xetal-extensions/lib/Ffi.xtlm</h1>
+<p class="meta"><a href="work-xetal-extensions-lib-Ffi.xtlm.src.html">source</a></p>
+<div class="item" id="w_ords">
+<h3><a href="#w_ords"><span class="c-builtin">w̲ords</span></a> <span class="type">: Char -&gt; Box Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L13">line 13</a></div>
+<pre class="code"><span class="c-builtin">w̲ords</span> ← { s → (<a href="builtins.html#n_ot" class="c-builtin">n̲ot</a> s <a href="builtins.html#-3d" class="c-symbol">=</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot; &quot;</span>) <a href="builtins.html#p_artition" class="c-builtin">p̲artition</a> s }</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut"><span class="c-builtin">p̲ut</span></a>, <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a></div>
+</div>
+<div class="item" id="w_ord">
+<h3><a href="#w_ord"><span class="c-builtin">w̲ord</span></a> <span class="type">: Int -&gt; Box a -&gt; a</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L14">line 14</a></div>
+<pre class="code"><span class="c-builtin">w̲ord</span> ← { i w → <a href="builtins.html#d_isclose" class="c-builtin">d̲isclose</a> i <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> w }</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut"><span class="c-builtin">p̲ut</span></a>, <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_uts"><span class="c-builtin">p̲uts</span></a>, <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a></div>
+</div>
+<div class="item" id="v_alue">
+<h3><a href="#v_alue"><span class="c-builtin">v̲alue</span></a> <span class="type">: Char -&gt; Char -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L18">line 18</a></div>
+<pre class="code"><span class="c-builtin">v̲alue</span> ← { k a →
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;text&quot;</span> ? a
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;chars&quot;</span> ? <span class="c-string">&quot;(r_avel &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;)&quot;</span>
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;int&quot;</span> ? <span class="c-string">&quot;(f_ormat r_avel f_loor &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;)&quot;</span>
+  <span class="c-string">&quot;(f_ormat r_avel f_loat &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;)&quot;</span>
+}</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut"><span class="c-builtin">p̲ut</span></a></div>
+</div>
+<div class="item" id="q_uery">
+<h3><a href="#q_uery"><span class="c-builtin">q̲uery</span></a> <span class="type">: Char -&gt; Char -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L24">line 24</a></div>
+<pre class="code"><span class="c-builtin">q̲uery</span> ← { k a →
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;text&quot;</span> ? <span class="c-string">&quot;?text\&quot;&quot;</span>
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;chars&quot;</span> ? <span class="c-string">&quot;?chars=\&quot; c_at f_ormat s_hape &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;int&quot;</span> ? <span class="c-string">&quot;?int=\&quot; c_at f_ormat s_hape &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a
+  <span class="c-string">&quot;?float=\&quot; c_at f_ormat s_hape &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a
+}</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut"><span class="c-builtin">p̲ut</span></a></div>
+</div>
+<div class="item" id="p_ut">
+<h3><a href="#p_ut"><span class="c-builtin">p̲ut</span></a> <span class="type">: Char -&gt; Char -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L32">line 32</a></div>
+<pre class="code"><span class="c-builtin">p̲ut</span> ← { ka t →
+  k ← <span class="c-number">1</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ords" class="c-builtin">w̲ords</a> ka
+  a ← <span class="c-number">2</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ords" class="c-builtin">w̲ords</a> ka
+  <span class="c-string">&quot;  p&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; := &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (k <a href="work-xetal-extensions-lib-Ffi.xtlm.html#v_alue" class="c-builtin">v̲alue</a> a) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; []N_PUT \&quot;ext:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (k <a href="work-xetal-extensions-lib-Ffi.xtlm.html#q_uery" class="c-builtin">q̲uery</a> a) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span>
+}</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_uts"><span class="c-builtin">p̲uts</span></a></div>
+</div>
+<div class="item" id="g_et">
+<h3><a href="#g_et"><span class="c-builtin">g̲et</span></a> <span class="type">: Char -&gt; Char -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L39">line 39</a></div>
+<pre class="code"><span class="c-builtin">g̲et</span> ← { k t →
+  call ← <span class="c-string">&quot;[]N_GET \&quot;ext:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\&quot;&quot;</span>
+  shape ← <span class="c-string">&quot;(f_loor n_umbers []N_GET \&quot;ext:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;?shape\&quot;) r_eshape v\n&quot;</span>
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;text&quot;</span> ? <span class="c-string">&quot;  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span>
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;float&quot;</span> ? <span class="c-string">&quot;  f_irst n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span>
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;int&quot;</span> ? <span class="c-string">&quot;  f_loor f_irst n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span>
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;floats&quot;</span> ? <span class="c-string">&quot;  v := n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> shape
+  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;ints&quot;</span> ? <span class="c-string">&quot;  v := f_loor n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> shape
+  <span class="c-string">&quot;  v := &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> shape
+}</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a></div>
+</div>
+<div class="item" id="p_arams">
+<h3><a href="#p_arams"><span class="c-builtin">p̲arams</span></a> <span class="type">: (Any a, Num b) =&gt; a -&gt; b -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L51">line 51</a></div>
+<pre class="code"><span class="c-builtin">p̲arams</span> ← { w n →
+  n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">0</span> ? <span class="c-string">&quot;@&quot;</span>
+  n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">1</span> ? <span class="c-string">&quot;a&quot;</span>
+  <span class="c-string">&quot;a b&quot;</span>
+}</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a></div>
+</div>
+<div class="item" id="p_uts">
+<h3><a href="#p_uts"><span class="c-builtin">p̲uts</span></a> <span class="type">: Box Char -&gt; Char -&gt; Char</span></h3>
+<div class="meta">function <span class="private">(private)</span> &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L56">line 56</a></div>
+<pre class="code"><span class="c-builtin">p̲uts</span> ← { w t →
+  n ← (<a href="builtins.html#t_ally" class="c-builtin">t̲ally</a> w) <a href="builtins.html#-2d" class="c-symbol">−</a> <span class="c-number">4</span>
+  (n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">1</span>) <a href="builtins.html#-2a" class="c-symbol">×</a> (<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;unit&quot;</span> ? <span class="c-string">&quot;&quot;</span>
+  n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">1</span> ? ((<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; a&quot;</span>) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut" class="c-builtin">p̲ut</a> t
+  (((<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; a&quot;</span>) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut" class="c-builtin">p̲ut</a> t) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> ((<span class="c-number">4</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; b&quot;</span>) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut" class="c-builtin">p̲ut</a> t
+}</pre>
+<div class="uses">Used in: <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a></div>
+</div>
+<div class="item" id="m.b_ind-3c">
+<h3><a href="#m.b_ind-3c"><span class="c-macro">ᵐb̲ind&lt;</span></a> <span class="type">: Char -&gt; Char -&gt; Char</span></h3>
+<div class="meta">macro &middot; <a href="work-xetal-extensions-lib-Ffi.xtlm.src.html#L64">line 64</a></div>
+<pre class="code"><span class="c-macro">ᵐb̲ind&lt;</span> ← { sig target →
+  w ← <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ords" class="c-builtin">w̲ords</a> sig
+  n ← <a href="builtins.html#t_ally" class="c-builtin">t̲ally</a> w
+  args ← (n <a href="builtins.html#-2d" class="c-symbol">−</a> <span class="c-number">4</span>) <a href="builtins.html#-2d" class="c-symbol">−</a> (<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;unit&quot;</span>
+  <span class="c-string">&quot;l:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<span class="c-number">1</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; := { &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (w <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_arams" class="c-builtin">p̲arams</a> args) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; -&gt;\n&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (w <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_uts" class="c-builtin">p̲uts</a> target) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> ((n <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#g_et" class="c-builtin">g̲et</a> target) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;}&quot;</span>
+}</pre>
+<div class="uses">Used in: <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_evices"><span class="c-libfunc">ˡd̲evices</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad"><span class="c-libfunc">ˡl̲oad</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind"><span class="c-libfunc">ˡb̲ind</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.s_chedule"><span class="c-libfunc">ˡs̲chedule</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un"><span class="c-libfunc">ˡr̲un</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput"><span class="c-libfunc">ˡo̲utput</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utputInts"><span class="c-libfunc">ˡo̲utputInts</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.e_xplain"><span class="c-libfunc">ˡe̲xplain</span></a>, <a href="extensions-gpu-lib-Gpu.xtl.html#l.k_ernel"><span class="c-libfunc">ˡk̲ernel</span></a>, <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.n_ow"><span class="c-libfunc">ˡn̲ow</span></a>, <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.i_so"><span class="c-libfunc">ˡi̲so</span></a>, <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.i_soOf"><span class="c-libfunc">ˡi̲soOf</span></a>, <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.m_illis"><span class="c-libfunc">ˡm̲illis</span></a></div>
+</div>
+</main>
+</body>
+</html>

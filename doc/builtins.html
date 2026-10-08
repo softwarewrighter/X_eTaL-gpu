@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>built-ins - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1>Built-ins</h1>
+<table class="items">
+<tr><th>name</th><th>type</th><th>what it does</th></tr>
+<tr id="-2b"><td><code><span class="c-symbol">+</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>Plus.</p>
+</td></tr>
+<tr id="-2d"><td><code><span class="c-symbol">−</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>Minus. Written spaced (<code><span class="c-number">3</span> <span class="c-symbol">−</span> <span class="c-number">1</span></code>): a minus touching a number makes it negative.</p>
+</td></tr>
+<tr id="-2a"><td><code><span class="c-symbol">×</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>Times, drawn as the times sign.</p>
+</td></tr>
+<tr id="-5e"><td><code><span class="c-symbol">^</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>Power, spaced: <code>x <span class="c-symbol">^</span> n</code>. An exponent written touching a value (<code>x<span class="c-exponent">²</span></code>) is a literal superscript instead; touching a function it is function power (see p_ower).</p>
+</td></tr>
+<tr id="m_ax"><td><code><span class="c-builtin">m̲ax</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>The larger of two numbers; <code><span class="c-builtin">'</span><span class="c-builtin">m̲ax</span> <span class="c-builtin">r̲/</span></code> is the largest item.</p>
+</td></tr>
+<tr id="m_in"><td><code><span class="c-builtin">m̲in</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>The smaller of two numbers.</p>
+</td></tr>
+<tr id="-2f"><td><code><span class="c-symbol">÷</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; Float</code></td><td><p>Divide, drawn as the division sign; the result is a Float.</p>
+</td></tr>
+<tr id="d_iv"><td><code><span class="c-builtin">d̲iv</span></code></td><td><code>Int -&gt; Int -&gt; Int</code></td><td><p>Whole-number division, in maths order: <code><span class="c-number">7</span> <span class="c-builtin">d̲iv</span> <span class="c-number">2</span></code> is 3.</p>
+</td></tr>
+<tr id="m_od"><td><code><span class="c-builtin">m̲od</span></code></td><td><code>Int -&gt; Int -&gt; Int</code></td><td><p>Remainder, in maths order: <code><span class="c-number">7</span> <span class="c-builtin">m̲od</span> <span class="c-number">3</span></code> is 1 (the left argument is divided by the right).</p>
+</td></tr>
+<tr id="n_eg"><td><code><span class="c-builtin">n̲eg</span></code></td><td><code>Num a =&gt; a -&gt; a</code></td><td><p>Negate.</p>
+</td></tr>
+<tr id="a_bs"><td><code><span class="c-builtin">a̲bs</span></code></td><td><code>Num a =&gt; a -&gt; a</code></td><td><p>Absolute value.</p>
+</td></tr>
+<tr id="f_loor"><td><code><span class="c-builtin">f̲loor</span></code></td><td><code>Num a =&gt; a -&gt; Int</code></td><td><p>Round down to an Int.</p>
+</td></tr>
+<tr id="c_eiling"><td><code><span class="c-builtin">c̲eiling</span></code></td><td><code>Num a =&gt; a -&gt; Int</code></td><td><p>Round up to an Int.</p>
+</td></tr>
+<tr id="e_xp"><td><code><span class="c-builtin">e̲xp</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>e to a power.</p>
+</td></tr>
+<tr id="l_og"><td><code><span class="c-builtin">l̲og</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>Natural logarithm.</p>
+</td></tr>
+<tr id="f_loat"><td><code><span class="c-builtin">f̲loat</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>An Int as a Float. A Float prints in the shortest form that reads back exactly, always with a <code><span class="c-error">.</span></code>, so a whole Float shows <code><span class="c-error">.</span><span class="c-number">0</span></code> and a sum shows every digit it holds.</p>
+</td></tr>
+<tr id="s_in"><td><code><span class="c-builtin">s̲in</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>Sine.</p>
+</td></tr>
+<tr id="c_os"><td><code><span class="c-builtin">c̲os</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>Cosine.</p>
+</td></tr>
+<tr id="a_tan"><td><code><span class="c-builtin">a̲tan</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>Arctangent, the angle whose tangent is the argument.</p>
+</td></tr>
+<tr id="p_i"><td><code><span class="c-builtin">p̲i</span></code></td><td><code>Unit -&gt; Float</code></td><td><p>The constant pi. It is niladic, so it is applied to <code>@</code>.</p>
+</td></tr>
+<tr id="-3d"><td><code><span class="c-symbol">=</span></code></td><td><code>(Eq a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Equal (any scalar type).</p>
+</td></tr>
+<tr id="-21-3d"><td><code><span class="c-symbol">≠</span></code></td><td><code>(Eq a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Not equal.</p>
+</td></tr>
+<tr id="-3c"><td><code><span class="c-symbol">&lt;</span></code></td><td><code>(Ord a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Less than (numbers and characters).</p>
+</td></tr>
+<tr id="-3e"><td><code><span class="c-symbol">&gt;</span></code></td><td><code>(Ord a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Greater than.</p>
+</td></tr>
+<tr id="-3c-3d"><td><code><span class="c-symbol">≤</span></code></td><td><code>(Ord a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>At most.</p>
+</td></tr>
+<tr id="-3e-3d"><td><code><span class="c-symbol">≥</span></code></td><td><code>(Ord a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>At least.</p>
+</td></tr>
+<tr id="e_q-7e"><td><code><span class="c-builtin">e̲q~</span></code></td><td><code>(Num a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Equal within a small tolerance, for Floats.</p>
+</td></tr>
+<tr id="-26"><td><code><span class="c-symbol">∧</span></code></td><td><code>(Truthy a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>And.</p>
+</td></tr>
+<tr id="-7c"><td><code><span class="c-symbol">∨</span></code></td><td><code>(Truthy a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Or.</p>
+</td></tr>
+<tr id="n_ot"><td><code><span class="c-builtin">n̲ot</span></code></td><td><code>(Truthy a, Truthy b) =&gt; a -&gt; b</code></td><td><p>Not.</p>
+</td></tr>
+<tr id="p_rint-21"><td><code><span class="c-builtin">p̲rint!</span></code></td><td><code>Any a =&gt; a -&gt; a</code></td><td><p>Print a value and give it back (the ! marks an effect).</p>
+</td></tr>
+<tr id="r_oll-21"><td><code><span class="c-builtin">r̲oll!</span></code></td><td><code>Int -&gt; Int</code></td><td><p>A random whole number from 1 to n for every n (seeded here, so the example repeats).</p>
+</td></tr>
+<tr id="i_d"><td><code><span class="c-builtin">i̲d</span></code></td><td><code>Any a =&gt; a -&gt; a</code></td><td><p>The value itself. As the left function of a fork it gives the argument unchanged: <code>[<span class="c-builtin">i̲d</span> F G] x</code> is <code>(<span class="c-builtin">i̲d</span> x) F (G x)</code>, that is <code>x F (G x)</code> (a hook); <code>[<span class="c-builtin">i̲d</span> <span class="c-symbol">−</span> <span class="c-builtin">n̲eg</span>] <span class="c-number">5</span></code> is <code><span class="c-number">5</span> <span class="c-symbol">−</span> (<span class="c-builtin">n̲eg</span> <span class="c-number">5</span>)</code>.</p>
+</td></tr>
+<tr id="l_eft"><td><code><span class="c-builtin">l̲eft</span></code></td><td><code>(Any a, Any b) =&gt; a -&gt; b -&gt; a</code></td><td><p>The left argument. In a dyadic train, <code>x [<span class="c-builtin">l̲eft</span> F <span class="c-builtin">r̲ight</span>] y</code> is <code>x F y</code>, so the tacks pick an argument for each side of a fork.</p>
+</td></tr>
+<tr id="r_ight"><td><code><span class="c-builtin">r̲ight</span></code></td><td><code>(Any a, Any b) =&gt; a -&gt; b -&gt; b</code></td><td><p>The right argument.</p>
+</td></tr>
+<tr id="-5b-5dA"><td><code><span class="c-builtin">⎕A</span></code></td><td><code>Char</code></td><td><p>The alphabet, the uppercase letters: a system value, written without an underline and read where it is used.</p>
+</td></tr>
+<tr id="-5b-5dD"><td><code><span class="c-builtin">⎕D</span></code></td><td><code>Char</code></td><td><p>The digits, as characters.</p>
+</td></tr>
+<tr id="-5b-5dAV"><td><code><span class="c-builtin">⎕AV</span></code></td><td><code>Char</code></td><td><p>The atomic vector: every character, ASCII 0 to 127 (source is ASCII), so a character's code is its place in it, less one.</p>
+</td></tr>
+<tr id="-5b-5dIO"><td><code><span class="c-builtin">⎕IO</span></code></td><td><code>Int</code></td><td><p>The index origin: always 1 (there is no setting).</p>
+</td></tr>
+<tr id="-5b-5dTS"><td><code><span class="c-builtin">⎕TS</span></code></td><td><code>Int</code></td><td><p>The local time stamp: year, month, day, hour, minute, second and millisecond, read each time it is used (a host without a clock reports <code>error[no<span class="c-symbol">−</span>clock]</code>). Shown here by its shape, since it changes.</p>
+</td></tr>
+<tr id="-5b-5dD_L"><td><code><span class="c-builtin">⎕D̲L</span></code></td><td><code>Num a =&gt; a -&gt; Float</code></td><td><p>Wait the given seconds (an Int or a Float); the result is the seconds actually waited, at least those asked for. A negative delay is an error.</p>
+</td></tr>
+<tr id="-5b-5dU_CS"><td><code><span class="c-builtin">⎕U̲CS</span></code></td><td><code>Char -&gt; Int</code></td><td><p>The code of each character, keeping the shape. Codes go back to characters with <code><span class="c-builtin">⎕U̲CHAR</span></code>.</p>
+</td></tr>
+<tr id="-5b-5dU_CHAR"><td><code><span class="c-builtin">⎕U̲CHAR</span></code></td><td><code>Int -&gt; Char</code></td><td><p>The character of each code, 0 to 127; another code is an error.</p>
+</td></tr>
+<tr id="-5b-5dN_PUT"><td><code><span class="c-builtin">⎕N̲PUT</span></code></td><td><code>Char -&gt; Char -&gt; Int</code></td><td><p>Write the text on the left to the file on the right (made, with its directories, if missing); how many characters it wrote.</p>
+</td></tr>
+<tr id="-5b-5dN_GET"><td><code><span class="c-builtin">⎕N̲GET</span></code></td><td><code>Char -&gt; Char</code></td><td><p>A file's text.</p>
+</td></tr>
+<tr id="-5b-5dR_EAD"><td><code><span class="c-builtin">⎕R̲EAD</span></code></td><td><code>Unit -&gt; Char</code></td><td><p>A line typed at the keyboard (here, the line &quot;a typed line&quot;). At the end of input it is an error, <code>io</code>; to read until the input ends, trap it: <code><span class="c-quote">'</span>{ @ → <span class="c-builtin">⎕R̲EAD</span> @ } <span class="c-builtin">⎕T̲RAP</span> <span class="c-quote">'</span>{ e → <span class="c-builtin">⎕R̲ECOVER</span> <span class="c-string">&quot;&lt;end&gt;&quot;</span> }</code> gives each line in turn, then <code><span class="c-symbol">&lt;</span>end<span class="c-symbol">&gt;</span></code>.</p>
+</td></tr>
+<tr id="-5b-5dE_RR"><td><code><span class="c-builtin">⎕E̲RR</span></code></td><td><code>Char -&gt; Char</code></td><td><p>Write a line to standard error (red in the live demo), and give the text back.</p>
+</td></tr>
+<tr id="-5b-5dP_ANIC"><td><code><span class="c-builtin">⎕P̲ANIC</span></code></td><td><code>Any a =&gt; Char -&gt; a</code></td><td><p>Stop the program with error[panic] and the text as its message (what <code>@ <span class="c-macro">p̲anic&lt;</span> <span class="c-string">&quot;...&quot;</span></code> writes). Its result has any type, so it stands where any value may.</p>
+</td></tr>
+<tr id="-5b-5dS_IGNAL"><td><code><span class="c-builtin">⎕S̲IGNAL</span></code></td><td><code>Any a =&gt; Char -&gt; Char -&gt; a</code></td><td><p>Stop with an error of your own: the code on the left names the error class, as xetal's own codes do (lowercase letters, digits and hyphens), and the text on the right is its message. Uncaught, it ends the program with exit status 1, like any error. Its result has any type.</p>
+</td></tr>
+<tr id="-5b-5dW_ARN"><td><code><span class="c-builtin">⎕W̲ARN</span></code></td><td><code>Any a =&gt; a -&gt; Box Char -&gt; a</code></td><td><p>An error the program can go on from (a warning): the left argument is the value to go on with, of the type of the place the warning stands in, and the right is the code and the message, a strand of two strings. Uncaught, a warning is an error like a signal. A handler that answers <code><span class="c-builtin">⎕C̲ONTINUE</span></code> makes the program go on from the warning with that value; the other answers unwind as they do for any error.</p>
+</td></tr>
+<tr id="-5b-5dT_RAP"><td><code><span class="c-builtin">⎕T̲RAP</span></code></td><td><code>Any a =&gt; (Unit -&gt; a) -&gt; (Error -&gt; Outcome a) -&gt; a</code></td><td><p>Run the body; on any error, call the handler with it. The trap's value is the body's, or what the handler recovers with.</p>
+</td></tr>
+<tr id="-5b-5dE_NSURE"><td><code><span class="c-builtin">⎕E̲NSURE</span></code></td><td><code>(Any a, Any b) =&gt; (Unit -&gt; a) -&gt; (Unit -&gt; b) -&gt; a</code></td><td><p>Run the body, then the cleanup (a function of <code>@</code>), whether the body gave a value or stopped with an error; the body's value, or its error going on. The <code><span class="c-macro">f̲inally&lt;</span></code> macro writes it.</p>
+</td></tr>
+<tr id="-5b-5dR_ECOVER"><td><code><span class="c-builtin">⎕R̲ECOVER</span></code></td><td><code>Any a =&gt; a -&gt; Outcome a</code></td><td><p>The handler's answer: the trap's value is this one, of the body's type.</p>
+</td></tr>
+<tr id="-5b-5dR_ETRY"><td><code><span class="c-builtin">⎕R̲ETRY</span></code></td><td><code>Any a =&gt; Error -&gt; Outcome a</code></td><td><p>The handler's answer: run the body again. After 1000 runs the trap gives up with error[retry-limit].</p>
+</td></tr>
+<tr id="-5b-5dH_ALT"><td><code><span class="c-builtin">⎕H̲ALT</span></code></td><td><code>Any a =&gt; Error -&gt; Outcome a</code></td><td><p>The handler's answer: the error goes on as it was, from where it was raised. A handler for one kind of error halts on the others.</p>
+</td></tr>
+<tr id="-5b-5dC_ONTINUE"><td><code><span class="c-builtin">⎕C̲ONTINUE</span></code></td><td><code>Any a =&gt; Error -&gt; Outcome a</code></td><td><p>The handler's answer to a warning: go on from it, with its value. The handler runs where the warning was raised, before any cleanup between it and the trap, so nothing has been undone. Halting a warning passes it outward still a warning; continuing an error raised by <code><span class="c-builtin">⎕S̲IGNAL</span></code> is error[not-resumable], since it has no value to go on with.</p>
+</td></tr>
+<tr id="-5b-5dE_CODE"><td><code><span class="c-builtin">⎕E̲CODE</span></code></td><td><code>Error -&gt; Char</code></td><td><p>The code of a caught error (<code>mine</code> of error[mine]).</p>
+</td></tr>
+<tr id="-5b-5dE_MESSAGE"><td><code><span class="c-builtin">⎕E̲MESSAGE</span></code></td><td><code>Error -&gt; Char</code></td><td><p>The message of a caught error.</p>
+</td></tr>
+<tr id="-5b-5dE_WHERE"><td><code><span class="c-builtin">⎕E̲WHERE</span></code></td><td><code>Error -&gt; Char</code></td><td><p>Where a caught error was raised, as errors print it: the span of source text, <code>start<span class="c-error">.</span><span class="c-error">.</span>end</code>.</p>
+</td></tr>
+<tr id="-5b-5dT_E"><td><code><span class="c-builtin">⎕T̲E</span></code></td><td><code>Unit -&gt; Int</code></td><td><p>The terminal's facts: rows, columns, 1 when output is a terminal, 1 when it does screen control (here, output to a file).</p>
+</td></tr>
+<tr id="-5b-5dK_EY"><td><code><span class="c-builtin">⎕K̲EY</span></code></td><td><code>Unit -&gt; Key</code></td><td><p>One key, without Enter, as a Key (here, the key a): the terminal reads it raw; in the live demo the program waits in the terminal pane. Keys are named in the Terminal library (<code><span class="c-libfunc">ᵗ⁼</span><span class="c-macro">u̲se&lt;</span> <span class="c-string">&quot;Terminal&quot;</span></code>, then <code>ᵗUP</code>, <code>ᵗENTER</code>, ...) and compare with <code><span class="c-symbol">=</span></code>.</p>
+</td></tr>
+<tr id="-5b-5dK_CHAR"><td><code><span class="c-builtin">⎕K̲CHAR</span></code></td><td><code>Key -&gt; Char</code></td><td><p>A printing key's character, or nothing for a named key such as Up.</p>
+</td></tr>
+<tr id="-5b-5dK_NAMED"><td><code><span class="c-builtin">⎕K̲NAMED</span></code></td><td><code>Int -&gt; Key</code></td><td><p>Named key n (1 to 11: Up, Down, Left, Right, Enter, Escape, Backspace, Tab, Delete, Home, End), for the Terminal library, which names them.</p>
+</td></tr>
+<tr id="-5b-5dV_IEW"><td><code><span class="c-builtin">⎕V̲IEW</span></code></td><td><code>Char -&gt; Box Char</code></td><td><p>Source text as the editor and the HTML export see it: a matrix of boxed texts, a row per run of one class, two columns: the decorated text (underlines drawn, as <code>xetal render</code> shows it) and the class (<code>builtin</code>, <code>userfunc</code>, <code>libfunc</code>, <code>variable</code>, <code>lambdaarg</code>, <code>number</code>, <code>exponent</code>, <code>string</code>, <code>symbol</code>, <code>quote</code>, <code>punct</code>, <code>unit</code>, <code>comment</code>, <code>space</code>, <code>macro</code>, <code>error</code>). A program colors code in a picture or a page from it, so the coloring never drifts from the language.</p>
+</td></tr>
+<tr id="-5b-5dL_IST"><td><code><span class="c-builtin">⎕L̲IST</span></code></td><td><code>Char -&gt; Char -&gt; Box Char</code></td><td><p>A top-level list of strings in a TOML file, as boxed texts: <code><span class="c-string">&quot;file&quot;</span> <span class="c-builtin">⎕L̲IST</span> <span class="c-string">&quot;name&quot;</span></code>. Strings only, and nothing in the file is run; a missing list, a value that is not a list of strings, or a file that is not TOML is error[bad-table], naming the file and the key.</p>
+</td></tr>
+<tr id="-5b-5dT_ABLE"><td><code><span class="c-builtin">⎕T̲ABLE</span></code></td><td><code>Box Char -&gt; Box Char -&gt; Box Char</code></td><td><p>A table of tables in a TOML file as a matrix of texts whose rows and columns follow two top-level lists: <code>(<span class="c-string">&quot;file&quot;</span> <span class="c-string">&quot;name&quot;</span>) <span class="c-builtin">⎕T̲ABLE</span> (<span class="c-string">&quot;rows&quot;</span> <span class="c-string">&quot;cols&quot;</span>)</code>; a cell the file does not have is the empty text. The Rosetta stone reads its idioms this way: <code>(<span class="c-string">&quot;data.toml&quot;</span> <span class="c-string">&quot;source&quot;</span>) <span class="c-builtin">⎕T̲ABLE</span> (<span class="c-string">&quot;idioms&quot;</span> <span class="c-string">&quot;languages&quot;</span>)</code>.</p>
+</td></tr>
+<tr id="-5b-5dE_VENT"><td><code><span class="c-builtin">⎕E̲VENT</span></code></td><td><code>Unit -&gt; Event</code></td><td><p>The next event from the host, as an Event: a tick of the clock, a pointer down, move, up or click, a key, or <code>end</code> when there are no more. The command line reads them one per line from standard input or <code><span class="c-symbol">−</span><span class="c-symbol">−</span>events FILE</code> (<code>tick <span class="c-number">0.016</span></code>, <code>down <span class="c-number">120</span> <span class="c-number">80</span></code>, <code>key Up</code>); in the live demo the page gives ticks on each frame and the keys pressed. A program that draws loops on them: <code>e ← <span class="c-builtin">⎕E̲VENT</span> @</code>, update, <code><span class="c-builtin">⎕S̲HOW</span></code>, again, until <code><span class="c-builtin">⎕E̲KIND</span> e</code> is <code>end</code>. Here the next event is <code>down <span class="c-number">120</span> <span class="c-number">80</span></code>.</p>
+</td></tr>
+<tr id="-5b-5dE_KIND"><td><code><span class="c-builtin">⎕E̲KIND</span></code></td><td><code>Event -&gt; Char</code></td><td><p>What kind an event is, as text: <code>tick</code>, <code>down</code>, <code>move</code>, <code>up</code>, <code>click</code>, <code>key</code>, <code>choose</code> (a choice in the host's controls, <code><span class="c-builtin">⎕E̲AT</span></code> giving which list and which item) or <code>end</code>.</p>
+</td></tr>
+<tr id="-5b-5dE_AT"><td><code><span class="c-builtin">⎕E̲AT</span></code></td><td><code>Event -&gt; Float</code></td><td><p>An event's numbers: <code>x y</code> for a pointer, the seconds since the last tick for a tick, the list and the item for a choice, none for a key or the end.</p>
+</td></tr>
+<tr id="-5b-5dE_KEY"><td><code><span class="c-builtin">⎕E̲KEY</span></code></td><td><code>Event -&gt; Key</code></td><td><p>A key event's key (<code><span class="c-builtin">⎕K̲CHAR</span></code> reads its character); an error for the other kinds. Here the events are <code>down <span class="c-number">120</span> <span class="c-number">80</span></code> then <code>key a</code>.</p>
+</td></tr>
+<tr id="-5b-5dC_OLOR"><td><code><span class="c-builtin">⎕C̲OLOR</span></code></td><td><code>Int -&gt; Color</code></td><td><p>Color n (1 to 8: black, red, green, yellow, blue, magenta, cyan, white), for the Terminal library, which names them (<code>ᵗRED</code>).</p>
+</td></tr>
+<tr id="-5b-5dF_G"><td><code><span class="c-builtin">⎕F̲G</span></code></td><td><code>Color -&gt; Char -&gt; Char</code></td><td><p>Text in a foreground color: the text wrapped in the codes a terminal (or the live demo's grid) colors it with; print it to see it. Here, its length: five characters on each side of the text.</p>
+</td></tr>
+<tr id="-5b-5dB_G"><td><code><span class="c-builtin">⎕B̲G</span></code></td><td><code>Color -&gt; Char -&gt; Char</code></td><td><p>Text on a background color, as []F_G does the foreground.</p>
+</td></tr>
+<tr id="-5b-5dB_OLD"><td><code><span class="c-builtin">⎕B̲OLD</span></code></td><td><code>Char -&gt; Char</code></td><td><p>Text in bold (wrapped in its codes, as []F_G).</p>
+</td></tr>
+<tr id="-5b-5dA_T"><td><code><span class="c-builtin">⎕A̲T</span></code></td><td><code>Int -&gt; Char -&gt; Char</code></td><td><p>Text placed at a row and a column (1-origin), for a program that draws a screen: the code moving the cursor there, then the text.</p>
+</td></tr>
+<tr id="-5b-5dC_LS"><td><code><span class="c-builtin">⎕C̲LS</span></code></td><td><code>Unit -&gt; Char</code></td><td><p>The text that clears the screen and moves the cursor home; print it.</p>
+</td></tr>
+<tr id="f_ormat"><td><code><span class="c-builtin">f̲ormat</span></code></td><td><code>a -&gt; Char</code></td><td><p>A value as the text it prints as.</p>
+</td></tr>
+<tr id="n_umbers"><td><code><span class="c-builtin">n̲umbers</span></code></td><td><code>Char -&gt; Float</code></td><td><p>The numbers in a text, as Floats.</p>
+</td></tr>
+<tr id="-5b-5dR_EJECT"><td><code><span class="c-builtin">⎕R̲EJECT</span></code></td><td><code>Char -&gt; Char -&gt; Char</code></td><td><p>Fail the macro call being expanded: the left text is a code and where to report it (call, left or right), the right text the message.</p>
+</td></tr>
+<tr id="-5b-5dS_TATEMENT"><td><code><span class="c-builtin">⎕S̲TATEMENT</span></code></td><td><code>Truthy a =&gt; Unit -&gt; a</code></td><td><p>Whether the call being expanded stands as a statement of its own.</p>
+</td></tr>
+<tr id="-5b-5dF_ILE"><td><code><span class="c-builtin">⎕F̲ILE</span></code></td><td><code>Unit -&gt; Char</code></td><td><p>The file the call being expanded is written in (<code>@ <span class="c-macro">f̲ile&lt;</span> @</code>).</p>
+</td></tr>
+<tr id="-5b-5dL_INE"><td><code><span class="c-builtin">⎕L̲INE</span></code></td><td><code>Unit -&gt; Int</code></td><td><p>The line the call being expanded is written on (<code>@ <span class="c-macro">l̲ine&lt;</span> @</code>).</p>
+</td></tr>
+<tr id="-5b-5dI_NCLUDE"><td><code><span class="c-builtin">⎕I̲NCLUDE</span></code></td><td><code>Char -&gt; Char</code></td><td><p>The text of a file, by a path relative to the file the call being expanded is written in (<code>@ <span class="c-macro">i̲nclude&lt;</span> <span class="c-string">&quot;data.txt&quot;</span></code>).</p>
+</td></tr>
+<tr id="-5b-5dC_FG"><td><code><span class="c-builtin">⎕C̲FG</span></code></td><td><code>Truthy a =&gt; Char -&gt; a</code></td><td><p>Whether a configuration fact holds: the platform (cli or web) or a flag set with <code>xetal <span class="c-symbol">−</span><span class="c-symbol">−</span>cfg NAME</code> (<code>@ <span class="c-macro">c̲fg&lt;</span> <span class="c-string">&quot;web&quot;</span></code>).</p>
+</td></tr>
+<tr id="-5b-5dG_RID"><td><code><span class="c-builtin">⎕G̲RID</span></code></td><td><code>Eq a =&gt; a -&gt; Char</code></td><td><p>An array as a picture, returned as SVG text: a vector as one row of cells, a matrix as a grid, a rank-3 array as frames shown in turn. Numbers that are all 0 or 1 draw their 1s dark; other numbers are colored from the least (dark purple) to the greatest (yellow); characters are drawn in their cells. A frame of more than 64 by 64 numbers is drawn as an image, a pixel per cell.</p>
+</td></tr>
+<tr id="-5b-5dP_ATH"><td><code><span class="c-builtin">⎕P̲ATH</span></code></td><td><code>Num a =&gt; a -&gt; Char</code></td><td><p>Points as a picture, returned as SVG text: 2 rows, x over y, joined in order and fitted into a 400-pixel picture with y pointing up; a rank-3 array is frames of paths shown in turn.</p>
+</td></tr>
+<tr id="-5b-5dS_HOW"><td><code><span class="c-builtin">⎕S̲HOW</span></code></td><td><code>Char -&gt; Char</code></td><td><p>Show a picture, and return it: the command line writes it to a numbered file (<code><span class="c-symbol">−</span><span class="c-symbol">−</span>draw DIR</code>, else <code><span class="c-builtin">XETAL̲DRAW</span></code>, else the current directory), the browser shows it beside the program.</p>
+</td></tr>
+<tr id="s_hape"><td><code><span class="c-builtin">s̲hape</span></code></td><td><code>a -&gt; Int</code></td><td><p>The length of each axis.</p>
+</td></tr>
+<tr id="t_ally"><td><code><span class="c-builtin">t̲ally</span></code></td><td><code>a -&gt; Int</code></td><td><p>How many items along the first axis: the rows of a matrix. With a subscript it counts along that axis only when the result keeps a rank the rule allows: <code><span class="c-builtin">t̲ally₂</span></code> would drop two ranks, an error.</p>
+</td></tr>
+<tr id="r_ange"><td><code><span class="c-builtin">r̲ange</span></code></td><td><code>Int -&gt; Int</code></td><td><p>The numbers 1 to n.</p>
+</td></tr>
+<tr id="o_ffsets"><td><code><span class="c-builtin">o̲ffsets</span></code></td><td><code>Int -&gt; Int</code></td><td><p>The numbers 0 to n - 1.</p>
+</td></tr>
+<tr id="f_irst"><td><code><span class="c-builtin">f̲irst</span></code></td><td><code>a -&gt; a</code></td><td><p>The first item along the first axis: the first row. With a subscript, along that axis: <code><span class="c-builtin">f̲irst₂</span></code> is the first column.</p>
+</td></tr>
+<tr id="r_avel"><td><code><span class="c-builtin">r̲avel</span></code></td><td><code>a -&gt; a</code></td><td><p>Every item as one vector, row after row. With axis 2, column after column.</p>
+</td></tr>
+<tr id="r_eshape"><td><code><span class="c-builtin">r̲eshape</span></code></td><td><code>Int -&gt; a -&gt; a</code></td><td><p>The items of the right argument, taken in order and repeated as needed, into the shape on the left.</p>
+</td></tr>
+<tr id="t_ake"><td><code><span class="c-builtin">t̲ake</span></code></td><td><code>Int -&gt; a -&gt; a</code></td><td><p>The first n items (the last n for a negative n) along the first axis, or along the subscript's axis.</p>
+</td></tr>
+<tr id="d_rop"><td><code><span class="c-builtin">d̲rop</span></code></td><td><code>Int -&gt; a -&gt; a</code></td><td><p>All but the first n items (the last n for a negative n), along the first axis or the subscript's.</p>
+</td></tr>
+<tr id="s_elect"><td><code><span class="c-builtin">s̲elect</span></code></td><td><code>Int -&gt; a -&gt; a</code></td><td><p>The items at the given positions (from 1) along the first axis, or along the subscript's axis.</p>
+</td></tr>
+<tr id="r_eplicate"><td><code><span class="c-builtin">r̲eplicate</span></code></td><td><code>Truthy a =&gt; a -&gt; b -&gt; b</code></td><td><p>Replicate: each item (each row of a matrix) repeated as many times as its count on the left, so a 0 drops it and a mask of 1s and 0s keeps the items where it is 1; one count extends to every item, and with a subscript the counts go along that axis. A negative count is an error.</p>
+</td></tr>
+<tr id="c_at"><td><code><span class="c-builtin">c̲at</span></code></td><td><code>a -&gt; a -&gt; a</code></td><td><p>Join along the first axis, or with a subscript along that axis of both arguments: <code><span class="c-builtin">c̲at₂</span></code> puts matrices side by side. The other axes must match; a single value extends, and an argument of one rank less is one row (or, along axis 2, one column).</p>
+</td></tr>
+<tr id="r_-2f"><td><code><span class="c-builtin">r̲/</span></code></td><td><code>(a -&gt; a -&gt; a) -&gt; a -&gt; a</code></td><td><p>Reduce: combine the items along the first axis with the function, from the right (<code><span class="c-symbol">'</span><span class="c-symbol">−</span> <span class="c-builtin">r̲/</span> <span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span></code> is 1 - (2 - 3)). On a matrix that combines the rows. A subscript picks the axis; two digits reduce both axes.</p>
+</td></tr>
+<tr id="s_-5c"><td><code><span class="c-builtin">s̲\</span></code></td><td><code>(a -&gt; a -&gt; a) -&gt; a -&gt; a</code></td><td><p>Scan: every running reduce, the last being the whole reduce. On a matrix down the rows; with a subscript along that axis.</p>
+</td></tr>
+<tr id="e_ach"><td><code><span class="c-builtin">e̲ach</span></code></td><td><code>(a -&gt; b) -&gt; a -&gt; b</code></td><td><p>Apply a function to every item. Given a dyadic function it pairs items of two arrays.</p>
+</td></tr>
+<tr id="m_ap"><td><code><span class="c-builtin">m̲ap</span></code></td><td><code>(a -&gt; b) -&gt; a -&gt; Box b</code></td><td><p>Map: the function on each item, every result boxed, so the function may give an array (e_ach wants one value per item).</p>
+</td></tr>
+<tr id="t_able"><td><code><span class="c-builtin">t̲able</span></code></td><td><code>(a -&gt; b -&gt; c) -&gt; a -&gt; b -&gt; c</code></td><td><p>Every pairing of an item on the left with one on the right (APL's outer product): the result has both shapes.</p>
+</td></tr>
+<tr id="i_nner"><td><code><span class="c-builtin">i̲nner</span></code></td><td><code>(a -&gt; b -&gt; c) -&gt; (c -&gt; c -&gt; c) -&gt; a -&gt; b -&gt; c</code></td><td><p>Inner product: <code>A <span class="c-symbol">'</span><span class="c-symbol">+</span> <span class="c-symbol">'</span><span class="c-symbol">×</span> <span class="c-builtin">i̲nner</span> B</code> is matrix multiplication (the last axis of A with the first of B).</p>
+</td></tr>
+<tr id="c_ompose"><td><code><span class="c-builtin">c̲ompose</span></code></td><td><code>(Any a, Any b, Any c) =&gt; (a -&gt; b) -&gt; (b -&gt; c) -&gt; a -&gt; c</code></td><td><p><code><span class="c-quote">'</span>f <span class="c-quote">'</span>g <span class="c-builtin">c̲ompose</span> x</code> is f applied to g applied to x; the atop train <code>[f g] x</code> is the same.</p>
+</td></tr>
+<tr id="s_wap"><td><code><span class="c-builtin">s̲wap</span></code></td><td><code>(Any a, Any b, Any c) =&gt; (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c</code></td><td><p><code>x <span class="c-quote">'</span>f <span class="c-builtin">s̲wap</span> y</code> is <code>y f x</code>: the arguments swapped.</p>
+</td></tr>
+<tr id="p_ower"><td><code><span class="c-builtin">p̲ower</span></code></td><td><code>Any a =&gt; (a -&gt; a) -&gt; Int -&gt; a -&gt; a</code></td><td><p><code>n <span class="c-quote">'</span>f <span class="c-builtin">p̲ower</span> x</code> applies f to x n times; <code><span class="c-builtin">f̲</span><span class="c-error">^</span><span class="c-error">n</span></code> is the same with a literal count.</p>
+</td></tr>
+<tr id="i_ndexOf"><td><code><span class="c-builtin">i̲ndexOf</span></code></td><td><code>Eq a =&gt; a -&gt; a -&gt; Int</code></td><td><p>Where each item of the right argument is first found among the items of the left, from 1; one past the end when it is not there.</p>
+</td></tr>
+<tr id="m_ember-3f"><td><code><span class="c-builtin">m̲ember?</span></code></td><td><code>(Eq a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Whether each item of the left is among the items of the right.</p>
+</td></tr>
+<tr id="m_atch"><td><code><span class="c-builtin">m̲atch</span></code></td><td><code>(Match a, Truthy b) =&gt; a -&gt; a -&gt; b</code></td><td><p>Whether both sides have the same shape and equal items (APL's match): one result for the whole arrays, where <code><span class="c-symbol">=</span></code> compares item by item. The same items in another shape do not match.</p>
+</td></tr>
+<tr id="u_nique"><td><code><span class="c-builtin">u̲nique</span></code></td><td><code>Eq a =&gt; a -&gt; a</code></td><td><p>The items without repeats, in first-seen order.</p>
+</td></tr>
+<tr id="s_ort"><td><code><span class="c-builtin">s̲ort</span></code></td><td><code>Ord a =&gt; a -&gt; a</code></td><td><p>The items in ascending order (the rows of a matrix, compared in order); with a subscript, sorted along that axis.</p>
+</td></tr>
+<tr id="g_rade"><td><code><span class="c-builtin">g̲rade</span></code></td><td><code>Ord a =&gt; a -&gt; Int</code></td><td><p>The positions that would sort the items: <code>(<span class="c-builtin">g̲rade</span> v) <span class="c-builtin">s̲elect</span> v</code> is <code><span class="c-builtin">s̲ort</span> v</code>.</p>
+</td></tr>
+<tr id="w_here"><td><code><span class="c-builtin">w̲here</span></code></td><td><code>Truthy a =&gt; a -&gt; Int</code></td><td><p>The positions of the 1s in a vector.</p>
+</td></tr>
+<tr id="e_nclose"><td><code><span class="c-builtin">e̲nclose</span></code></td><td><code>a -&gt; Box a</code></td><td><p>Enclose: the whole value as one item, a box, so arrays can be items of other arrays; a strand of strings encloses each string. A nested array prints in frames, as APL2's DISPLAY draws them (shown here as <code>xetal <span class="c-symbol">−</span><span class="c-symbol">−</span>ascii</code> draws them; a terminal gets box characters): an arrow along the top, a down arrow for each leading axis, and a mark at the bottom for what it holds (<code><span class="c-error">~</span></code> numbers, <code>e</code> boxes).</p>
+</td></tr>
+<tr id="d_isclose"><td><code><span class="c-builtin">d̲isclose</span></code></td><td><code>Box a -&gt; a</code></td><td><p>Disclose: what a box holds. It opens one box (select one item first).</p>
+</td></tr>
+<tr id="d_isplay"><td><code><span class="c-builtin">d̲isplay</span></code></td><td><code>a -&gt; Char</code></td><td><p>Display: any value as APL2's DISPLAY draws it, as a character matrix, flat arrays framed too: an arrow along the top, a down arrow for each leading axis, and a mark at the bottom for what it holds (<code><span class="c-error">~</span></code> numbers, a plain line characters, <code>e</code> boxes); a simple scalar is itself. <code>xetal <span class="c-symbol">−</span><span class="c-symbol">−</span>box</code> prints every array result this way (shown here as <code>xetal <span class="c-symbol">−</span><span class="c-symbol">−</span>ascii</code> draws them).</p>
+</td></tr>
+<tr id="p_artition"><td><code><span class="c-builtin">p̲artition</span></code></td><td><code>Truthy a =&gt; a -&gt; b -&gt; Box b</code></td><td><p>Partition: the items (rows of a matrix) cut into pieces by the keys on the left, one per item: a new piece starts where the key goes up, and an item with key 0 is left out, so a mask of 1s and 0s cuts out the runs of 1s. Each piece is a box; one key extends to every item.</p>
+</td></tr>
+<tr id="e_ncode"><td><code><span class="c-builtin">e̲ncode</span></code></td><td><code>Int -&gt; Int -&gt; Int</code></td><td><p>Encode: the digits of a number in the radix on the left, most significant first (APL's encode). Radixes may differ from digit to digit (hours, minutes, seconds), a radix of 0 takes all that is left, and digits beyond the radix are dropped. A vector gives one column of digits per item. A negative number takes floored remainders, as in APL: each digit is 0 or more and below its radix, so in base 2 the digits are its two's complement, and a leading 0 radix keeps the sign.</p>
+</td></tr>
+<tr id="d_ecode"><td><code><span class="c-builtin">d̲ecode</span></code></td><td><code>Num a =&gt; a -&gt; a -&gt; a</code></td><td><p>Decode: the number whose digits, in the radix on the left, are on the right (APL's decode), the inverse of <code><span class="c-builtin">e̲ncode</span></code>. One radix extends to every digit; a matrix gives one number per column. It is Horner's rule on any numbers, radix and digits of one type, so on Floats <code>x <span class="c-builtin">d̲ecode</span> <span class="c-builtin">r̲ev</span> c</code> is the polynomial with coefficients c (lowest first) at x.</p>
+</td></tr>
+<tr id="r_ev"><td><code><span class="c-builtin">r̲ev</span></code></td><td><code>a -&gt; a</code></td><td><p>Reverse the order of the items along the first axis (the rows of a matrix), or along the subscript's axis.</p>
+</td></tr>
+<tr id="o_-2d"><td><code><span class="c-builtin">o̲-</span></code></td><td><code>Int -&gt; a -&gt; a</code></td><td><p>Rotate: shift the items round by n (APL's rotate); positive n moves items toward the front. Along the first axis by default, so a matrix's rows move; with a subscript along that axis. A list of amounts gives one result per amount.</p>
+</td></tr>
+<tr id="o_-5c"><td><code><span class="c-builtin">o̲\</span></code></td><td><code>a -&gt; a</code></td><td><p>Transpose: reverse the order of the axes, so a matrix's rows become its columns; a vector or a single value is unchanged. A subscript of two axes swaps just those two.</p>
+</td></tr>
+<tr id="t_ranspose"><td><code><span class="c-builtin">t̲ranspose</span></code></td><td><code>Int -&gt; a -&gt; a</code></td><td><p>Permute the axes: the left argument lists each axis once, and axis i of the right argument becomes the axis that item i of the list names (APL's dyadic transpose), so <code><span class="c-number">3</span> <span class="c-number">1</span> <span class="c-number">2</span></code> moves axis 1 to the end. Listing the axes in reverse is <code><span class="c-builtin">o̲\</span></code>.</p>
+</td></tr>
+</table>
+</main>
+</body>
+</html>

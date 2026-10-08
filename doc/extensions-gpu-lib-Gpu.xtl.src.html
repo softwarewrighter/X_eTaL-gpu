@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>extensions/gpu/lib/Gpu.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#L19"><span class="c-libfunc">ˡd̲evices</span></a></li>
+<li class="item"><a href="#L21"><span class="c-libfunc">ˡl̲oad</span></a></li>
+<li class="item"><a href="#L23"><span class="c-libfunc">ˡb̲ind</span></a></li>
+<li class="item"><a href="#L25"><span class="c-libfunc">ˡs̲chedule</span></a></li>
+<li class="item"><a href="#L36"><span class="c-libfunc">ˡr̲un</span></a></li>
+<li class="item"><a href="#L38"><span class="c-libfunc">ˡo̲utput</span></a></li>
+<li class="item"><a href="#L40"><span class="c-libfunc">ˡo̲utputInts</span></a></li>
+<li class="item"><a href="#L42"><span class="c-libfunc">ˡe̲xplain</span></a></li>
+<li class="item"><a href="#L44"><span class="c-libfunc">ˡk̲ernel</span></a></li>
+<li class="item"><a href="#L50"><span class="c-builtin">n̲l</span></a></li>
+<li class="item"><a href="#L61"><span class="c-libfunc">ˡp̲roductProgram</span></a></li>
+<li class="item"><a href="#L70"><span class="c-libfunc">ˡd̲enseProgram</span></a></li>
+<li class="item"><a href="#L84"><span class="c-libfunc">ˡp̲roduct</span></a></li>
+<li class="item"><a href="#L93"><span class="c-libfunc">ˡd̲ense</span></a></li>
+<li class="item"><a href="#L109"><span class="c-libfunc">ˡn̲ear</span></a></li>
+<li class="item"><a href="#L118">ˡpackage</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">source</span><a href="extensions-gpu-lib-Gpu.xtl.html">extensions/gpu/lib/Gpu.xtl</a></h1>
+<div class="source"><span class="line" id="L1"><a class="ln" href="#L1">1</a><span class="c-comment">⍝</span><span class="c-comment"># Gpu: XIR programs run on OpenCL devices (or the reference interpreter) from X_eTaL</span></span>
+<span class="line" id="L2"><a class="ln" href="#L2">2</a><span class="c-comment">⍝</span><span class="c-comment">#</span></span>
+<span class="line" id="L3"><a class="ln" href="#L3">3</a><span class="c-comment">⍝</span><span class="c-comment"># Import: &quot;gp:&quot; u_se&lt; &quot;Gpu&quot;</span></span>
+<span class="line" id="L4"><a class="ln" href="#L4">4</a><span class="c-comment">⍝</span><span class="c-comment"># Run with xetal-x (X_eTaL-extensions' bridge host): &quot;scripts/xx run prog.xtl&quot;</span></span>
+<span class="line" id="L5"><a class="ln" href="#L5">5</a><span class="c-comment">⍝</span><span class="c-comment"># puts this package and this repository's libraries in reach.</span></span>
+<span class="line" id="L6"><a class="ln" href="#L6">6</a><span class="c-comment">⍝</span><span class="c-comment">#</span></span>
+<span class="line" id="L7"><a class="ln" href="#L7">7</a><span class="c-comment">⍝</span><span class="c-comment"># The first half binds the native functions (extensions/gpu/rust),</span></span>
+<span class="line" id="L8"><a class="ln" href="#L8">8</a><span class="c-comment">⍝</span><span class="c-comment"># one line each, with X_eTaL-extensions' binding macro (Ffi.xtlm):</span></span>
+<span class="line" id="L9"><a class="ln" href="#L9">9</a><span class="c-comment">⍝</span><span class="c-comment"># a session per thread, loaded, bound, run, read. The second half is</span></span>
+<span class="line" id="L10"><a class="ln" href="#L10">10</a><span class="c-comment">⍝</span><span class="c-comment"># ordinary X_eTaL over them: functions that write XIR programs (the</span></span>
+<span class="line" id="L11"><a class="ln" href="#L11">11</a><span class="c-comment">⍝</span><span class="c-comment"># text is data, so these are functions, not macros:</span></span>
+<span class="line" id="L12"><a class="ln" href="#L12">12</a><span class="c-comment">⍝</span><span class="c-comment"># docs/macros-and-extensions.md, X4), a product and a dense layer in</span></span>
+<span class="line" id="L13"><a class="ln" href="#L13">13</a><span class="c-comment">⍝</span><span class="c-comment"># one call each, and a check for f32 results.</span></span>
+<span class="line" id="L14"><a class="ln" href="#L14">14</a><span class="c-libfunc">ᶠᶠⁱ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html" class="c-string">&quot;Ffi&quot;</a></span>
+<span class="line" id="L15"><a class="ln" href="#L15">15</a></span>
+<span class="line" id="L16"><a class="ln" href="#L16">16</a><span class="c-comment">⍝</span><span class="c-comment">## Native functions</span></span>
+<span class="line" id="L17"><a class="ln" href="#L17">17</a></span>
+<span class="line" id="L18"><a class="ln" href="#L18">18</a><span class="c-comment">⍝</span><span class="c-comment"># The OpenCL devices, one line each (opencl:N).</span></span>
+<span class="line" id="L19"><a class="ln" href="#L19">19</a><span class="c-string">&quot;d_evices : unit -&gt; text&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/devices&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡd̲evices</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/devices&quot;</span>
+}</pre></details>
+<span class="line" id="L20"><a class="ln" href="#L20">20</a><span class="c-comment">⍝</span><span class="c-comment"># Load an XIR program, by its text; the number of inputs.</span></span>
+<span class="line" id="L21"><a class="ln" href="#L21">21</a><span class="c-string">&quot;l_oad : text -&gt; int&quot;</span>          <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/load&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡl̲oad</span> ← { a →
+  pa ← a <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/load?text&quot;</span>
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/load&quot;</span>
+}</pre></details>
+<span class="line" id="L22"><a class="ln" href="#L22">22</a><span class="c-comment">⍝</span><span class="c-comment"># n gp:b_ind a: input n (from 1) gets the array a, of its declared shape.</span></span>
+<span class="line" id="L23"><a class="ln" href="#L23">23</a><span class="c-string">&quot;b_ind : int float -&gt; int&quot;</span>     <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/bind&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡb̲ind</span> ← { a b →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/bind?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  pb ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> b) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/bind?float=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> b
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/bind&quot;</span>
+}</pre></details>
+<span class="line" id="L24"><a class="ln" href="#L24">24</a><span class="c-comment">⍝</span><span class="c-comment"># The schedule for later runs, as a schedules/*.toml text (&quot;&quot; for the defaults).</span></span>
+<span class="line" id="L25"><a class="ln" href="#L25">25</a><span class="c-string">&quot;s_chedule : text -&gt; int&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/schedule&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡs̲chedule</span> ← { a →
+  pa ← a <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/schedule?text&quot;</span>
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/schedule&quot;</span>
+}</pre></details>
+<span class="line" id="L26"><a class="ln" href="#L26">26</a><span class="c-comment">⍝</span><span class="c-comment"># Run on opencl:d, or on the reference interpreter for -1; the number of outputs.</span></span>
+<span class="line" id="L27"><a class="ln" href="#L27">27</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; &quot;gp:&quot; u_se&lt; &quot;Gpu&quot;</span></span>
+<span class="line" id="L28"><a class="ln" href="#L28">28</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; gp:l_oad &quot;%a = input i64 [3]\n%k = const i64 [] 2\n%b = map mul %k %a\noutput %b\n&quot;</span></span>
+<span class="line" id="L29"><a class="ln" href="#L29">29</a><span class="c-comment">⍝</span><span class="c-comment"># 1</span></span>
+<span class="line" id="L30"><a class="ln" href="#L30">30</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; 1 gp:b_ind 1 2 3</span></span>
+<span class="line" id="L31"><a class="ln" href="#L31">31</a><span class="c-comment">⍝</span><span class="c-comment"># 1</span></span>
+<span class="line" id="L32"><a class="ln" href="#L32">32</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; gp:r_un -1</span></span>
+<span class="line" id="L33"><a class="ln" href="#L33">33</a><span class="c-comment">⍝</span><span class="c-comment"># 1</span></span>
+<span class="line" id="L34"><a class="ln" href="#L34">34</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; gp:o_utputInts 1</span></span>
+<span class="line" id="L35"><a class="ln" href="#L35">35</a><span class="c-comment">⍝</span><span class="c-comment"># 2 4 6</span></span>
+<span class="line" id="L36"><a class="ln" href="#L36">36</a><span class="c-string">&quot;r_un : int -&gt; int&quot;</span>            <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/run&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡr̲un</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/run?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/run&quot;</span>
+}</pre></details>
+<span class="line" id="L37"><a class="ln" href="#L37">37</a><span class="c-comment">⍝</span><span class="c-comment"># Output i (from 1) of the last run, as Floats.</span></span>
+<span class="line" id="L38"><a class="ln" href="#L38">38</a><span class="c-string">&quot;o_utput : int -&gt; floats&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/output&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡo̲utput</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/output?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  v ← <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output&quot;</span>
+  (<a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output?shape&quot;</span>) <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> v
+}</pre></details>
+<span class="line" id="L39"><a class="ln" href="#L39">39</a><span class="c-comment">⍝</span><span class="c-comment"># Output i (from 1) of the last run, as Ints (exact to 2^53).</span></span>
+<span class="line" id="L40"><a class="ln" href="#L40">40</a><span class="c-string">&quot;o_utputInts : int -&gt; ints&quot;</span>    <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/output&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡo̲utputInts</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:gpu/output?int=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  v ← <a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output&quot;</span>
+  (<a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/output?shape&quot;</span>) <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> v
+}</pre></details>
+<span class="line" id="L41"><a class="ln" href="#L41">41</a><span class="c-comment">⍝</span><span class="c-comment"># The last run's plan in words.</span></span>
+<span class="line" id="L42"><a class="ln" href="#L42">42</a><span class="c-string">&quot;e_xplain : unit -&gt; text&quot;</span>      <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/explain&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡe̲xplain</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/explain&quot;</span>
+}</pre></details>
+<span class="line" id="L43"><a class="ln" href="#L43">43</a><span class="c-comment">⍝</span><span class="c-comment"># The last run's OpenCL C.</span></span>
+<span class="line" id="L44"><a class="ln" href="#L44">44</a><span class="c-string">&quot;k_ernel : unit -&gt; text&quot;</span>       <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;gpu/kernel&quot;</span></span>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡk̲ernel</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:gpu/kernel&quot;</span>
+}</pre></details>
+<span class="line" id="L45"><a class="ln" href="#L45">45</a></span>
+<span class="line" id="L46"><a class="ln" href="#L46">46</a><span class="c-comment">⍝</span><span class="c-comment">## Programs, as text</span></span>
+<span class="line" id="L47"><a class="ln" href="#L47">47</a></span>
+<span class="line" id="L48"><a class="ln" href="#L48">48</a><span class="c-comment">⍝</span><span class="c-comment"># A newline (private; bare, not h:n_l, because xetal-x's X_eTaL</span></span>
+<span class="line" id="L49"><a class="ln" href="#L49">49</a><span class="c-comment">⍝</span><span class="c-comment"># v0.1.0 has no h: namespace: docs/macros-and-extensions.md).</span></span>
+<span class="line" id="L50"><a class="ln" href="#L50">50</a><span class="c-builtin">n̲l</span> ← { @ → <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot;\n&quot;</span> }</span>
+<span class="line" id="L51"><a class="ln" href="#L51">51</a></span>
+<span class="line" id="L52"><a class="ln" href="#L52">52</a><span class="c-comment">⍝</span><span class="c-comment"># sa gp:p_roductProgram sb: the XIR text of a times b ('+ '* i_nner)</span></span>
+<span class="line" id="L53"><a class="ln" href="#L53">53</a><span class="c-comment">⍝</span><span class="c-comment"># for an a of the shape sa and a b of the shape sb (Floats).</span></span>
+<span class="line" id="L54"><a class="ln" href="#L54">54</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; &quot;gp:&quot; u_se&lt; &quot;Gpu&quot;</span></span>
+<span class="line" id="L55"><a class="ln" href="#L55">55</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; (2 3) gp:p_roductProgram 3</span></span>
+<span class="line" id="L56"><a class="ln" href="#L56">56</a><span class="c-comment">⍝</span><span class="c-comment"># %a = input f64 [2 3]</span></span>
+<span class="line" id="L57"><a class="ln" href="#L57">57</a><span class="c-comment">⍝</span><span class="c-comment"># %b = input f64 [3]</span></span>
+<span class="line" id="L58"><a class="ln" href="#L58">58</a><span class="c-comment">⍝</span><span class="c-comment"># %c = matmul %a %b</span></span>
+<span class="line" id="L59"><a class="ln" href="#L59">59</a><span class="c-comment">⍝</span><span class="c-comment"># output %c</span></span>
+<span class="line" id="L60"><a class="ln" href="#L60">60</a><span class="c-comment">⍝</span><span class="c-comment">#</span></span>
+<span class="line" id="L61"><a class="ln" href="#L61">61</a><span class="c-libfunc">ˡp̲roductProgram</span> ← { sa sb →</span>
+<span class="line" id="L62"><a class="ln" href="#L62">62</a>  a ← <span class="c-string">&quot;%a = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> sa) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @</span>
+<span class="line" id="L63"><a class="ln" href="#L63">63</a>  b ← <span class="c-string">&quot;%b = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> sb) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @</span>
+<span class="line" id="L64"><a class="ln" href="#L64">64</a>  a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> b <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%c = matmul %a %b&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;output %c&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @</span>
+<span class="line" id="L65"><a class="ln" href="#L65">65</a>}</span>
+<span class="line" id="L66"><a class="ln" href="#L66">66</a></span>
+<span class="line" id="L67"><a class="ln" href="#L67">67</a><span class="c-comment">⍝</span><span class="c-comment"># sx gp:d_enseProgram swb: the XIR text of the layer x W + b (Accel's</span></span>
+<span class="line" id="L68"><a class="ln" href="#L68">68</a><span class="c-comment">⍝</span><span class="c-comment"># ac:d_ense, the bias the last row of wb) for an x of the shape sx and</span></span>
+<span class="line" id="L69"><a class="ln" href="#L69">69</a><span class="c-comment">⍝</span><span class="c-comment"># a wb of the shape swb.</span></span>
+<span class="line" id="L70"><a class="ln" href="#L70">70</a><span class="c-libfunc">ˡd̲enseProgram</span> ← { sx swb →</span>
+<span class="line" id="L71"><a class="ln" href="#L71">71</a>  nl ← <a href="extensions-gpu-lib-Gpu.xtl.html#n_l" class="c-builtin">n̲l</a> @</span>
+<span class="line" id="L72"><a class="ln" href="#L72">72</a>  rows ← <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> sx</span>
+<span class="line" id="L73"><a class="ln" href="#L73">73</a>  t ← <span class="c-string">&quot;%x = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> sx) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl</span>
+<span class="line" id="L74"><a class="ln" href="#L74">74</a>  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%wb = input f64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> swb) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;]&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl</span>
+<span class="line" id="L75"><a class="ln" href="#L75">75</a>  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%w = drop -1 %wb&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%t = take -1 %wb&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%v = ravel %t&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl</span>
+<span class="line" id="L76"><a class="ln" href="#L76">76</a>  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%o = const i64 [&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> rows) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;] &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#o_ffsets" class="c-builtin">o̲ffsets</a> rows) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl</span>
+<span class="line" id="L77"><a class="ln" href="#L77">77</a>  t ← t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%bias = table right %o %v&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%xw = matmul %x %w&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl</span>
+<span class="line" id="L78"><a class="ln" href="#L78">78</a>  t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;%y = map add %xw %bias&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;output %y&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> nl</span>
+<span class="line" id="L79"><a class="ln" href="#L79">79</a>}</span>
+<span class="line" id="L80"><a class="ln" href="#L80">80</a></span>
+<span class="line" id="L81"><a class="ln" href="#L81">81</a><span class="c-comment">⍝</span><span class="c-comment">## In one call</span></span>
+<span class="line" id="L82"><a class="ln" href="#L82">82</a></span>
+<span class="line" id="L83"><a class="ln" href="#L83">83</a><span class="c-comment">⍝</span><span class="c-comment"># a gp:p_roduct b: a '+ '* i_nner b computed on opencl:0.</span></span>
+<span class="line" id="L84"><a class="ln" href="#L84">84</a><span class="c-libfunc">ˡp̲roduct</span> ← { a b →</span>
+<span class="line" id="L85"><a class="ln" href="#L85">85</a>  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ˡl̲oad</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a) <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roductProgram" class="c-libfunc">ˡp̲roductProgram</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> b</span>
+<span class="line" id="L86"><a class="ln" href="#L86">86</a>  n ← <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> a</span>
+<span class="line" id="L87"><a class="ln" href="#L87">87</a>  n ← <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> b</span>
+<span class="line" id="L88"><a class="ln" href="#L88">88</a>  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ˡr̲un</a> <span class="c-number">0</span></span>
+<span class="line" id="L89"><a class="ln" href="#L89">89</a>  <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ˡo̲utput</a> <span class="c-number">1</span></span>
+<span class="line" id="L90"><a class="ln" href="#L90">90</a>}</span>
+<span class="line" id="L91"><a class="ln" href="#L91">91</a></span>
+<span class="line" id="L92"><a class="ln" href="#L92">92</a><span class="c-comment">⍝</span><span class="c-comment"># x gp:d_ense wb: the layer x W + b (ac:d_ense) computed on opencl:0.</span></span>
+<span class="line" id="L93"><a class="ln" href="#L93">93</a><span class="c-libfunc">ˡd̲ense</span> ← { x wb →</span>
+<span class="line" id="L94"><a class="ln" href="#L94">94</a>  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ˡl̲oad</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> x) <a href="extensions-gpu-lib-Gpu.xtl.html#l.d_enseProgram" class="c-libfunc">ˡd̲enseProgram</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> wb</span>
+<span class="line" id="L95"><a class="ln" href="#L95">95</a>  n ← <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> x</span>
+<span class="line" id="L96"><a class="ln" href="#L96">96</a>  n ← <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ˡb̲ind</a> wb</span>
+<span class="line" id="L97"><a class="ln" href="#L97">97</a>  n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ˡr̲un</a> <span class="c-number">0</span></span>
+<span class="line" id="L98"><a class="ln" href="#L98">98</a>  <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ˡo̲utput</a> <span class="c-number">1</span></span>
+<span class="line" id="L99"><a class="ln" href="#L99">99</a>}</span>
+<span class="line" id="L100"><a class="ln" href="#L100">100</a></span>
+<span class="line" id="L101"><a class="ln" href="#L101">101</a><span class="c-comment">⍝</span><span class="c-comment"># want gp:n_ear got: &quot;ok&quot; when the shapes match and every item agrees</span></span>
+<span class="line" id="L102"><a class="ln" href="#L102">102</a><span class="c-comment">⍝</span><span class="c-comment"># within a relative 1e-5 (absolute below 1), as an f32 device's result</span></span>
+<span class="line" id="L103"><a class="ln" href="#L103">103</a><span class="c-comment">⍝</span><span class="c-comment"># agrees with the evaluator's f64; else what differs.</span></span>
+<span class="line" id="L104"><a class="ln" href="#L104">104</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; &quot;gp:&quot; u_se&lt; &quot;Gpu&quot;</span></span>
+<span class="line" id="L105"><a class="ln" href="#L105">105</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; (1 2 3) gp:n_ear 1.000001 2.000001 3.000001</span></span>
+<span class="line" id="L106"><a class="ln" href="#L106">106</a><span class="c-comment">⍝</span><span class="c-comment"># ok</span></span>
+<span class="line" id="L107"><a class="ln" href="#L107">107</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; (1 2 3) gp:n_ear 1 2</span></span>
+<span class="line" id="L108"><a class="ln" href="#L108">108</a><span class="c-comment">⍝</span><span class="c-comment"># FAIL: shapes 3 and 2</span></span>
+<span class="line" id="L109"><a class="ln" href="#L109">109</a><span class="c-libfunc">ˡn̲ear</span> ← { w g →</span>
+<span class="line" id="L110"><a class="ln" href="#L110">110</a>  <a href="builtins.html#n_ot" class="c-builtin">n̲ot</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> g ? <span class="c-string">&quot;FAIL: shapes &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; and &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> g</span>
+<span class="line" id="L111"><a class="ln" href="#L111">111</a>  d ← <a href="builtins.html#a_bs" class="c-builtin">a̲bs</a> (<a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> w) <a href="builtins.html#-2d" class="c-symbol">−</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> g</span>
+<span class="line" id="L112"><a class="ln" href="#L112">112</a>  <span class="c-symbol">'</span><a href="builtins.html#-26" class="c-symbol">∧</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> d <a href="builtins.html#-3c-3d" class="c-symbol">≤</a> <span class="c-number">0.00001</span> <a href="builtins.html#-2a" class="c-symbol">×</a> <span class="c-number">1.0</span> <a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#a_bs" class="c-builtin">a̲bs</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> w ? <span class="c-string">&quot;ok&quot;</span></span>
+<span class="line" id="L113"><a class="ln" href="#L113">113</a>  <span class="c-string">&quot;FAIL: the largest difference is &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <span class="c-builtin">'</span><a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> d</span>
+<span class="line" id="L114"><a class="ln" href="#L114">114</a>}</span>
+<span class="line" id="L115"><a class="ln" href="#L115">115</a></span>
+<span class="line" id="L116"><a class="ln" href="#L116">116</a><span class="c-comment">⍝</span><span class="c-comment"># The native package behind these functions (a literal l: name also</span></span>
+<span class="line" id="L117"><a class="ln" href="#L117">117</a><span class="c-comment">⍝</span><span class="c-comment"># makes this file a library to &quot;xetal type&quot;: X_eTaL-extensions' ask E7).</span></span>
+<span class="line" id="L118"><a class="ln" href="#L118">118</a>ˡpackage ← <span class="c-string">&quot;gpu&quot;</span></span>
+</div>
+</main>
+</body>
+</html>

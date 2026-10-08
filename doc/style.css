@@ -1,0 +1,88 @@
+/* xetal doc: the site's stylesheet (written by `xetal doc --out`).
+   Light and dark, following the system unless the reader picks one
+   (the theme button, remembered in the browser). Token colors are the
+   live demo's and the literate documents'. */
+:root {
+  --bg: #fdfdfb; --fg: #20242c; --dim: #626874; --code: #f2f2ee;
+  --side: #f3f3ee; --rule: #deded6; --accent: #a67c00; --link: #1f5fbf;
+  --builtin: #1f5fbf; --userfunc: #1e7a34; --libfunc: #0b7d8a;
+  --lambdaarg: #9b2f9b; --number: #9a6a00; --string: #8a6d00;
+  --symbol: #2c6fb8; --macro: #9a6a00; --error: #c62828;
+}
+:root[data-theme="dark"] {
+  --bg: #16181d; --fg: #d8dbe2; --dim: #8a90a0; --code: #1e2129;
+  --side: #1b1e24; --rule: #2c3038; --accent: #f5c518; --link: #7cb3ff;
+  --builtin: #5b9cff; --userfunc: #3fbf5f; --libfunc: #22b8c8;
+  --lambdaarg: #d25fd2; --number: #e0b400; --string: #e8d27a;
+  --symbol: #7fbfff; --macro: #e0b400; --error: #ff6b6b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16181d; --fg: #d8dbe2; --dim: #8a90a0; --code: #1e2129;
+    --side: #1b1e24; --rule: #2c3038; --accent: #f5c518; --link: #7cb3ff;
+    --builtin: #5b9cff; --userfunc: #3fbf5f; --libfunc: #22b8c8;
+    --lambdaarg: #d25fd2; --number: #e0b400; --string: #e8d27a;
+    --symbol: #7fbfff; --macro: #e0b400; --error: #ff6b6b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: flex; min-height: 100vh;
+}
+nav.side {
+  flex: 0 0 17rem; background: var(--side); border-right: 1px solid var(--rule);
+  padding: 1rem 1rem 2rem; font-size: .92rem; overflow-wrap: anywhere;
+}
+nav.side h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 1.2rem 0 .3rem; }
+nav.side ul { list-style: none; margin: 0; padding: 0; }
+nav.side li { margin: .15rem 0; }
+nav.side .home { font-weight: bold; font-size: 1.05rem; }
+main { flex: 1; min-width: 0; max-width: 60rem; padding: 1rem 2rem 4rem; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.6rem; margin: .4rem 0 .2rem; }
+h1 .kind { color: var(--dim); font-weight: normal; font-size: 1rem; margin-right: .4rem; }
+h2.section { border-bottom: 1px solid var(--rule); padding-bottom: .2rem; margin-top: 2.2rem; }
+code, pre { font-family: "JuliaMono", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: .92rem; }
+code { background: var(--code); padding: 0 .25em; border-radius: 3px; }
+pre { background: var(--code); padding: .6rem .9rem; overflow-x: auto; border-radius: 6px; }
+pre.example { border-left: 3px solid var(--accent); }
+pre.code { border-left: 3px solid var(--dim); }
+.item { border-top: 1px solid var(--rule); padding-top: .6rem; margin-top: 1.4rem; }
+.item h3 { margin: 0; font-size: 1.12rem; font-family: "JuliaMono", "DejaVu Sans Mono", Menlo, monospace; }
+.item h3 .type { color: var(--dim); font-weight: normal; }
+.item .meta { color: var(--dim); font-size: .85rem; margin: .1rem 0 .4rem; }
+.item .private { font-style: italic; }
+details > summary { cursor: pointer; color: var(--dim); font-size: .88rem; }
+.uses { font-size: .88rem; color: var(--dim); }
+.doc p:first-child { margin-top: .3rem; }
+table.items { border-collapse: collapse; width: 100%; font-size: .92rem; }
+table.items td, table.items th { text-align: left; padding: .25rem .6rem .25rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.items th { color: var(--dim); font-weight: normal; }
+div.source { background: var(--code); border-radius: 6px; padding: .6rem 0; line-height: 1.45; overflow-x: auto; font-family: "JuliaMono", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: .92rem; }
+div.source .line { display: block; white-space: pre; padding-right: .9rem; }
+div.source .line:target { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+div.source details.expansion { margin: .1rem .9rem .3rem 4.3rem; }
+details.expansion { border-left: 3px solid var(--macro); padding-left: .6rem; margin: .3rem 0; }
+details.expansion > summary { font-family: system-ui, sans-serif; }
+details.expansion pre.code { margin: .3rem 0; }
+div.source .ln { display: inline-block; width: 3.4rem; padding-right: .9rem; text-align: right; color: var(--dim); user-select: none; }
+.c-builtin { color: var(--builtin); } .c-userfunc { color: var(--userfunc); }
+.c-libfunc { color: var(--libfunc); } .c-lambdaarg { color: var(--lambdaarg); }
+.c-number, .c-exponent { color: var(--number); } .c-string { color: var(--string); }
+.c-symbol { color: var(--symbol); } .c-quote { font-weight: bold; }
+.c-comment { color: var(--dim); } .c-macro { color: var(--macro); font-weight: bold; }
+.c-error { color: var(--error); }
+button.theme { float: right; background: none; color: var(--dim); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font-size: .8rem; }
+@media (max-width: 760px) {
+  body { display: block; }
+  nav.side { border-right: none; border-bottom: 1px solid var(--rule); }
+  main { padding: 1rem; }
+}
+#search { width: 100%; margin: .8rem 0 0; padding: .35rem .5rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--fg); font-size: .9rem; }
+#results { display: none; }
+body.searching #results { display: block; }
+body.searching main > :not(#results):not(button.theme) { display: none; }
+#results td.type { font-family: "JuliaMono", "DejaVu Sans Mono", Menlo, monospace; font-size: .88rem; }

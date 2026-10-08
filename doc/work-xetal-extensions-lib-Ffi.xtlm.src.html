@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>work/xetal-extensions/lib/Ffi.xtlm - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#L13"><span class="c-builtin">w̲ords</span></a></li>
+<li class="item"><a href="#L14"><span class="c-builtin">w̲ord</span></a></li>
+<li class="item"><a href="#L18"><span class="c-builtin">v̲alue</span></a></li>
+<li class="item"><a href="#L24"><span class="c-builtin">q̲uery</span></a></li>
+<li class="item"><a href="#L32"><span class="c-builtin">p̲ut</span></a></li>
+<li class="item"><a href="#L39"><span class="c-builtin">g̲et</span></a></li>
+<li class="item"><a href="#L51"><span class="c-builtin">p̲arams</span></a></li>
+<li class="item"><a href="#L56"><span class="c-builtin">p̲uts</span></a></li>
+<li class="item"><a href="#L64"><span class="c-macro">ᵐb̲ind&lt;</span></a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">source</span><a href="work-xetal-extensions-lib-Ffi.xtlm.html">work/xetal-extensions/lib/Ffi.xtlm</a></h1>
+<div class="source"><span class="line" id="L1"><a class="ln" href="#L1">1</a><span class="c-comment">⍝</span><span class="c-comment"> Ffi.xtlm -- the binding macro: a facade function written from the</span></span>
+<span class="line" id="L2"><a class="ln" href="#L2">2</a><span class="c-comment">⍝</span><span class="c-comment"> signature of a native function (docs/ffi-macro.md).</span></span>
+<span class="line" id="L3"><a class="ln" href="#L3">3</a><span class="c-comment">⍝</span><span class="c-comment"> Import: &quot;ffi:&quot; u_se&lt; &quot;Ffi&quot;     (xetal-x puts this directory on XETAL_PATH)</span></span>
+<span class="line" id="L4"><a class="ln" href="#L4">4</a><span class="c-comment">⍝</span></span>
+<span class="line" id="L5"><a class="ln" href="#L5">5</a><span class="c-comment">⍝</span><span class="c-comment">   &quot;s_hout : text -&gt; text&quot; ffi:b_ind&lt; &quot;hello/shout&quot;</span></span>
+<span class="line" id="L6"><a class="ln" href="#L6">6</a><span class="c-comment">⍝</span></span>
+<span class="line" id="L7"><a class="ln" href="#L7">7</a><span class="c-comment">⍝</span><span class="c-comment"> expands to the facade function l:s_hout, which speaks the ext: channel</span></span>
+<span class="line" id="L8"><a class="ln" href="#L8">8</a><span class="c-comment">⍝</span><span class="c-comment"> (docs/bridge.md). Kinds: unit (no argument), text, chars, int, float</span></span>
+<span class="line" id="L9"><a class="ln" href="#L9">9</a><span class="c-comment">⍝</span><span class="c-comment"> (an argument of any rank; as a result, a scalar), and as results also</span></span>
+<span class="line" id="L10"><a class="ln" href="#L10">10</a><span class="c-comment">⍝</span><span class="c-comment"> floats and ints (any rank, reshaped by the reply's shape).</span></span>
+<span class="line" id="L11"><a class="ln" href="#L11">11</a></span>
+<span class="line" id="L12"><a class="ln" href="#L12">12</a><span class="c-comment">⍝</span><span class="c-comment"> private: the words of a text, and the i-th of them</span></span>
+<span class="line" id="L13"><a class="ln" href="#L13">13</a><span class="c-builtin">w̲ords</span> ← { s → (<a href="builtins.html#n_ot" class="c-builtin">n̲ot</a> s <a href="builtins.html#-3d" class="c-symbol">=</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot; &quot;</span>) <a href="builtins.html#p_artition" class="c-builtin">p̲artition</a> s }</span>
+<span class="line" id="L14"><a class="ln" href="#L14">14</a><span class="c-builtin">w̲ord</span> ← { i w → <a href="builtins.html#d_isclose" class="c-builtin">d̲isclose</a> i <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> w }</span>
+<span class="line" id="L15"><a class="ln" href="#L15">15</a></span>
+<span class="line" id="L16"><a class="ln" href="#L16">16</a><span class="c-comment">⍝</span><span class="c-comment"> private: what an argument a of kind k is sent as, and the query that</span></span>
+<span class="line" id="L17"><a class="ln" href="#L17">17</a><span class="c-comment">⍝</span><span class="c-comment"> says its kind (and shape)</span></span>
+<span class="line" id="L18"><a class="ln" href="#L18">18</a><span class="c-builtin">v̲alue</span> ← { k a →</span>
+<span class="line" id="L19"><a class="ln" href="#L19">19</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;text&quot;</span> ? a</span>
+<span class="line" id="L20"><a class="ln" href="#L20">20</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;chars&quot;</span> ? <span class="c-string">&quot;(r_avel &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;)&quot;</span></span>
+<span class="line" id="L21"><a class="ln" href="#L21">21</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;int&quot;</span> ? <span class="c-string">&quot;(f_ormat r_avel f_loor &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;)&quot;</span></span>
+<span class="line" id="L22"><a class="ln" href="#L22">22</a>  <span class="c-string">&quot;(f_ormat r_avel f_loat &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;)&quot;</span></span>
+<span class="line" id="L23"><a class="ln" href="#L23">23</a>}</span>
+<span class="line" id="L24"><a class="ln" href="#L24">24</a><span class="c-builtin">q̲uery</span> ← { k a →</span>
+<span class="line" id="L25"><a class="ln" href="#L25">25</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;text&quot;</span> ? <span class="c-string">&quot;?text\&quot;&quot;</span></span>
+<span class="line" id="L26"><a class="ln" href="#L26">26</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;chars&quot;</span> ? <span class="c-string">&quot;?chars=\&quot; c_at f_ormat s_hape &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a</span>
+<span class="line" id="L27"><a class="ln" href="#L27">27</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;int&quot;</span> ? <span class="c-string">&quot;?int=\&quot; c_at f_ormat s_hape &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a</span>
+<span class="line" id="L28"><a class="ln" href="#L28">28</a>  <span class="c-string">&quot;?float=\&quot; c_at f_ormat s_hape &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a</span>
+<span class="line" id="L29"><a class="ln" href="#L29">29</a>}</span>
+<span class="line" id="L30"><a class="ln" href="#L30">30</a></span>
+<span class="line" id="L31"><a class="ln" href="#L31">31</a><span class="c-comment">⍝</span><span class="c-comment"> private: the line putting argument a (kind k) for the native function t</span></span>
+<span class="line" id="L32"><a class="ln" href="#L32">32</a><span class="c-builtin">p̲ut</span> ← { ka t →</span>
+<span class="line" id="L33"><a class="ln" href="#L33">33</a>  k ← <span class="c-number">1</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ords" class="c-builtin">w̲ords</a> ka</span>
+<span class="line" id="L34"><a class="ln" href="#L34">34</a>  a ← <span class="c-number">2</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ords" class="c-builtin">w̲ords</a> ka</span>
+<span class="line" id="L35"><a class="ln" href="#L35">35</a>  <span class="c-string">&quot;  p&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; := &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (k <a href="work-xetal-extensions-lib-Ffi.xtlm.html#v_alue" class="c-builtin">v̲alue</a> a) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; []N_PUT \&quot;ext:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (k <a href="work-xetal-extensions-lib-Ffi.xtlm.html#q_uery" class="c-builtin">q̲uery</a> a) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span></span>
+<span class="line" id="L36"><a class="ln" href="#L36">36</a>}</span>
+<span class="line" id="L37"><a class="ln" href="#L37">37</a></span>
+<span class="line" id="L38"><a class="ln" href="#L38">38</a><span class="c-comment">⍝</span><span class="c-comment"> private: the lines getting the reply of t as kind k</span></span>
+<span class="line" id="L39"><a class="ln" href="#L39">39</a><span class="c-builtin">g̲et</span> ← { k t →</span>
+<span class="line" id="L40"><a class="ln" href="#L40">40</a>  call ← <span class="c-string">&quot;[]N_GET \&quot;ext:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\&quot;&quot;</span></span>
+<span class="line" id="L41"><a class="ln" href="#L41">41</a>  shape ← <span class="c-string">&quot;(f_loor n_umbers []N_GET \&quot;ext:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;?shape\&quot;) r_eshape v\n&quot;</span></span>
+<span class="line" id="L42"><a class="ln" href="#L42">42</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;text&quot;</span> ? <span class="c-string">&quot;  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span></span>
+<span class="line" id="L43"><a class="ln" href="#L43">43</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;float&quot;</span> ? <span class="c-string">&quot;  f_irst n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span></span>
+<span class="line" id="L44"><a class="ln" href="#L44">44</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;int&quot;</span> ? <span class="c-string">&quot;  f_loor f_irst n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n&quot;</span></span>
+<span class="line" id="L45"><a class="ln" href="#L45">45</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;floats&quot;</span> ? <span class="c-string">&quot;  v := n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> shape</span>
+<span class="line" id="L46"><a class="ln" href="#L46">46</a>  k <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;ints&quot;</span> ? <span class="c-string">&quot;  v := f_loor n_umbers &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> shape</span>
+<span class="line" id="L47"><a class="ln" href="#L47">47</a>  <span class="c-string">&quot;  v := &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> call <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\n  &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> shape</span>
+<span class="line" id="L48"><a class="ln" href="#L48">48</a>}</span>
+<span class="line" id="L49"><a class="ln" href="#L49">49</a></span>
+<span class="line" id="L50"><a class="ln" href="#L50">50</a><span class="c-comment">⍝</span><span class="c-comment"> private: the parameters and the put lines, by how many arguments there are</span></span>
+<span class="line" id="L51"><a class="ln" href="#L51">51</a><span class="c-builtin">p̲arams</span> ← { w n →</span>
+<span class="line" id="L52"><a class="ln" href="#L52">52</a>  n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">0</span> ? <span class="c-string">&quot;@&quot;</span></span>
+<span class="line" id="L53"><a class="ln" href="#L53">53</a>  n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">1</span> ? <span class="c-string">&quot;a&quot;</span></span>
+<span class="line" id="L54"><a class="ln" href="#L54">54</a>  <span class="c-string">&quot;a b&quot;</span></span>
+<span class="line" id="L55"><a class="ln" href="#L55">55</a>}</span>
+<span class="line" id="L56"><a class="ln" href="#L56">56</a><span class="c-builtin">p̲uts</span> ← { w t →</span>
+<span class="line" id="L57"><a class="ln" href="#L57">57</a>  n ← (<a href="builtins.html#t_ally" class="c-builtin">t̲ally</a> w) <a href="builtins.html#-2d" class="c-symbol">−</a> <span class="c-number">4</span></span>
+<span class="line" id="L58"><a class="ln" href="#L58">58</a>  (n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">1</span>) <a href="builtins.html#-2a" class="c-symbol">×</a> (<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;unit&quot;</span> ? <span class="c-string">&quot;&quot;</span></span>
+<span class="line" id="L59"><a class="ln" href="#L59">59</a>  n <a href="builtins.html#-3d" class="c-symbol">=</a> <span class="c-number">1</span> ? ((<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; a&quot;</span>) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut" class="c-builtin">p̲ut</a> t</span>
+<span class="line" id="L60"><a class="ln" href="#L60">60</a>  (((<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; a&quot;</span>) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut" class="c-builtin">p̲ut</a> t) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> ((<span class="c-number">4</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; b&quot;</span>) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_ut" class="c-builtin">p̲ut</a> t</span>
+<span class="line" id="L61"><a class="ln" href="#L61">61</a>}</span>
+<span class="line" id="L62"><a class="ln" href="#L62">62</a></span>
+<span class="line" id="L63"><a class="ln" href="#L63">63</a><span class="c-comment">⍝</span><span class="c-comment"> &quot;NAME : KIND [KIND] -&gt; KIND&quot; ffi:b_ind&lt; &quot;EXTENSION/FUNCTION&quot;</span></span>
+<span class="line" id="L64"><a class="ln" href="#L64">64</a><span class="c-macro">ᵐb̲ind&lt;</span> ← { sig target →</span>
+<span class="line" id="L65"><a class="ln" href="#L65">65</a>  w ← <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ords" class="c-builtin">w̲ords</a> sig</span>
+<span class="line" id="L66"><a class="ln" href="#L66">66</a>  n ← <a href="builtins.html#t_ally" class="c-builtin">t̲ally</a> w</span>
+<span class="line" id="L67"><a class="ln" href="#L67">67</a>  args ← (n <a href="builtins.html#-2d" class="c-symbol">−</a> <span class="c-number">4</span>) <a href="builtins.html#-2d" class="c-symbol">−</a> (<span class="c-number">3</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;unit&quot;</span></span>
+<span class="line" id="L68"><a class="ln" href="#L68">68</a>  <span class="c-string">&quot;l:&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<span class="c-number">1</span> <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; := { &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (w <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_arams" class="c-builtin">p̲arams</a> args) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; -&gt;\n&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (w <a href="work-xetal-extensions-lib-Ffi.xtlm.html#p_uts" class="c-builtin">p̲uts</a> target) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> ((n <a href="work-xetal-extensions-lib-Ffi.xtlm.html#w_ord" class="c-builtin">w̲ord</a> w) <a href="work-xetal-extensions-lib-Ffi.xtlm.html#g_et" class="c-builtin">g̲et</a> target) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;}&quot;</span></span>
+<span class="line" id="L69"><a class="ln" href="#L69">69</a>}</span>
+</div>
+</main>
+</body>
+</html>

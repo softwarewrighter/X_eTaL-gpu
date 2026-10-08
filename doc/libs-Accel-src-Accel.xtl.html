@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>libs/Accel/src/Accel.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li><a href="#section-1">Elementwise</a></li>
+<li class="item"><a href="#l.v_add"><span class="c-libfunc">ˡv̲add</span></a></li>
+<li class="item"><a href="#l.s_cale"><span class="c-libfunc">ˡs̲cale</span></a></li>
+<li class="item"><a href="#l.r_elu"><span class="c-libfunc">ˡr̲elu</span></a></li>
+<li><a href="#section-2">Masks and select</a></li>
+<li class="item"><a href="#l.t_hreshold"><span class="c-libfunc">ˡt̲hreshold</span></a></li>
+<li class="item"><a href="#l.k_eep"><span class="c-libfunc">ˡk̲eep</span></a></li>
+<li><a href="#section-3">Reductions</a></li>
+<li class="item"><a href="#l.s_um"><span class="c-libfunc">ˡs̲um</span></a></li>
+<li class="item"><a href="#l.l_argest"><span class="c-libfunc">ˡl̲argest</span></a></li>
+<li class="item"><a href="#l.d_ot"><span class="c-libfunc">ˡd̲ot</span></a></li>
+<li><a href="#section-4">Along an axis</a></li>
+<li class="item"><a href="#l.r_owSums"><span class="c-libfunc">ˡr̲owSums</span></a></li>
+<li class="item"><a href="#l.c_olSums"><span class="c-libfunc">ˡc̲olSums</span></a></li>
+<li class="item"><a href="#l.r_owMax"><span class="c-libfunc">ˡr̲owMax</span></a></li>
+<li><a href="#section-5">Inner products</a></li>
+<li class="item"><a href="#l.m_atmul"><span class="c-libfunc">ˡm̲atmul</span></a></li>
+<li><a href="#section-6">A layer of a network</a></li>
+<li class="item"><a href="#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a></li>
+<li class="item"><a href="#l.s_oftmax"><span class="c-libfunc">ˡs̲oftmax</span></a></li>
+<li><a href="#section-7">The acceptance pipeline</a></li>
+<li class="item"><a href="#l.p_ipeline"><span class="c-libfunc">ˡp̲ipeline</span></a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">library</span>libs/Accel/src/Accel.xtl</h1>
+<div class="doc">
+<p>Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, a layer</p>
+<p>Import it with an alias of your choice: &quot;ac:&quot; u_se&lt; &quot;Accel&quot;.
+Put libs/Accel/src on XETAL_PATH (&quot;just path&quot;); the reference is libs/Accel/docs.</p>
+<p>Every function here is one whole-array expression in the subset a
+GPU (or an FPGA) can take on directly: static scalar types, pure
+functions, arithmetic and comparisons item by item with scalar
+extension, a select by mask, reductions, inner products and tables.
+No recursion, no nested arrays, no input or output. The X_eTaL
+evaluator is the reference: X_eTaL-gpu runs the same functions on a
+GPU and must give the same answers (the demos are the programs it
+checks). Names with l: are exported; the others are private.</p>
+</div>
+<p class="meta"><a href="libs-Accel-src-Accel.xtl.src.html">source</a></p>
+<h2 class="section" id="section-1">Elementwise</h2>
+<div class="item" id="l.v_add">
+<h3><a href="#l.v_add"><span class="c-libfunc">ˡv̲add</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L21">line 21</a></div>
+<div class="doc">
+<p>The sum, item by item: the first kernel, one work-item per element.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span> <span class="c-number">4</span> <a href="libs-Accel-src-Accel.xtl.html#l.v_add" class="c-libfunc">ᵃᶜv̲add</a> <span class="c-number">10</span> <span class="c-number">20</span> <span class="c-number">30</span> <span class="c-number">40</span>
+11 22 33 44</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡv̲add</span> ← { x y → x <a href="builtins.html#-2b" class="c-symbol">+</a> y }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.html#c">c</a>, <a href="libs-Accel-demos-saxpy.xtl.src.html#L7">libs/Accel/demos/saxpy.xtl:7</a>, <a href="libs-Accel-demos-vector-add.xtl.src.html#L7">libs/Accel/demos/vector-add.xtl:7</a>, <a href="libs-Accel-demos-vector-add.xtl.src.html#L10">libs/Accel/demos/vector-add.xtl:10</a></div>
+</div>
+<div class="item" id="l.s_cale">
+<h3><a href="#l.s_cale"><span class="c-libfunc">ˡs̲cale</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L27">line 27</a></div>
+<div class="doc">
+<p>Every item of the right times the number on the left.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><span class="c-number">3</span> <a href="libs-Accel-src-Accel.xtl.html#l.s_cale" class="c-libfunc">ᵃᶜs̲cale</a> <span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span>
+3 6 9</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡs̲cale</span> ← { a x → a <a href="builtins.html#-2a" class="c-symbol">×</a> x }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.html#b">b</a>, <a href="libs-Accel-demos-saxpy.xtl.html#y">y</a>, <a href="libs-Accel-demos-saxpy.xtl.src.html#L7">libs/Accel/demos/saxpy.xtl:7</a>, <a href="libs-Accel-demos-vector-add.xtl.html#y">y</a></div>
+</div>
+<div class="item" id="l.r_elu">
+<h3><a href="#l.r_elu"><span class="c-libfunc">ˡr̲elu</span></a> <span class="type">: Num a =&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L34">line 34</a></div>
+<div class="doc">
+<p>The items where positive, 0 elsewhere (a select by comparison with
+a constant), for Ints or Floats.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.r_elu" class="c-libfunc">ᵃᶜr̲elu</a> <span class="c-number">1</span> <span class="c-number">-2</span> <span class="c-number">3</span> <span class="c-number">-4</span>
+1 0 3 0</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡr̲elu</span> ← { x → x <a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <span class="c-number">0</span> }</pre>
+<div class="uses">Used in: <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline"><span class="c-libfunc">ˡp̲ipeline</span></a>, <a href="libs-Accel-demos-threshold.xtl.src.html#L9">libs/Accel/demos/threshold.xtl:9</a>, <a href="libs-Accel-demos-threshold.xtl.src.html#L11">libs/Accel/demos/threshold.xtl:11</a>, <a href="libs-Accel-demos-tiny-net.xtl.html#h">h</a></div>
+</div>
+<h2 class="section" id="section-2">Masks and select</h2>
+<div class="item" id="l.t_hreshold">
+<h3><a href="#l.t_hreshold"><span class="c-libfunc">ˡt̲hreshold</span></a> <span class="type">: Float -&gt; Float -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L44">line 44</a></div>
+<div class="doc">
+<p>t ac:t_hreshold x: x where x &gt; t, 0.0 elsewhere, for Floats: the
+mask <code>x <a href="builtins.html#-3e" class="c-symbol">&gt;</a> t</code> made Float and multiplied in, the select a GPU does
+with a conditional move. A masked-out negative comes back as -0.0.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><span class="c-number">0.5</span> <a href="libs-Accel-src-Accel.xtl.html#l.t_hreshold" class="c-libfunc">ᵃᶜt̲hreshold</a> <span class="c-number">0.25</span> <span class="c-number">0.5</span> <span class="c-number">0.75</span> <span class="c-number">1.0</span>
+0.0 0.0 0.75 1.0</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡt̲hreshold</span> ← { t x → x <a href="builtins.html#-2a" class="c-symbol">×</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> x <a href="builtins.html#-3e" class="c-symbol">&gt;</a> t }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-threshold.xtl.src.html#L8">libs/Accel/demos/threshold.xtl:8</a></div>
+</div>
+<div class="item" id="l.k_eep">
+<h3><a href="#l.k_eep"><span class="c-libfunc">ˡk̲eep</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L50">line 50</a></div>
+<div class="doc">
+<p>m ac:k_eep x: x where the Int mask m is 1, 0 elsewhere.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span>(<span class="c-number">1</span> <span class="c-number">0</span> <span class="c-number">1</span> <span class="c-number">0</span>) <a href="libs-Accel-src-Accel.xtl.html#l.k_eep" class="c-libfunc">ᵃᶜk̲eep</a> <span class="c-number">5</span> <span class="c-number">6</span> <span class="c-number">7</span> <span class="c-number">8</span>
+5 0 7 0</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡk̲eep</span> ← { m x → x <a href="builtins.html#-2a" class="c-symbol">×</a> m }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-threshold.xtl.src.html#L12">libs/Accel/demos/threshold.xtl:12</a></div>
+</div>
+<h2 class="section" id="section-3">Reductions</h2>
+<div class="item" id="l.s_um">
+<h3><a href="#l.s_um"><span class="c-libfunc">ˡs̲um</span></a> <span class="type">: Num a =&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L59">line 59</a></div>
+<div class="doc">
+<p>The sum of the items of a vector: a parallel reduction on a GPU
+(work-group partials, then a second pass).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.s_um" class="c-libfunc">ᵃᶜs̲um</a> <span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span> <span class="c-number">4</span>
+10</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡs̲um</span> ← { x → <span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> x }</pre>
+<div class="uses">Used in: <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline"><span class="c-libfunc">ˡp̲ipeline</span></a>, <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L14">libs/Accel/demos/axis-reduce.xtl:14</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L8">libs/Accel/demos/reduce-sum.xtl:8</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L12">libs/Accel/demos/reduce-sum.xtl:12</a></div>
+</div>
+<div class="item" id="l.l_argest">
+<h3><a href="#l.l_argest"><span class="c-libfunc">ˡl̲argest</span></a> <span class="type">: Num a =&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L65">line 65</a></div>
+<div class="doc">
+<p>The largest item of a vector.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.l_argest" class="c-libfunc">ᵃᶜl̲argest</a> <span class="c-number">3</span> <span class="c-number">9</span> <span class="c-number">2</span>
+9</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡl̲argest</span> ← { x → <span class="c-builtin">'</span><a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> x }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L9">libs/Accel/demos/reduce-sum.xtl:9</a></div>
+</div>
+<div class="item" id="l.d_ot">
+<h3><a href="#l.d_ot"><span class="c-libfunc">ˡd̲ot</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L71">line 71</a></div>
+<div class="doc">
+<p>The inner product of two vectors: a multiply, then a reduce.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span> <a href="libs-Accel-src-Accel.xtl.html#l.d_ot" class="c-libfunc">ᵃᶜd̲ot</a> <span class="c-number">4</span> <span class="c-number">5</span> <span class="c-number">6</span>
+32</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡd̲ot</span> ← { x y → <span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> x <a href="builtins.html#-2a" class="c-symbol">×</a> y }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L10">libs/Accel/demos/reduce-sum.xtl:10</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L13">libs/Accel/demos/reduce-sum.xtl:13</a></div>
+</div>
+<h2 class="section" id="section-4">Along an axis</h2>
+<div class="item" id="l.r_owSums">
+<h3><a href="#l.r_owSums"><span class="c-libfunc">ˡr̲owSums</span></a> <span class="type">: Num a =&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L80">line 80</a></div>
+<div class="doc">
+<p>The sum of each row of a matrix (along axis 2: one work-item per
+row on a GPU).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.r_owSums" class="c-libfunc">ᵃᶜr̲owSums</a> <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1</span> <span class="c-number">20</span> <span class="c-number">3</span> <span class="c-number">4</span> <span class="c-number">5</span> <span class="c-number">60</span>
+24 69</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡr̲owSums</span> ← { m → <span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/₂</a> m }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L8">libs/Accel/demos/axis-reduce.xtl:8</a>, <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L12">libs/Accel/demos/axis-reduce.xtl:12</a>, <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L14">libs/Accel/demos/axis-reduce.xtl:14</a>, <a href="libs-Accel-demos-tiny-net.xtl.src.html#L13">libs/Accel/demos/tiny-net.xtl:13</a></div>
+</div>
+<div class="item" id="l.c_olSums">
+<h3><a href="#l.c_olSums"><span class="c-libfunc">ˡc̲olSums</span></a> <span class="type">: Num a =&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L86">line 86</a></div>
+<div class="doc">
+<p>The sum of each column (along axis 1, the default of r_/).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.c_olSums" class="c-libfunc">ᵃᶜc̲olSums</a> <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1</span> <span class="c-number">20</span> <span class="c-number">3</span> <span class="c-number">4</span> <span class="c-number">5</span> <span class="c-number">60</span>
+5 25 63</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡc̲olSums</span> ← { m → <span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/</a> m }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L9">libs/Accel/demos/axis-reduce.xtl:9</a>, <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L13">libs/Accel/demos/axis-reduce.xtl:13</a></div>
+</div>
+<div class="item" id="l.r_owMax">
+<h3><a href="#l.r_owMax"><span class="c-libfunc">ˡr̲owMax</span></a> <span class="type">: Num a =&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L92">line 92</a></div>
+<div class="doc">
+<p>The largest item of each row.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.r_owMax" class="c-libfunc">ᵃᶜr̲owMax</a> <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1</span> <span class="c-number">20</span> <span class="c-number">3</span> <span class="c-number">4</span> <span class="c-number">5</span> <span class="c-number">60</span>
+20 60</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡr̲owMax</span> ← { m → <span class="c-builtin">'</span><a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/₂</a> m }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-axis-reduce.xtl.src.html#L10">libs/Accel/demos/axis-reduce.xtl:10</a></div>
+</div>
+<h2 class="section" id="section-5">Inner products</h2>
+<div class="item" id="l.m_atmul">
+<h3><a href="#l.m_atmul"><span class="c-libfunc">ˡm̲atmul</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L106">line 106</a></div>
+<div class="doc">
+<p>x ac:m_atmul w: the inner product of x's last axis with w's first
+(APL's +.x): a matrix times a matrix, a matrix times a vector, a
+vector times a matrix. Each result item is a sum of products, one
+GPU work-item each (or a tile of them, as the schedule says).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span>(<span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">6</span>) <a href="libs-Accel-src-Accel.xtl.html#l.m_atmul" class="c-libfunc">ᵃᶜm̲atmul</a> <span class="c-number">3</span> <span class="c-number">2</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">6</span>
+22 28
+49 64</pre>
+<pre class="example"><span class="prompt">      </span>(<span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">6</span>) <a href="libs-Accel-src-Accel.xtl.html#l.m_atmul" class="c-libfunc">ᵃᶜm̲atmul</a> <span class="c-number">1</span> <span class="c-number">0</span> <span class="c-number">2</span>
+7 16</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡm̲atmul</span> ← { x w → x <span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <span class="c-symbol">'</span><a href="builtins.html#-2a" class="c-symbol">×</a> <a href="builtins.html#i_nner" class="c-builtin">i̲nner</a> w }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-matmul.xtl.src.html#L8">libs/Accel/demos/matmul.xtl:8</a>, <a href="libs-Accel-demos-matmul.xtl.src.html#L9">libs/Accel/demos/matmul.xtl:9</a>, <a href="libs-Accel-demos-matmul.xtl.src.html#L10">libs/Accel/demos/matmul.xtl:10</a>, <a href="libs-Accel-demos-matmul.xtl.src.html#L13">libs/Accel/demos/matmul.xtl:13</a>, <a href="extensions-gpu-demos-offload.xtl.html#cpu">cpu</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L16">extensions/gpu/demos/offload.xtl:16</a></div>
+</div>
+<h2 class="section" id="section-6">A layer of a network</h2>
+<div class="item" id="l.d_ense">
+<h3><a href="#l.d_ense"><span class="c-libfunc">ˡd̲ense</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L120">line 120</a></div>
+<div class="doc">
+<p>x ac:d_ense wb: the layer x W + b for a batch x (one example per
+row), the weights W (a row per input, a column per output) with the
+bias b as one more row at the bottom of wb, as X_eTaL-ML's NN has
+it. The bias row is spread down the batch by a table (r_ight).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span>x ← <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1.0</span> <span class="c-number">2.0</span> <span class="c-number">3.0</span> <span class="c-number">-1.0</span> <span class="c-number">0.5</span> <span class="c-number">0.0</span></pre>
+<pre class="example"><span class="prompt">      </span>wb ← <span class="c-number">4</span> <span class="c-number">2</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.5</span> <span class="c-number">-1.0</span> <span class="c-number">1.0</span> <span class="c-number">0.25</span> <span class="c-number">-0.5</span> <span class="c-number">2.0</span> <span class="c-number">0.1</span> <span class="c-number">0.2</span></pre>
+<pre class="example"><span class="prompt">      </span>x <a href="libs-Accel-src-Accel.xtl.html#l.d_ense" class="c-libfunc">ᵃᶜd̲ense</a> wb
+1.1   5.7
+0.1 1.325</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡd̲ense</span> ← { x wb → (x <span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <span class="c-symbol">'</span><a href="builtins.html#-2a" class="c-symbol">×</a> <a href="builtins.html#i_nner" class="c-builtin">i̲nner</a> <span class="c-number">-1</span> <a href="builtins.html#d_rop" class="c-builtin">d̲rop</a> wb) <a href="builtins.html#-2b" class="c-symbol">+</a> (<a href="builtins.html#o_ffsets" class="c-builtin">o̲ffsets</a> <a href="builtins.html#t_ally" class="c-builtin">t̲ally</a> x) <span class="c-builtin">'</span><a href="builtins.html#r_ight" class="c-builtin">r̲ight</a> <a href="builtins.html#t_able" class="c-builtin">t̲able</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <span class="c-number">-1</span> <a href="builtins.html#t_ake" class="c-builtin">t̲ake</a> wb }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.html#h">h</a>, <a href="libs-Accel-demos-tiny-net.xtl.html#p">p</a></div>
+</div>
+<div class="item" id="l.s_oftmax">
+<h3><a href="#l.s_oftmax"><span class="c-libfunc">ˡs̲oftmax</span></a> <span class="type">: Num a =&gt; a -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L129">line 129</a></div>
+<div class="doc">
+<p>Each row of a matrix into probabilities: the row's largest taken
+off (the same result, no overflow), e to each, each divided by its
+row's sum; a row's value spread across the row by a table (l_eft).</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><a href="libs-Accel-src-Accel.xtl.html#l.s_oftmax" class="c-libfunc">ᵃᶜs̲oftmax</a> <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.0</span> <span class="c-number">0.0</span> <span class="c-number">0.0</span> <span class="c-number">1.0</span> <span class="c-number">2.0</span> <span class="c-number">3.0</span>
+ 0.3333333333333333  0.3333333333333333 0.3333333333333333
+0.09003057317038046 0.24472847105479764 0.6652409557748218</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡs̲oftmax</span> ← { m →
+  c ← <a href="builtins.html#o_ffsets" class="c-builtin">o̲ffsets</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-number">-1</span> <a href="builtins.html#t_ake" class="c-builtin">t̲ake</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> m
+  e ← <a href="builtins.html#e_xp" class="c-builtin">e̲xp</a> m <a href="builtins.html#-2d" class="c-symbol">−</a> (<span class="c-builtin">'</span><a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/₂</a> m) <span class="c-builtin">'</span><a href="builtins.html#l_eft" class="c-builtin">l̲eft</a> <a href="builtins.html#t_able" class="c-builtin">t̲able</a> c
+  e <a href="builtins.html#-2f" class="c-symbol">÷</a> (<span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/₂</a> e) <span class="c-builtin">'</span><a href="builtins.html#l_eft" class="c-builtin">l̲eft</a> <a href="builtins.html#t_able" class="c-builtin">t̲able</a> c
+}</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.html#p">p</a></div>
+</div>
+<h2 class="section" id="section-7">The acceptance pipeline</h2>
+<div class="item" id="l.p_ipeline">
+<h3><a href="#l.p_ipeline"><span class="c-libfunc">ˡp̲ipeline</span></a> <span class="type">: Num a =&gt; a -&gt; a -&gt; a</span></h3>
+<div class="meta">function &middot; <a href="libs-Accel-src-Accel.xtl.src.html#L144">line 144</a></div>
+<div class="doc">
+<p>x ac:p_ipeline w: multiply, add, select, reduce in one expression,
+the sum of the positive items of x + x * w: the first end-to-end
+test research7 asks for (arithmetic, map, zip, comparison,
+selection, reduction), for Ints or Floats.</p>
+<pre class="example"><span class="prompt">      </span><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></pre>
+<pre class="example"><span class="prompt">      </span><span class="c-number">1</span> <span class="c-number">2</span> <span class="c-number">3</span> <span class="c-number">4</span> <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline" class="c-libfunc">ᵃᶜp̲ipeline</a> <span class="c-number">1</span> <span class="c-number">-2</span> <span class="c-number">1</span> <span class="c-number">-2</span>
+8</pre>
+</div>
+<pre class="code"><span class="c-libfunc">ˡp̲ipeline</span> ← { x w → <a href="libs-Accel-src-Accel.xtl.html#l.s_um" class="c-libfunc">ˡs̲um</a> <a href="libs-Accel-src-Accel.xtl.html#l.r_elu" class="c-libfunc">ˡr̲elu</a> x <a href="builtins.html#-2b" class="c-symbol">+</a> x <a href="builtins.html#-2a" class="c-symbol">×</a> w }</pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-pipeline.xtl.src.html#L7">libs/Accel/demos/pipeline.xtl:7</a>, <a href="libs-Accel-demos-pipeline.xtl.src.html#L10">libs/Accel/demos/pipeline.xtl:10</a>, <a href="extensions-gpu-demos-offload.xtl.html#cpu">cpu</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L33">extensions/gpu/demos/offload.xtl:33</a></div>
+</div>
+</main>
+</body>
+</html>

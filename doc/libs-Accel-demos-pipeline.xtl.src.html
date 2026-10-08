@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>libs/Accel/demos/pipeline.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#L5">x</a></li>
+<li class="item"><a href="#L6">w</a></li>
+<li class="item"><a href="#L8">f</a></li>
+<li class="item"><a href="#L9">g</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">source</span><a href="libs-Accel-demos-pipeline.xtl.html">libs/Accel/demos/pipeline.xtl</a></h1>
+<div class="source"><span class="line" id="L1"><a class="ln" href="#L1">1</a><span class="c-comment">⍝</span><span class="c-comment">!/usr/bin/env xetal</span></span>
+<span class="line" id="L2"><a class="ln" href="#L2">2</a><span class="c-comment">⍝</span><span class="c-comment"> The acceptance pipeline: multiply, add, select, reduce, as one</span></span>
+<span class="line" id="L3"><a class="ln" href="#L3">3</a><span class="c-comment">⍝</span><span class="c-comment"> expression, on Ints and on Floats. Run with &quot;just demo-lib Accel pipeline&quot;.</span></span>
+<span class="line" id="L4"><a class="ln" href="#L4">4</a><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></span>
+<span class="line" id="L5"><a class="ln" href="#L5">5</a>x ← <a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">8</span></span>
+<span class="line" id="L6"><a class="ln" href="#L6">6</a>w ← <span class="c-number">1</span> <span class="c-number">-1</span> <span class="c-number">1</span> <span class="c-number">-1</span> <span class="c-number">1</span> <span class="c-number">-1</span> <span class="c-number">1</span> <span class="c-number">-1</span></span>
+<span class="line" id="L7"><a class="ln" href="#L7">7</a><a href="libs-Accel-demos-pipeline.xtl.html#x">x</a> <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline" class="c-libfunc">ᵃᶜp̲ipeline</a> <a href="libs-Accel-demos-pipeline.xtl.html#w">w</a></span>
+<span class="line" id="L8"><a class="ln" href="#L8">8</a>f ← (<a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">8</span>) <a href="builtins.html#-2f" class="c-symbol">÷</a> <span class="c-number">4</span></span>
+<span class="line" id="L9"><a class="ln" href="#L9">9</a>g ← <span class="c-number">-1.5</span> <span class="c-number">-1.0</span> <span class="c-number">-0.5</span> <span class="c-number">0.0</span> <span class="c-number">0.5</span> <span class="c-number">1.0</span> <span class="c-number">1.5</span> <span class="c-number">2.0</span></span>
+<span class="line" id="L10"><a class="ln" href="#L10">10</a><a href="libs-Accel-demos-pipeline.xtl.html#f">f</a> <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline" class="c-libfunc">ᵃᶜp̲ipeline</a> <a href="libs-Accel-demos-pipeline.xtl.html#g">g</a></span>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>extensions/gpu/demos/offload.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#L13">a</a></li>
+<li class="item"><a href="#L14">cpu</a></li>
+<li class="item"><a href="#L15">gpu</a></li>
+<li class="item"><a href="#L28">x</a></li>
+<li class="item"><a href="#L29">w</a></li>
+<li class="item"><a href="#L30">cpu</a></li>
+<li class="item"><a href="#L31">p</a></li>
+<li class="item"><a href="#L32">gpu</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">source</span><a href="extensions-gpu-demos-offload.xtl.html">extensions/gpu/demos/offload.xtl</a></h1>
+<div class="source"><span class="line" id="L1"><a class="ln" href="#L1">1</a><span class="c-comment">⍝</span><span class="c-comment">!/usr/bin/env xetal</span></span>
+<span class="line" id="L2"><a class="ln" href="#L2">2</a><span class="c-comment">⍝</span><span class="c-comment"> Offload: the same products and the same elementwise work computed by</span></span>
+<span class="line" id="L3"><a class="ln" href="#L3">3</a><span class="c-comment">⍝</span><span class="c-comment"> the X_eTaL evaluator and, through the gpu extension, on opencl:0;</span></span>
+<span class="line" id="L4"><a class="ln" href="#L4">4</a><span class="c-comment">⍝</span><span class="c-comment"> compared, and timed. Products gain on the GPU even through the text</span></span>
+<span class="line" id="L5"><a class="ln" href="#L5">5</a><span class="c-comment">⍝</span><span class="c-comment"> bridge; elementwise work does not (docs/macros-and-extensions.md).</span></span>
+<span class="line" id="L6"><a class="ln" href="#L6">6</a><span class="c-comment">⍝</span><span class="c-comment"> Prints its timings, so it has no baseline. Run with</span></span>
+<span class="line" id="L7"><a class="ln" href="#L7">7</a><span class="c-comment">⍝</span><span class="c-comment"> &quot;scripts/xx run extensions/gpu/demos/offload.xtl&quot; (or &quot;just offload&quot;).</span></span>
+<span class="line" id="L8"><a class="ln" href="#L8">8</a><span class="c-libfunc">ᵍᵖ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="extensions-gpu-lib-Gpu.xtl.html" class="c-string">&quot;Gpu&quot;</a></span>
+<span class="line" id="L9"><a class="ln" href="#L9">9</a><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></span>
+<span class="line" id="L10"><a class="ln" href="#L10">10</a><span class="c-libfunc">ᶜᵏ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html" class="c-string">&quot;Clock&quot;</a></span>
+<span class="line" id="L11"><a class="ln" href="#L11">11</a></span>
+<span class="line" id="L12"><a class="ln" href="#L12">12</a><span class="c-string">&quot;A 512 by 512 product:&quot;</span></span>
+<span class="line" id="L13"><a class="ln" href="#L13">13</a>a ← <span class="c-number">512</span> <span class="c-number">512</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> (<a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">262144</span>) <a href="builtins.html#-2f" class="c-symbol">÷</a> <span class="c-number">262144</span></span>
+<span class="line" id="L14"><a class="ln" href="#L14">14</a>cpu ← <span class="c-quote">'</span>{ m → m <a href="libs-Accel-src-Accel.xtl.html#l.m_atmul" class="c-libfunc">ᵃᶜm̲atmul</a> m } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <a href="extensions-gpu-demos-offload.xtl.html#a">a</a></span>
+<span class="line" id="L15"><a class="ln" href="#L15">15</a>gpu ← <span class="c-quote">'</span>{ m → m <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct" class="c-libfunc">ᵍᵖp̲roduct</a> m } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <a href="extensions-gpu-demos-offload.xtl.html#a">a</a></span>
+<span class="line" id="L16"><a class="ln" href="#L16">16</a>(<a href="extensions-gpu-demos-offload.xtl.html#a">a</a> <a href="libs-Accel-src-Accel.xtl.html#l.m_atmul" class="c-libfunc">ᵃᶜm̲atmul</a> <a href="extensions-gpu-demos-offload.xtl.html#a">a</a>) <a href="extensions-gpu-lib-Gpu.xtl.html#l.n_ear" class="c-libfunc">ᵍᵖn̲ear</a> <a href="extensions-gpu-demos-offload.xtl.html#a">a</a> <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roduct" class="c-libfunc">ᵍᵖp̲roduct</a> <a href="extensions-gpu-demos-offload.xtl.html#a">a</a></span>
+<span class="line" id="L17"><a class="ln" href="#L17">17</a><span class="c-string">&quot;  evaluator (ms), GPU through the extension (ms), how many times faster:&quot;</span></span>
+<span class="line" id="L18"><a class="ln" href="#L18">18</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="extensions-gpu-demos-offload.xtl.html#cpu">cpu</a></span>
+<span class="line" id="L19"><a class="ln" href="#L19">19</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a></span>
+<span class="line" id="L20"><a class="ln" href="#L20">20</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="extensions-gpu-demos-offload.xtl.html#cpu">cpu</a> <a href="builtins.html#-2f" class="c-symbol">÷</a> <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a> <a href="builtins.html#m_ax" class="c-builtin">m̲ax</a> <span class="c-number">1.0</span></span>
+<span class="line" id="L21"><a class="ln" href="#L21">21</a></span>
+<span class="line" id="L22"><a class="ln" href="#L22">22</a><span class="c-string">&quot;Where the GPU's time goes: load and bind (ms), run (ms), read back (ms):&quot;</span></span>
+<span class="line" id="L23"><a class="ln" href="#L23">23</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <span class="c-quote">'</span>{ m → n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ᵍᵖl̲oad</a> (<a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> m) <a href="extensions-gpu-lib-Gpu.xtl.html#l.p_roductProgram" class="c-libfunc">ᵍᵖp̲roductProgram</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> m◆ n ← <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> m◆ <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> m } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <a href="extensions-gpu-demos-offload.xtl.html#a">a</a></span>
+<span class="line" id="L24"><a class="ln" href="#L24">24</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <span class="c-quote">'</span>{ d → <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ᵍᵖr̲un</a> d } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <span class="c-number">0</span></span>
+<span class="line" id="L25"><a class="ln" href="#L25">25</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <span class="c-quote">'</span>{ i → <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ᵍᵖo̲utput</a> i } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <span class="c-number">1</span></span>
+<span class="line" id="L26"><a class="ln" href="#L26">26</a></span>
+<span class="line" id="L27"><a class="ln" href="#L27">27</a><span class="c-string">&quot;A million items, elementwise and summed, x + x * w, positive parts:&quot;</span></span>
+<span class="line" id="L28"><a class="ln" href="#L28">28</a>x ← (<a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">1048576</span>) <a href="builtins.html#-2f" class="c-symbol">÷</a> <span class="c-number">1048576</span></span>
+<span class="line" id="L29"><a class="ln" href="#L29">29</a>w ← <span class="c-number">1048576</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1.0</span> <span class="c-number">-1.0</span></span>
+<span class="line" id="L30"><a class="ln" href="#L30">30</a>cpu ← <span class="c-quote">'</span>{ v → v <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline" class="c-libfunc">ᵃᶜp̲ipeline</a> <a href="extensions-gpu-demos-offload.xtl.html#w">w</a> } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <a href="extensions-gpu-demos-offload.xtl.html#x">x</a></span>
+<span class="line" id="L31"><a class="ln" href="#L31">31</a>p ← <span class="c-string">&quot;%x = input f64 [1048576]\n%w = input f64 [1048576]\n%xw = map mul %x %w\n%s = map add %x %xw\n%z = const f64 [] 0.0\n%r = map max %s %z\n%t = reduce add %r\noutput %t\n&quot;</span></span>
+<span class="line" id="L32"><a class="ln" href="#L32">32</a>gpu ← <span class="c-quote">'</span>{ v → n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_oad" class="c-libfunc">ᵍᵖl̲oad</a> <a href="extensions-gpu-demos-offload.xtl.html#p">p</a>◆ n ← <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> v◆ n ← <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> <a href="extensions-gpu-demos-offload.xtl.html#w">w</a>◆ n ← <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ᵍᵖr̲un</a> <span class="c-number">0</span>◆ <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ᵍᵖo̲utput</a> <span class="c-number">1</span> } <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime" class="c-libfunc">ᶜᵏt̲ime</a> <a href="extensions-gpu-demos-offload.xtl.html#x">x</a></span>
+<span class="line" id="L33"><a class="ln" href="#L33">33</a>(<a href="extensions-gpu-demos-offload.xtl.html#x">x</a> <a href="libs-Accel-src-Accel.xtl.html#l.p_ipeline" class="c-libfunc">ᵃᶜp̲ipeline</a> <a href="extensions-gpu-demos-offload.xtl.html#w">w</a>) <a href="extensions-gpu-lib-Gpu.xtl.html#l.n_ear" class="c-libfunc">ᵍᵖn̲ear</a> <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ᵍᵖo̲utput</a> <span class="c-number">1</span></span>
+<span class="line" id="L34"><a class="ln" href="#L34">34</a><span class="c-string">&quot;  evaluator (ms), GPU through the extension (ms): the bridge's text costs more than the work&quot;</span></span>
+<span class="line" id="L35"><a class="ln" href="#L35">35</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="extensions-gpu-demos-offload.xtl.html#cpu">cpu</a></span>
+<span class="line" id="L36"><a class="ln" href="#L36">36</a><a href="builtins.html#f_loor" class="c-builtin">f̲loor</a> <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a></span>
+</div>
+</main>
+</body>
+</html>

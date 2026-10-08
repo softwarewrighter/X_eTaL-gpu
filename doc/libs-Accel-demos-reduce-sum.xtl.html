@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>libs/Accel/demos/reduce-sum.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#a">a</a></li>
+<li class="item"><a href="#b">b</a></li>
+<li class="item"><a href="#c">c</a></li>
+<li class="item"><a href="#f">f</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">program</span>libs/Accel/demos/reduce-sum.xtl</h1>
+<p class="meta"><a href="libs-Accel-demos-reduce-sum.xtl.src.html">source</a> &middot; imports <code><span class="c-error">ac:</span></code> <a href="libs-Accel-src-Accel.xtl.html">libs/Accel/src/Accel.xtl</a></p>
+<div class="item" id="a">
+<h3><a href="#a">a</a> <span class="type">: Int</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L5">line 5</a></div>
+<pre class="code">a ← <a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">8</span></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.html#b">b</a>, <a href="libs-Accel-demos-reduce-sum.xtl.html#c">c</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L10">libs/Accel/demos/reduce-sum.xtl:10</a></div>
+</div>
+<div class="item" id="b">
+<h3><a href="#b">b</a> <span class="type">: Int</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L6">line 6</a></div>
+<pre class="code">b ← <span class="c-number">2</span> <a href="libs-Accel-src-Accel.xtl.html#l.s_cale" class="c-libfunc">ᵃᶜs̲cale</a> <a href="libs-Accel-demos-reduce-sum.xtl.html#a">a</a></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.html#c">c</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L10">libs/Accel/demos/reduce-sum.xtl:10</a></div>
+</div>
+<div class="item" id="c">
+<h3><a href="#c">c</a> <span class="type">: Int</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L7">line 7</a></div>
+<pre class="code">c ← <a href="libs-Accel-demos-reduce-sum.xtl.html#a">a</a> <a href="libs-Accel-src-Accel.xtl.html#l.v_add" class="c-libfunc">ᵃᶜv̲add</a> <a href="libs-Accel-demos-reduce-sum.xtl.html#b">b</a></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L8">libs/Accel/demos/reduce-sum.xtl:8</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L9">libs/Accel/demos/reduce-sum.xtl:9</a></div>
+</div>
+<div class="item" id="f">
+<h3><a href="#f">f</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L11">line 11</a></div>
+<pre class="code">f ← (<a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">8</span>) <a href="builtins.html#-2f" class="c-symbol">÷</a> <span class="c-number">8</span></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L12">libs/Accel/demos/reduce-sum.xtl:12</a>, <a href="libs-Accel-demos-reduce-sum.xtl.src.html#L13">libs/Accel/demos/reduce-sum.xtl:13</a></div>
+</div>
+</main>
+</body>
+</html>

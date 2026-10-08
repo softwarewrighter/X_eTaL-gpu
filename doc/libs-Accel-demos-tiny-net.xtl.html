@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>libs/Accel/demos/tiny-net.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#w1">w1</a></li>
+<li class="item"><a href="#w2">w2</a></li>
+<li class="item"><a href="#x">x</a></li>
+<li class="item"><a href="#h">h</a></li>
+<li class="item"><a href="#p">p</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">program</span>libs/Accel/demos/tiny-net.xtl</h1>
+<p class="meta"><a href="libs-Accel-demos-tiny-net.xtl.src.html">source</a> &middot; imports <code><span class="c-error">ac:</span></code> <a href="libs-Accel-src-Accel.xtl.html">libs/Accel/src/Accel.xtl</a></p>
+<div class="item" id="w1">
+<h3><a href="#w1">w1</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-tiny-net.xtl.src.html#L7">line 7</a></div>
+<pre class="code">w1 ← <span class="c-number">4</span> <span class="c-number">5</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;../data/w1.txt&quot;</span></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.html#h">h</a></div>
+</div>
+<div class="item" id="w2">
+<h3><a href="#w2">w2</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-tiny-net.xtl.src.html#L8">line 8</a></div>
+<pre class="code">w2 ← <span class="c-number">6</span> <span class="c-number">2</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;../data/w2.txt&quot;</span></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.html#p">p</a></div>
+</div>
+<div class="item" id="x">
+<h3><a href="#x">x</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-tiny-net.xtl.src.html#L9">line 9</a></div>
+<pre class="code">x ← <span class="c-number">4</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.5</span> <span class="c-number">-1.0</span> <span class="c-number">0.25</span> <span class="c-number">1.0</span> <span class="c-number">0.0</span> <span class="c-number">-0.5</span> <span class="c-number">-0.75</span> <span class="c-number">0.5</span> <span class="c-number">1.0</span> <span class="c-number">0.2</span> <span class="c-number">0.4</span> <span class="c-number">-0.6</span></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.html#h">h</a></div>
+</div>
+<div class="item" id="h">
+<h3><a href="#h">h</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-tiny-net.xtl.src.html#L10">line 10</a></div>
+<pre class="code">h ← <a href="libs-Accel-src-Accel.xtl.html#l.r_elu" class="c-libfunc">ᵃᶜr̲elu</a> <a href="libs-Accel-demos-tiny-net.xtl.html#x">x</a> <a href="libs-Accel-src-Accel.xtl.html#l.d_ense" class="c-libfunc">ᵃᶜd̲ense</a> <a href="libs-Accel-demos-tiny-net.xtl.html#w1">w1</a></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.html#p">p</a></div>
+</div>
+<div class="item" id="p">
+<h3><a href="#p">p</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="libs-Accel-demos-tiny-net.xtl.src.html#L11">line 11</a></div>
+<pre class="code">p ← <a href="libs-Accel-src-Accel.xtl.html#l.s_oftmax" class="c-libfunc">ᵃᶜs̲oftmax</a> <a href="libs-Accel-demos-tiny-net.xtl.html#h">h</a> <a href="libs-Accel-src-Accel.xtl.html#l.d_ense" class="c-libfunc">ᵃᶜd̲ense</a> <a href="libs-Accel-demos-tiny-net.xtl.html#w2">w2</a></pre>
+<div class="uses">Used in: <a href="libs-Accel-demos-tiny-net.xtl.src.html#L12">libs/Accel/demos/tiny-net.xtl:12</a>, <a href="libs-Accel-demos-tiny-net.xtl.src.html#L13">libs/Accel/demos/tiny-net.xtl:13</a></div>
+</div>
+</main>
+</body>
+</html>
