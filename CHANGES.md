@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-10-08
 
+- 15:35 `docs` The live `/doc` rebuilt with this repository's pinned `xetal doc` (X_eTaL 1998414: the sidebar grouped by directory, directories and files sorted) instead of `xetal-x`'s X_eTaL v0.1.0: documenting expands Ffi.xtlm from `XETAL_PATH` and never calls the bridge. The Gpu facade's private helper stays bare (`h:n_l` gives `unknown-namespace` under `xetal-x`; tuples likewise), recorded as an ask of X_eTaL-extensions in `docs/macros-and-extensions.md`. The landing page's footer names the X_eTaL whose doc tool wrote the docs.
+- 15:45 `docs` The plan's row and this entry for the step above, which its commit had left out (a script error).
 - 15:20 `build` X_eTaL pinned at 1998414 (was d284a8c): the doc site's sidebar sorted (directories and files alphabetical), a file's header recognized with or without a blank line after it, stray doc blocks warned (none here); the gate passes unchanged.
 - 13:10 `build` X_eTaL pinned at d284a8c (was 75e6a5c; 51 commits: the doc site's sidebar grouped by directory, `h:` file-private names with bare library helpers deprecated, tuples): every baseline, doc example, twin and size check unchanged; the gate passes.
 - 11:55 `fix` No pipe into `grep -q` under `pipefail` in the scripts: `check-live.sh` reported two live pages as missing their doc comments (they were there; `grep -q` stopped reading and curl's broken pipe failed the pipeline), and `check-xetal.sh`, `test-ext.sh` (which could skip the device tests on a machine with several devices) and `test-libs.sh` had the same pattern; each now reads the whole output first. The live site passes `just check-live`.
