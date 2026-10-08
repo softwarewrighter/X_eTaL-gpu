@@ -13,7 +13,8 @@ command -v reg-rs >/dev/null || { echo "test-ext: reg-rs not found on PATH" >&2;
 "$root/scripts/gpu-ext.sh" >/dev/null
 d="$root/extensions/gpu/tests"
 has_device=1
-"$root/target/release/xetal-gpu" devices 2>/dev/null | grep -q '^opencl:' || has_device=0
+found="$("$root/target/release/xetal-gpu" devices 2>/dev/null || true)"
+grep -q '^opencl:' <<<"$found" || has_device=0
 xx="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$root/scripts/xx" "$d")"
 wanted=("types|$xx type ../lib/Gpu.xtl|")
 for p in "$d"/*.xtl; do wanted+=("$(basename "$p" .xtl)|$xx run $(basename "$p")|$p"); done

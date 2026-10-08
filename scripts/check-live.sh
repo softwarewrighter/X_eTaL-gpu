@@ -11,7 +11,10 @@ head="$(git -C "$root" rev-parse --short HEAD)"
 get() { curl -sfL "$url/$1"; }
 fail=0
 check() { # check PATH TEXT
-  if get "$1" | grep -qF -- "$2"; then echo "ok: live $1"; else echo "FAIL: live $1 does not show: $2"; fail=1; fi
+  # The page read whole first: grep -q in a pipe would stop early and,
+  # under pipefail, report curl's broken pipe as a failure.
+  page="$(get "$1" || true)"
+  if grep -qF -- "$2" <<<"$page"; then echo "ok: live $1"; else echo "FAIL: live $1 does not show: $2"; fail=1; fi
 }
 check "" "X_eTaL-gpu $head"
 check "doc/index.html" "Accel"
