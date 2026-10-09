@@ -168,6 +168,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   subset, the roadmap
 - [`docs/xetal-asks.md`](docs/xetal-asks.md) -- what this repo needs
   from X_eTaL; the blockers first
+- [`docs/tuple-plan.md`](docs/tuple-plan.md) -- where X_eTaL's
+  tuples would help here, what blocks each use, and when to adopt them
 - [`docs/macros-and-extensions.md`](docs/macros-and-extensions.md) --
   where macros and native extensions are justified here, and where
   not, with measurements

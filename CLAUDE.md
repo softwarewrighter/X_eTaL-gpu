@@ -307,6 +307,8 @@ Read before working:
 - `docs/macros-and-extensions.md` -- when a macro or a native
   extension is justified (concision, speed, a C-ABI library) and the
   verdict on each candidate; a new one is judged the same way
+- `docs/tuple-plan.md` -- where tuples may be used (code run by the
+  pinned `xetal`) and where not yet (code run by `xetal-x`)
 - `docs/research7.txt` -- the planning conversation (archival, NOT
   normative)
 - `../X_eTaL/docs/lang-choices.md`, `../X_eTaL/docs/reference.md` --

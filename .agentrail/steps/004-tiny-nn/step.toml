@@ -1,4 +1,4 @@
-number = 3
+number = 4
 slug = "tiny-nn"
 status = "in-progress"
 description = "A complete tiny trained network: a small classification task (for example poi..."

@@ -1,7 +1,7 @@
 number = 5
-slug = "jev-train"
+slug = "jev-model"
 status = "pending"
-description = "A trainer for the typed-decision task: requests classified as DRAW, ARRAY_QUE..."
+description = "examples/jev/: config.toml (vocabulary, sequence length, width, heads, layers..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T17:43:00"

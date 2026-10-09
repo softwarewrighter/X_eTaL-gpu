@@ -209,8 +209,11 @@ To X_eTaL-extensions (recorded here; this repo does not change it):
   so an Int array goes out without passing through `f_loat`;
 - results of more than one array per call, or the session pattern
   above documented as the way to return several;
-- a newer X_eTaL pin: `xetal-x` embeds X_eTaL v0.1.0, which predates
-  `h:` file-private names (X_eTaL Saga 38), so the Gpu facade keeps
+- tuples across the ABI (`docs/tuple-plan.md`, X-2): ABI V1 has no
+  tuple value and the binding macro no tuple kind, so a run's several
+  outputs are read one call at a time;
+- a newer X_eTaL pin (`docs/tuple-plan.md`, X-1): `xetal-x` embeds X_eTaL v0.1.0, which predates
+  tuples and `h:` file-private names (X_eTaL Saga 38), so the Gpu facade keeps
   its one private helper bare (deprecated in X_eTaL d284a8c, still
   accepted) and cannot move it to `h:` until X_eTaL-extensions pins a
   newer X_eTaL (found 2026-10-08: `h:n_l` gives `unknown-namespace`

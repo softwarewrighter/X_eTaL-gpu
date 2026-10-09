@@ -1,0 +1,1 @@
+docs/tuple-plan.md: whether and where this repository uses X_eTaL's tuples (Saga 39), what each use needs, what blocks it (xetal-x's X_eTaL v0.1.0; ABI V1 has no tuple), the asks, and the rule for adopting them. Docs, CHANGES, commit, push.
