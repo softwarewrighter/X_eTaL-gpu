@@ -1,0 +1,1 @@
+docs/tuple-plan.md: no tuples used yet; T1-T5 judged with what each needs and what blocks it; rule (pinned-xetal code may use them now, xetal-x code waits on X-1); asks X-1, X-2, G9; linked from README, CLAUDE.md, analysis, plan; gate passes.
