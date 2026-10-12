@@ -37,3 +37,8 @@ wb := w c_at 1 2 r_eshape b
 ((x ac:m_atmul w) + 2 2 r_eshape b) u:c_heck x ac:d_ense wb
 (1.0 1.0) u:c_heck f_loat f_loor 0.5 + ac:r_owSums ac:s_oftmax x
 (ac:s_oftmax x) u:c_heck ac:s_oftmax x + 100.0
+(m ac:m_atmul o_\ m) u:c_heck m ac:s_cores m
+((o_\ m) ac:m_atmul m) u:c_heck m ac:w_eightGrad m
+(o_\ m ac:s_cores i) u:c_heck i ac:s_cores m
+m u:c_heck o_\ o_\ m
+(ac:r_owSums m) u:c_heck ac:c_olSums o_\ m

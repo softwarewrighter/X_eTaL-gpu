@@ -1,7 +1,7 @@
 # Accel
 
 The acceleratable subset of X_eTaL: elementwise arithmetic, masks and
-a select, reductions. Each function is one whole-array expression in
+a select, reductions, products, transposes, a layer. Each function is one whole-array expression in
 the subset research7 (`docs/research7.txt`) says an accelerator
 should accept first: static scalar types, pure functions, arithmetic
 and comparisons item by item with scalar extension, a select by
@@ -47,6 +47,8 @@ recommended alias.
 | `ac:c_olSums m` | `Num a => a -> a` | the sum of each column (`'+ r_/ m`) |
 | `ac:r_owMax m` | `Num a => a -> a` | the largest item of each row |
 | `x ac:m_atmul w` | `Num a => a -> a -> a` | the inner product of x's last axis with w's first: matrix by matrix, matrix by vector, vector by matrix |
+| `q ac:s_cores k` | `Num a => a -> a -> a` | attention scores, every query row against every key row: `q '+ '* i_nner o_\ k` |
+| `x ac:w_eightGrad dy` | `Num a => a -> a -> a` | a dense layer's weight gradient for a batch x and the output gradient dy: `(o_\ x) '+ '* i_nner dy` |
 | `x ac:d_ense wb` | `Num a => a -> a -> a` | the layer x W + b for a batch x (a row per example), W with the bias b as its last row (X_eTaL-ML's NN convention) |
 | `ac:s_oftmax m` | `Num a => a -> Float` | each row of a matrix into probabilities (its largest taken off first) |
 | `x ac:p_ipeline w` | `Num a => a -> a -> a` | the sum of the positive items of x + x * w: multiply, add, select, reduce |
@@ -107,6 +109,10 @@ The example programs, each the reference for a GPU run:
   read from `data/w1.txt` and `data/w2.txt`.
 - [`demos/pipeline.xtl`](../demos/pipeline.xtl): the acceptance
   pipeline, multiply, add, select, reduce, as one expression.
+- [`demos/transpose.xtl`](../demos/transpose.xtl): `o_\` of a matrix
+  and of a rank-3 array, `t_ranspose` with a permutation, `o_\_23`, a
+  vector (unchanged); attention scores and a weight gradient, the
+  two products a model needs a transpose for.
 
 ## Provenance
 

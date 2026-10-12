@@ -239,6 +239,12 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Drop { n, arg } => format!("drop {n} {}", name(*arg)),
         Op::Ravel { arg } => format!("ravel {}", name(*arg)),
         Op::Table { op, a, b } => format!("table {op} {} {}", name(*a), name(*b)),
+        Op::Transpose { perm: None, arg } => format!("transpose {}", name(*arg)),
+        Op::Transpose { perm: Some(p), arg } => format!(
+            "transpose {} {}",
+            p.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "),
+            name(*arg)
+        ),
     }
 }
 

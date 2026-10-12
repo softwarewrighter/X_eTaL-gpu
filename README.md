@@ -101,7 +101,9 @@ programs call themselves, through X_eTaL-extensions' `xetal-x`: on
 the M1 Max a 512 by 512 product runs 31 times faster than in the
 evaluator, even through the bridge (`just offload`). Saga 4
 (gpu-models, in progress) runs X_eTaL-ML's benchmarks and its world
-model on every device here. On 2026-10-12 the same code was run on
+model on every device here, and adds the operations a transformer
+needs, transpose first (a gather, or the last two axes in tiles;
+attention scores and a layer's weight gradient as Accel exports). On 2026-10-12 the same code was run on
 the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its own lane:
 every check passes there too, with its own schedules
 (`schedules/nvidia-rtx5060-ti*.toml`) and reports. See

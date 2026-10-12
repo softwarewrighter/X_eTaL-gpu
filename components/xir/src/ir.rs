@@ -356,6 +356,11 @@ pub enum Op {
     /// `a 'f t_able b`: every pairing of an item of a with one of b
     /// (APL's outer product); the result has both shapes.
     Table { op: TableOp, a: ValueId, b: ValueId },
+    /// `o_\ a` (`perm` None: the axes reversed) or `p t_ranspose a`
+    /// (`perm` Some: axis i of a becomes axis p[i], 1 the first, each
+    /// axis listed once; APL's dyadic transpose, so `o_\_23` is
+    /// `1 3 2`). A vector or a single value is unchanged.
+    Transpose { perm: Option<Vec<usize>>, arg: ValueId },
 }
 
 impl Op {
@@ -367,9 +372,78 @@ impl Op {
             Op::Select { cond, a, b } => vec![*cond, *a, *b],
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],
             Op::Matmul { a, b } | Op::Table { a, b, .. } => vec![*a, *b],
-            Op::Take { arg, .. } | Op::Drop { arg, .. } | Op::Ravel { arg } => vec![*arg],
+            Op::Take { arg, .. } | Op::Drop { arg, .. } | Op::Ravel { arg } | Op::Transpose { arg, .. } => vec![*arg],
         }
     }
+}
+
+/// The permutation a transpose applies, 1-based (axis i of the
+/// argument becomes axis `perm[i - 1]` of the result): the axes
+/// reversed when none is written; a written one is checked to list
+/// each axis once, the error saying what is wrong.
+pub fn permutation(rank: usize, perm: &Option<Vec<usize>>) -> std::result::Result<Vec<usize>, String> {
+    let Some(p) = perm else {
+        return Ok((1..=rank).rev().collect());
+    };
+    if p.len() != rank {
+        return Err(format!(
+            "the permutation lists {} ax{}, the array has rank {rank}",
+            p.len(),
+            if p.len() == 1 { "is" } else { "es" }
+        ));
+    }
+    let mut seen = vec![false; rank];
+    for &a in p {
+        if a < 1 || a > rank || seen[a - 1] {
+            return Err(format!(
+                "a permutation lists each axis once, got {}",
+                p.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" ")
+            ));
+        }
+        seen[a - 1] = true;
+    }
+    Ok(p.clone())
+}
+
+/// The shape a transpose gives and, for each axis of it, the stride
+/// in the argument's row order: item (c_1, ..., c_r) of the result
+/// is item c_1 * stride_1 + ... + c_r * stride_r of the argument's
+/// ravel. Identity (a vector, a single value, `1 2 t_ranspose`) means
+/// the same items in the same order.
+pub fn transpose_layout(shape: &Shape, perm: &[usize]) -> (Shape, Vec<usize>) {
+    let rank = shape.rank();
+    let mut in_strides = vec![1usize; rank];
+    for i in (0..rank.saturating_sub(1)).rev() {
+        in_strides[i] = in_strides[i + 1] * shape.0[i + 1];
+    }
+    let mut dims = vec![0; rank];
+    let mut strides = vec![0; rank];
+    for (i, &a) in perm.iter().enumerate() {
+        dims[a - 1] = shape.0[i];
+        strides[a - 1] = in_strides[i];
+    }
+    (Shape(dims), strides)
+}
+
+/// For each item of a transpose's result, in row order, the position
+/// of the item it takes from the argument's ravel.
+pub fn transpose_indices(shape: &Shape, perm: &[usize]) -> Vec<usize> {
+    let (out, strides) = transpose_layout(shape, perm);
+    (0..out.len())
+        .map(|k| {
+            let (mut r, mut src) = (k, 0);
+            for j in (0..out.rank()).rev() {
+                src += (r % out.0[j]) * strides[j];
+                r /= out.0[j];
+            }
+            src
+        })
+        .collect()
+}
+
+/// Whether a permutation leaves every axis where it is.
+pub fn is_identity(perm: &[usize]) -> bool {
+    perm.iter().enumerate().all(|(i, &a)| a == i + 1)
 }
 
 /// One value of a program: its name (as written, without the `%`),

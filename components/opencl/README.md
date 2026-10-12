@@ -22,7 +22,7 @@ represents each scalar type and how big a work-group is.
 | `float` | `f32` (`float`) | X_eTaL's Float on the device; `f64` asks for `double` (`cl_khr_fp64`) |
 | `int` | `i64` (`long`) | X_eTaL's Int on the device; `i32` asks for `int` |
 | `work_group` | 256 | work-items per work-group, a power of two (the reduction tree needs it) |
-| `tile` | 0 | inner products in T by T tiles in local memory; 0 untiled |
+| `tile` | 0 | inner products, and transposes of the last two axes, in T by T tiles in local memory; 0 untiled |
 
 Bool is `int` (1 or 0, what a C comparison gives).
 
@@ -86,6 +86,24 @@ xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml 
   buffer read as a vector, with no launch; a `table` is a kernel of
   its own, one work-item per result item reading `a[k / nb]` and
   `b[k % nb]` (a literal for a single value).
+- **Transposes.** A `transpose` that moves axes is a gather kernel
+  of its own (`transpose3`), one work-item per result item: its
+  position is taken apart with the result's dimensions and put
+  together with the argument's strides, both baked in as constants.
+  One that moves nothing (a vector, a single value, `1 2 t_ranspose`)
+  is the same buffer, no launch. With `tile = T`, a transpose of the
+  last two axes (`o_\` of a matrix, attention's `K^T`, `o_\_23`)
+  goes through local memory in T by T tiles
+  (`transpose_tiled16_float`), read and written along the rows, the
+  block arithmetic in `int` (a 64-bit division is emulated on a
+  GPU and cost more than the gather saved). Measured on the Apple M1
+  Max, 4096 by 4096 Floats, the kernel's own time: the gather 0.10
+  ms, tiled 0.046 ms (8 or 16 alike), a plain copy 0.011 ms; at 2048
+  by 2048, 0.018 against 0.012 ms. A rank-3 reversal (`o_\` of
+  `[64 256 256]`) is not a swap of the last two axes and stays the
+  gather, 0.021 ms. The Apple schedule file stays untiled (it is the
+  defaults); the NVIDIA files tile, so their transposes go through
+  local memory, to be measured there.
 - **Semantics kept.** `idiv` and `mod` are floored
   (`xetal_idiv_long`, `xetal_imod_long`), Float to Int casts take
   `floor`, a number to Bool is `!= 0`, `abs` of a `long` avoids the

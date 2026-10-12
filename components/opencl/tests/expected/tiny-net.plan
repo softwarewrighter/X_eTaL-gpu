@@ -1,4 +1,4 @@
-schedule: Float as float, Int as long, work-group 256, products untiled
+schedule: Float as float, Int as long, work-group 256, products and transposes untiled
 buffers:
   b_w1: float 20 items, %w1 f64 [4 5]; constant, uploaded by the host
   b_w2: float 12 items, %w2 f64 [6 2]; constant, uploaded by the host

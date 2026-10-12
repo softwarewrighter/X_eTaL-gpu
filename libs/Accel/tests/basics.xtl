@@ -33,3 +33,9 @@ wb := 4 2 r_eshape 0.5 -1.0 1.0 0.25 -0.5 2.0 0.1 0.2
 x ac:d_ense wb
 ac:s_oftmax x ac:d_ense wb
 ac:s_oftmax 2 3 r_eshape 0.0 0.0 0.0 1.0 2.0 3.0
+q := 2 3 r_eshape r_ange 6
+k := 4 3 r_eshape r_ange 12
+q ac:s_cores k
+(2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25) ac:s_cores 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0
+(4 2 r_eshape r_ange 8) ac:w_eightGrad 4 3 r_eshape r_ange 12
+(4 2 r_eshape 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0) ac:w_eightGrad 4 3 r_eshape 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2

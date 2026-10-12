@@ -48,6 +48,10 @@ mod tests {
             }
         );
         assert_eq!(
+            s.to_string(),
+            "Float as double, Int as int, work-group 1024, products and transposes in 32 by 32 tiles"
+        );
+        assert_eq!(
             Schedule::from_toml("tile = 32\n").unwrap_err(),
             "tile = 32: a 32 by 32 tile is a work-group of 1024, more than work_group = 256"
         );
@@ -98,9 +102,10 @@ pub struct Schedule {
     pub int: Width,
     /// Work-items per work-group; a power of two (the reduction tree needs it).
     pub work_group: usize,
-    /// Inner products in T by T tiles staged in local memory (a work-group
-    /// of T * T items); 0 computes each result item straight from global
-    /// memory. A power of two, T * T at most the work-group.
+    /// Inner products, and transposes of the last two axes, in T by T
+    /// tiles staged in local memory (a work-group of T * T items); 0
+    /// computes each result item straight from global memory. A power
+    /// of two, T * T at most the work-group.
     pub tile: usize,
 }
 
@@ -218,9 +223,9 @@ impl fmt::Display for Schedule {
             },
             self.work_group,
             if self.tile == 0 {
-                "products untiled".to_string()
+                "products and transposes untiled".to_string()
             } else {
-                format!("products in {0} by {0} tiles", self.tile)
+                format!("products and transposes in {0} by {0} tiles", self.tile)
             }
         )
     }

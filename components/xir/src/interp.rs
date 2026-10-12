@@ -164,6 +164,17 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
                 Array::new(ty.scalar, ty.shape.clone(), a.data.clone())?
             }
             Op::Table { op, a, b } => table(*op, &values[a.0], &values[b.0], ty)?,
+            Op::Transpose { perm, arg } => {
+                let a = &values[arg.0];
+                let perm = permutation(a.shape.rank(), perm).expect("checked");
+                let idx = transpose_indices(&a.shape, &perm);
+                let data = match &a.data {
+                    Data::Int(x) => Data::Int(idx.iter().map(|&i| x[i]).collect()),
+                    Data::Float(x) => Data::Float(idx.iter().map(|&i| x[i]).collect()),
+                    Data::Bool(x) => Data::Bool(idx.iter().map(|&i| x[i]).collect()),
+                };
+                Array::new(ty.scalar, ty.shape.clone(), data)?
+            }
         };
         values.push(array);
     }
@@ -625,6 +636,26 @@ mod tests {
                 "10 10 10\n20 20 20"
             ]
         );
+    }
+
+    #[test]
+    fn transposes_as_xetal_does() {
+        // t := 2 3 4 r_eshape r_ange 24: o_\ t, 3 1 2 t_ranspose t, 2 3 1 t_ranspose t
+        // and o_\_23 t (1 3 2) as xetal prints them; o_\ of a matrix and of a vector.
+        let out = eval("%t = const i64 [2 3 4] 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24\n%r = transpose %t\n%p = transpose 3 1 2 %t\n%q = transpose 2 3 1 %t\n%s = transpose 1 3 2 %t\n%m = const i64 [2 3] 1 2 3 4 5 6\n%mt = transpose %m\n%v = const f64 [3] 1.5 2.5 3.5\n%vt = transpose %v\n%i = transpose 1 2 %m\noutput %r\noutput %p\noutput %q\noutput %s\noutput %mt\noutput %vt\noutput %i\n");
+        assert_eq!(
+            out,
+            [
+                " 1 13\n 5 17\n 9 21\n\n 2 14\n 6 18\n10 22\n\n 3 15\n 7 19\n11 23\n\n 4 16\n 8 20\n12 24",
+                " 1 13\n 2 14\n 3 15\n 4 16\n\n 5 17\n 6 18\n 7 19\n 8 20\n\n 9 21\n10 22\n11 23\n12 24",
+                " 1  5  9\n13 17 21\n\n 2  6 10\n14 18 22\n\n 3  7 11\n15 19 23\n\n 4  8 12\n16 20 24",
+                " 1  5  9\n 2  6 10\n 3  7 11\n 4  8 12\n\n13 17 21\n14 18 22\n15 19 23\n16 20 24",
+                "1 4\n2 5\n3 6",
+                "1.5 2.5 3.5",
+                "1 2 3\n4 5 6"
+            ]
+        );
+        assert!(is_identity(&[1, 2, 3]) && !is_identity(&[2, 1]) && is_identity(&[]));
     }
 
     #[test]
