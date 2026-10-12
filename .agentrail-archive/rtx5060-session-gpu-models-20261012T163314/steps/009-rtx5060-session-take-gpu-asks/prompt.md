@@ -1,0 +1,1 @@
+Take X_eTaL-ML's asks (its docs/gpu-asks.md, GA1 to GA6, 2026-10-12) into this repo's plan: a ledger of incoming asks in docs/plan.md (each ask, its status here, the step that answers it), the steps queued in saga gpu-models (ml-bench, world-model, transpose, windows, denoiser), tiny-nn noted as answered by the world model. Docs, CHANGES, commit, push.

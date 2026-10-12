@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-10-12
 
+- 16:33 `chore` Complete and archive the rtx5060-session lane after the full GPU gate; restore the Mac live saga from main 5757e10. Preserve independent RTX results and session history for upstream handoff.
+
 - 16:28 `feat` Prepared OpenCL sessions retain kernels and device buffers; extension `gp:r_erun` uploads changed bindings only and rebuilds after program, schedule or device changes. Avoid empty OpenCL builds for constant-only plans (the NVIDIA driver crashes when querying kernel names). CLI repeat and refresh timing, runtime/ABI regression tests, isolated NumPy/OpenBLAS setup and a trained-model batch sweep. Exact counts agree across all settings, but fresh-input runs lose to optimized CPU inference at every measured batch size; report setup, resident and transfer-inclusive timings without claiming an application speedup.
 
 - 16:08 `chore` Complete and archive rtx5060-binary after the combined RTX gate passes; restore the Mac's active saga from main 6c61943, with transpose complete and windows next. Preserve the world-model Arch archive and report in the combined handoff.

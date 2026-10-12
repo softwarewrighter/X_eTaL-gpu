@@ -1,4 +1,4 @@
-name = "rtx5060-session-gpu-models"
+name = "gpu-models"
 status = "active"
 current_step = 13
 created_at = "2026-10-07T17:43:00"
