@@ -88,6 +88,7 @@ fn descriptor_lists_every_function() {
             "bind_file",
             "schedule",
             "run",
+            "rerun",
             "output",
             "explain",
             "kernel"
@@ -204,4 +205,46 @@ fn a_session_on_the_device() {
         panic!("text")
     };
     assert!(src.contains("matmul_tiled2_float"), "{src}");
+}
+
+#[test]
+fn rerun_rebind_and_invalidation() {
+    let Value::Text(found) = call("devices", &[]).unwrap() else {
+        panic!("text")
+    };
+    if !found.starts_with("opencl:0") {
+        eprintln!("skipped: no OpenCL device");
+        return;
+    }
+    call("load", &[Value::Text(MATVEC.into())]).unwrap();
+    call(
+        "bind",
+        &[Value::Int(1), floats(&[2, 3], &[1., 2., 3., 4., 5., 6.])],
+    )
+    .unwrap();
+    call("bind", &[Value::Int(2), floats(&[3], &[1., 0., 2.])]).unwrap();
+    call("run", &[Value::Int(0)]).unwrap();
+    call("rerun", &[Value::Int(0)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(23.));
+    call("bind", &[Value::Int(2), floats(&[3], &[0., 1., 0.])]).unwrap();
+    call("rerun", &[Value::Int(0)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(7.));
+    call("schedule", &[Value::Text("tile = 2\n".into())]).unwrap();
+    call("rerun", &[Value::Int(0)]).unwrap();
+    let Value::Text(src) = call("kernel", &[]).unwrap() else {
+        panic!("text")
+    };
+    assert!(src.contains("matmul_tiled2_float"));
+    assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(7.));
+    // Switching through the CPU releases GPU state and returning rebuilds it.
+    call("rerun", &[Value::Int(-1)]).unwrap();
+    call("rerun", &[Value::Int(0)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(7.));
+    call(
+        "load",
+        &[Value::Text("%v = const i64 [] 91\noutput %v\n".into())],
+    )
+    .unwrap();
+    call("rerun", &[Value::Int(0)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(1)]).unwrap(), Value::Int(91));
 }

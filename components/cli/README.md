@@ -12,6 +12,7 @@ xetal-gpu check FILE.xir                 parse and check: every value with its t
 xetal-gpu devices                        the OpenCL devices found (opencl:N)
 xetal-gpu run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
     [--bind NAME=1,2,3 | --bind NAME=@FILE]...     an input's items (a file: whitespace-separated)
+    [--repeat N] [--refresh NAME]...          reuse a session; optionally reupload named inputs each repeat
     [--time]                                 on a device: where the time went (setup, upload, kernels as the device timed them, launches, download), to standard error
 xetal-gpu print FILE.xir                 the program in its canonical text form
 xetal-gpu kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run

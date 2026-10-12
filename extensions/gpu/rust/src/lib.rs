@@ -10,11 +10,11 @@
 //! X_eTaL name and type.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use xetal_ext_sdk::{float_vector, number, text, Array as ExtArray, ArrayData, OwnedError, Value};
 use xetal_gpu_opencl::{explain as explain_plan, plan, Plan, Schedule};
-use xetal_gpu_runtime::{devices as list_devices, execute};
+use xetal_gpu_runtime::{devices as list_devices, Prepared};
 use xetal_gpu_xir::{
     binary, check, run as interpret, text as xir_text, Array, Checked, Data, Scalar, Shape,
 };
@@ -26,6 +26,8 @@ struct Session {
     schedule: Schedule,
     outputs: Vec<Array>,
     last_plan: Option<Plan>,
+    prepared: Option<(usize, Prepared)>,
+    dirty: HashSet<String>,
 }
 
 thread_local! {
@@ -87,6 +89,8 @@ fn load(args: &[Value]) -> Result<Value, OwnedError> {
         s.inputs.clear();
         s.outputs.clear();
         s.last_plan = None;
+        s.prepared = None;
+        s.dirty.clear();
     });
     Ok(Value::Int(i64::try_from(n).unwrap_or(i64::MAX)))
 }
@@ -134,6 +138,7 @@ fn bind(args: &[Value]) -> Result<Value, OwnedError> {
             Scalar::Bool => Data::Bool(items.iter().map(|x| *x != 0.0).collect()),
         };
         let array = Array::new(ty.scalar, ty.shape.clone(), data).map_err(failure)?;
+        s.dirty.insert(name.clone());
         s.inputs.insert(name, array);
         Ok(Value::Int(n))
     })
@@ -166,6 +171,7 @@ fn bind_file(args: &[Value]) -> Result<Value, OwnedError> {
         )
         .map_err(OwnedError::invalid_argument_from)?;
         let name = checked.program.value(id).name.clone();
+        s.dirty.insert(name.clone());
         s.inputs.insert(name, a);
         Ok(Value::Int(n))
     })
@@ -176,29 +182,72 @@ fn bind_file(args: &[Value]) -> Result<Value, OwnedError> {
 fn schedule(args: &[Value]) -> Result<Value, OwnedError> {
     let src = text(&args[0])?;
     let sch = Schedule::from_toml(&src).map_err(OwnedError::invalid_argument_from)?;
-    SESSION.with(|s| s.borrow_mut().schedule = sch);
+    SESSION.with(|s| {
+        let mut s = s.borrow_mut();
+        if s.schedule != sch {
+            s.prepared = None;
+            s.last_plan = None;
+        }
+        s.schedule = sch;
+    });
     Ok(Value::Int(0))
 }
 
 /// Run the loaded program on opencl:d, or on the reference interpreter
 /// for d = -1. The number of outputs.
 fn run(args: &[Value]) -> Result<Value, OwnedError> {
+    run_impl(args, false)
+}
+
+/// Reuse the last device's kernels and buffers; upload only rebound inputs.
+/// Program, schedule or device changes cause a new preparation.
+fn rerun(args: &[Value]) -> Result<Value, OwnedError> {
+    run_impl(args, true)
+}
+
+fn run_impl(args: &[Value], reuse: bool) -> Result<Value, OwnedError> {
     let d = whole(&args[0], "a device")?;
-    SESSION.with(|s| {
-        let mut s = s.borrow_mut();
+    SESSION.with(|cell| {
+        let mut borrow = cell.borrow_mut();
+        let s = &mut *borrow;
         let checked = s
             .program
             .as_ref()
             .ok_or_else(|| OwnedError::invalid_argument("no program loaded (gp:l_oad first)"))?;
-        let p = plan(checked, &s.schedule);
+        let p = if reuse {
+            s.last_plan
+                .clone()
+                .unwrap_or_else(|| plan(checked, &s.schedule))
+        } else {
+            plan(checked, &s.schedule)
+        };
         let outputs = if d < 0 {
+            s.prepared = None;
             interpret(checked, &s.inputs).map_err(failure)?
         } else {
-            execute(checked, &p, &s.inputs, usize::try_from(d).unwrap_or(0)).map_err(failure)?
+            let index = usize::try_from(d).map_err(failure)?;
+            if !reuse || s.prepared.as_ref().map(|(i, _)| *i) != Some(index) {
+                let (prepared, _) =
+                    Prepared::new(checked, &p, &s.inputs, index).map_err(failure)?;
+                s.prepared = Some((index, prepared));
+            } else {
+                let (_, prepared) = s.prepared.as_mut().expect("matching session");
+                for name in &s.dirty {
+                    prepared.rebind(name, &s.inputs[name]).map_err(failure)?;
+                }
+            }
+            s.prepared
+                .as_mut()
+                .expect("prepared session")
+                .1
+                .run_timed()
+                .map_err(failure)?
+                .0
         };
         let n = outputs.len();
         s.outputs = outputs;
         s.last_plan = Some(p);
+        s.dirty.clear();
         Ok(Value::Int(i64::try_from(n).unwrap_or(i64::MAX)))
     })
 }
@@ -284,6 +333,7 @@ xetal_ext_sdk::xetal_extension! {
         bind_file: 2, "Int -> Char -> Int", "Bind input n from a checked XTLARR01 binary array file.";
         schedule: 1, "Char -> Int", "The schedule for later runs (a schedules/*.toml text; empty for the defaults).";
         run: 1, "Int -> Int", "Run on opencl:d (-1: the reference interpreter); the number of outputs.";
+        rerun: 1, "Int -> Int", "Rerun with resident inputs and kernels; upload only rebound inputs.";
         output: 1, "Num a => Int -> a", "Output i (from 1) of the last run.";
         explain: 0, "Unit -> Char", "The last run's plan in words.";
         kernel: 0, "Unit -> Char", "The last run's OpenCL C.";

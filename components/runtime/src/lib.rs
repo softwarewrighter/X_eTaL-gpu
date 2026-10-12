@@ -142,170 +142,275 @@ pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, 
 /// `execute`, and where its time went.
 pub fn execute_timed(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, index: usize) -> Result<(Vec<Array>, Stats)> {
     let start = Instant::now();
-    let ms = |t: Instant| t.elapsed().as_secs_f64() * 1000.0;
-    let mut stats = Stats::default();
-    let (info, dev) = device(index)?;
-    if plan.needs_fp64() && !info.fp64 {
-        return Err(Error(format!(
-            "device opencl:{index} ({}) has no double precision: the schedule's float = \"f64\" cannot run there (use f32)",
-            info.name
-        )));
-    }
-    if plan.schedule.work_group > info.max_work_group {
-        return Err(Error(format!(
+    let (mut session, initial) = Prepared::new(checked, plan, inputs, index)?;
+    let (outputs, mut stats) = session.run_timed()?;
+    stats.setup_ms = initial.setup_ms;
+    stats.upload_ms = initial.upload_ms;
+    stats.total_ms = start.elapsed().as_secs_f64() * 1000.0;
+    Ok((outputs, stats))
+}
+
+/// One program and schedule on one device: compiled kernels, queue and buffers
+/// stay alive until this session is dropped. Inputs are uploaded at creation;
+/// only an explicit rebind uploads them again. No disk cache or global state.
+pub struct Prepared {
+    checked: Checked,
+    plan: Plan,
+    bufs: Vec<DevBuf>,
+    kernels: HashMap<String, Kernel>,
+    queue: CommandQueue,
+    _program: Option<Program>,
+    _context: Context,
+}
+
+impl Prepared {
+    /// Build a session and upload all declared inputs and constants once.
+    /// Its statistics contain setup/upload costs; no kernels have run yet.
+    pub fn new(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, index: usize) -> Result<(Self, Stats)> {
+        let start = Instant::now();
+        let ms = |t: Instant| t.elapsed().as_secs_f64() * 1000.0;
+        let mut stats = Stats::default();
+        let (info, dev) = device(index)?;
+        if plan.needs_fp64() && !info.fp64 {
+            return Err(Error(format!(
+                "device opencl:{index} ({}) has no double precision: the schedule's float = \"f64\" cannot run there (use f32)",
+                info.name
+            )));
+        }
+        if plan.schedule.work_group > info.max_work_group {
+            return Err(Error(format!(
             "device opencl:{index} ({}) allows work-groups of at most {}: the schedule's work_group = {} cannot run there (use {} or less)",
             info.name,
             info.max_work_group,
             plan.schedule.work_group,
             largest_power_of_two(info.max_work_group)
         )));
-    }
-    let context = Context::from_device(&dev).map_err(cl)?;
-    #[allow(deprecated)]
-    let queue = CommandQueue::create_default(&context, CL_QUEUE_PROFILING_ENABLE).map_err(cl)?;
-    let program = Program::create_and_build_from_source(&context, &plan.source, "")
-        .map_err(|log| Error(format!("the OpenCL compiler of {} refused the kernels:\n{}", info.name, log.trim())))?;
-    let mut kernels: HashMap<String, Kernel> = HashMap::new();
-    for k in &plan.kernels {
-        kernels.insert(k.name.clone(), Kernel::create(&program, &k.name).map_err(cl)?);
-    }
-    stats.setup_ms = ms(start);
-    let phase = Instant::now();
-    // Buffers: allocate each, upload inputs and constants.
-    let mut bufs: Vec<DevBuf> = Vec::with_capacity(plan.buffers.len());
-    for b in &plan.buffers {
-        let len = b.len.max(1);
-        let host: Option<Array> = match &b.init {
-            Init::Input(name) => {
-                let id = b.value.expect("an input buffer holds a value");
-                let ty = checked.ty(id);
-                let Some(a) = inputs.get(name) else {
-                    return Err(Error(format!("input %{name} ({ty}) is not bound")));
-                };
-                if a.ty() != *ty {
-                    return Err(Error(format!("input %{name} is {ty}, bound to {}", a.ty())));
-                }
-                Some(a.clone())
-            }
-            Init::Const(c) => Some(const_array(c, checked.ty(b.value.expect("a const holds a value")).scalar, len)),
-            Init::Device => None,
-        };
-        let buf = unsafe {
-            match b.elem {
-                Elem::I32 => {
-                    let mut d = Buffer::<i32>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
-                    if let Some(a) = &host {
-                        let v: Vec<i32> = to_i64(a).into_iter().map(|x| x as i32).collect();
-                        queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
-                    }
-                    DevBuf::I32(d)
-                }
-                Elem::I64 => {
-                    let mut d = Buffer::<i64>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
-                    if let Some(a) = &host {
-                        queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &to_i64(a), &[]).map_err(cl)?;
-                    }
-                    DevBuf::I64(d)
-                }
-                Elem::F32 => {
-                    let mut d = Buffer::<f32>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
-                    if let Some(a) = &host {
-                        let v: Vec<f32> = to_f64(a).into_iter().map(|x| x as f32).collect();
-                        queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
-                    }
-                    DevBuf::F32(d)
-                }
-                Elem::F64 => {
-                    let mut d = Buffer::<f64>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
-                    if let Some(a) = &host {
-                        queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &to_f64(a), &[]).map_err(cl)?;
-                    }
-                    DevBuf::F64(d)
-                }
-            }
-        };
-        bufs.push(buf);
-    }
-    stats.upload_ms = ms(phase);
-    let phase = Instant::now();
-    let mut events = Vec::with_capacity(plan.launches.len());
-    // Launches, in order, on the in-order queue.
-    for l in &plan.launches {
-        let kernel = &kernels[&l.kernel];
-        let max = kernel.get_work_group_size(dev.id()).map_err(cl)?;
-        if l.local > max {
-            return Err(Error(format!(
-                "kernel {} allows work-groups of at most {max} on {}; schedule --work-group {max} or less",
-                l.kernel, info.name
-            )));
         }
-        let mut ex = ExecuteKernel::new(kernel);
-        unsafe {
-            for a in &l.args {
-                match a {
-                    Arg::Buffer(id) => match &bufs[id.0] {
-                        DevBuf::I32(b) => ex.set_arg(b),
-                        DevBuf::I64(b) => ex.set_arg(b),
-                        DevBuf::F32(b) => ex.set_arg(b),
-                        DevBuf::F64(b) => ex.set_arg(b),
-                    },
-                    Arg::Long(n) => ex.set_arg(&(*n as cl_long)),
-                    Arg::Local(bytes) => ex.set_arg_local_buffer(*bytes),
-                };
-            }
-            events.push(
-                ex.set_global_work_size(l.global)
-                    .set_local_work_size(l.local)
-                    .enqueue_nd_range(&queue)
-                    .map_err(cl)?,
+        let context = Context::from_device(&dev).map_err(cl)?;
+        #[allow(deprecated)]
+        let queue = CommandQueue::create_default(&context, CL_QUEUE_PROFILING_ENABLE).map_err(cl)?;
+        // Constant-only plans have no kernels. Avoid compiling an empty program:
+        // NVIDIA's driver can crash while querying its kernel names after build.
+        let program = if plan.kernels.is_empty() {
+            None
+        } else {
+            Some(
+                Program::create_and_build_from_source(&context, &plan.source, "")
+                    .map_err(|log| Error(format!("the OpenCL compiler of {} refused the kernels:\n{}", info.name, log.trim())))?,
+            )
+        };
+        let mut kernels: HashMap<String, Kernel> = HashMap::new();
+        for k in &plan.kernels {
+            kernels.insert(
+                k.name.clone(),
+                Kernel::create(program.as_ref().expect("kernel program"), &k.name).map_err(cl)?,
             );
         }
+        for l in &plan.launches {
+            let kernel = &kernels[&l.kernel];
+            let max = kernel.get_work_group_size(dev.id()).map_err(cl)?;
+            if l.local > max {
+                return Err(Error(format!(
+                    "kernel {} allows work-groups of at most {max} on {}; schedule --work-group {max} or less",
+                    l.kernel, info.name
+                )));
+            }
+        }
+        stats.setup_ms = ms(start);
+        let phase = Instant::now();
+        // Buffers: allocate each, upload inputs and constants.
+        let mut bufs: Vec<DevBuf> = Vec::with_capacity(plan.buffers.len());
+        for b in &plan.buffers {
+            let len = b.len.max(1);
+            let host: Option<Array> = match &b.init {
+                Init::Input(name) => {
+                    let id = b.value.expect("an input buffer holds a value");
+                    let ty = checked.ty(id);
+                    let Some(a) = inputs.get(name) else {
+                        return Err(Error(format!("input %{name} ({ty}) is not bound")));
+                    };
+                    if a.ty() != *ty {
+                        return Err(Error(format!("input %{name} is {ty}, bound to {}", a.ty())));
+                    }
+                    Some(a.clone())
+                }
+                Init::Const(c) => Some(const_array(c, checked.ty(b.value.expect("a const holds a value")).scalar, len)),
+                Init::Device => None,
+            };
+            let buf = unsafe {
+                match b.elem {
+                    Elem::I32 => {
+                        let mut d = Buffer::<i32>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
+                        if let Some(a) = &host.filter(|a| !a.data.is_empty()) {
+                            let v: Vec<i32> = to_i64(a).into_iter().map(|x| x as i32).collect();
+                            queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
+                        }
+                        DevBuf::I32(d)
+                    }
+                    Elem::I64 => {
+                        let mut d = Buffer::<i64>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
+                        if let Some(a) = &host.filter(|a| !a.data.is_empty()) {
+                            queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &to_i64(a), &[]).map_err(cl)?;
+                        }
+                        DevBuf::I64(d)
+                    }
+                    Elem::F32 => {
+                        let mut d = Buffer::<f32>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
+                        if let Some(a) = &host.filter(|a| !a.data.is_empty()) {
+                            let v: Vec<f32> = to_f64(a).into_iter().map(|x| x as f32).collect();
+                            queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
+                        }
+                        DevBuf::F32(d)
+                    }
+                    Elem::F64 => {
+                        let mut d = Buffer::<f64>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
+                        if let Some(a) = &host.filter(|a| !a.data.is_empty()) {
+                            queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &to_f64(a), &[]).map_err(cl)?;
+                        }
+                        DevBuf::F64(d)
+                    }
+                }
+            };
+            bufs.push(buf);
+        }
+        stats.upload_ms = ms(phase);
+        stats.total_ms = ms(start);
+        Ok((
+            Self {
+                checked: checked.clone(),
+                plan: plan.clone(),
+                bufs,
+                kernels,
+                queue,
+                _program: program,
+                _context: context,
+            },
+            stats,
+        ))
     }
-    queue.finish().map_err(cl)?;
-    stats.launch_ms = ms(phase);
-    for e in &events {
-        let (a, b) = (e.profiling_command_start().map_err(cl)?, e.profiling_command_end().map_err(cl)?);
-        stats.kernels_ms += b.saturating_sub(a) as f64 / 1e6;
-    }
-    let phase = Instant::now();
-    // Read the outputs back as the program's types.
-    let mut outputs = Vec::with_capacity(plan.outputs.len());
-    for (value, buf) in &plan.outputs {
-        let b = plan.buffer(*buf);
-        let ty = checked.ty(*value);
-        let data = unsafe {
-            match &bufs[buf.0] {
-                DevBuf::I32(d) => {
-                    let mut v = vec![0i32; b.len.max(1)];
-                    queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
-                    v.truncate(b.len);
-                    from_ints(v.into_iter().map(i64::from).collect(), ty.scalar)
-                }
-                DevBuf::I64(d) => {
-                    let mut v = vec![0i64; b.len.max(1)];
-                    queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
-                    v.truncate(b.len);
-                    from_ints(v, ty.scalar)
-                }
-                DevBuf::F32(d) => {
-                    let mut v = vec![0f32; b.len.max(1)];
-                    queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
-                    v.truncate(b.len);
-                    Data::Float(v.into_iter().map(f64::from).collect())
-                }
-                DevBuf::F64(d) => {
-                    let mut v = vec![0f64; b.len.max(1)];
-                    queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
-                    v.truncate(b.len);
-                    Data::Float(v)
+
+    /// Upload one replacement input without changing kernels or other buffers.
+    /// Bad names, types or shapes leave the existing binding unchanged.
+    pub fn rebind(&mut self, name: &str, array: &Array) -> Result<f64> {
+        let start = Instant::now();
+        let id = self
+            .plan
+            .buffers
+            .iter()
+            .position(|b| matches!(&b.init, Init::Input(n) if n == name))
+            .ok_or_else(|| Error(format!("no input %{name} in the prepared session")))?;
+        let ty = self.checked.ty(self.plan.buffers[id].value.expect("input value"));
+        if array.ty() != *ty {
+            return Err(Error(format!("input %{name} is {ty}, bound to {}", array.ty())));
+        }
+        // An empty array has no bytes to upload; its buffer is a dummy allocation.
+        if !array.data.is_empty() {
+            unsafe {
+                match &mut self.bufs[id] {
+                    DevBuf::I32(b) => {
+                        let v: Vec<i32> = to_i64(array).into_iter().map(|x| x as i32).collect();
+                        self.queue.enqueue_write_buffer(b, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
+                    }
+                    DevBuf::I64(b) => {
+                        self.queue
+                            .enqueue_write_buffer(b, CL_BLOCKING, 0, &to_i64(array), &[])
+                            .map_err(cl)?;
+                    }
+                    DevBuf::F32(b) => {
+                        let v: Vec<f32> = to_f64(array).into_iter().map(|x| x as f32).collect();
+                        self.queue.enqueue_write_buffer(b, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
+                    }
+                    DevBuf::F64(b) => {
+                        self.queue
+                            .enqueue_write_buffer(b, CL_BLOCKING, 0, &to_f64(array), &[])
+                            .map_err(cl)?;
+                    }
                 }
             }
-        };
-        outputs.push(Array::new(ty.scalar, Shape(ty.shape.0.clone()), data)?);
+        }
+        Ok(start.elapsed().as_secs_f64() * 1000.0)
     }
-    stats.download_ms = ms(phase);
-    stats.total_ms = ms(start);
-    Ok((outputs, stats))
+
+    /// Execute with resident inputs; setup and upload times are zero. Outputs
+    /// are read back on each call. Intermediate buffers are overwritten by kernels.
+    pub fn run_timed(&mut self) -> Result<(Vec<Array>, Stats)> {
+        let start = Instant::now();
+        let ms = |t: Instant| t.elapsed().as_secs_f64() * 1000.0;
+        let mut stats = Stats::default();
+        let (checked, plan, bufs, kernels, queue) = (&self.checked, &self.plan, &self.bufs, &self.kernels, &self.queue);
+        let phase = Instant::now();
+        let mut events = Vec::with_capacity(plan.launches.len());
+        // Launches, in order, on the in-order queue.
+        for l in &plan.launches {
+            let kernel = &kernels[&l.kernel];
+            let mut ex = ExecuteKernel::new(kernel);
+            unsafe {
+                for a in &l.args {
+                    match a {
+                        Arg::Buffer(id) => match &bufs[id.0] {
+                            DevBuf::I32(b) => ex.set_arg(b),
+                            DevBuf::I64(b) => ex.set_arg(b),
+                            DevBuf::F32(b) => ex.set_arg(b),
+                            DevBuf::F64(b) => ex.set_arg(b),
+                        },
+                        Arg::Long(n) => ex.set_arg(&(*n as cl_long)),
+                        Arg::Local(bytes) => ex.set_arg_local_buffer(*bytes),
+                    };
+                }
+                events.push(
+                    ex.set_global_work_size(l.global)
+                        .set_local_work_size(l.local)
+                        .enqueue_nd_range(queue)
+                        .map_err(cl)?,
+                );
+            }
+        }
+        queue.finish().map_err(cl)?;
+        stats.launch_ms = ms(phase);
+        for e in &events {
+            let (a, b) = (e.profiling_command_start().map_err(cl)?, e.profiling_command_end().map_err(cl)?);
+            stats.kernels_ms += b.saturating_sub(a) as f64 / 1e6;
+        }
+        let phase = Instant::now();
+        // Read the outputs back as the program's types.
+        let mut outputs = Vec::with_capacity(plan.outputs.len());
+        for (value, buf) in &plan.outputs {
+            let b = plan.buffer(*buf);
+            let ty = checked.ty(*value);
+            let data = unsafe {
+                match &bufs[buf.0] {
+                    DevBuf::I32(d) => {
+                        let mut v = vec![0i32; b.len.max(1)];
+                        queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
+                        v.truncate(b.len);
+                        from_ints(v.into_iter().map(i64::from).collect(), ty.scalar)
+                    }
+                    DevBuf::I64(d) => {
+                        let mut v = vec![0i64; b.len.max(1)];
+                        queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
+                        v.truncate(b.len);
+                        from_ints(v, ty.scalar)
+                    }
+                    DevBuf::F32(d) => {
+                        let mut v = vec![0f32; b.len.max(1)];
+                        queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
+                        v.truncate(b.len);
+                        Data::Float(v.into_iter().map(f64::from).collect())
+                    }
+                    DevBuf::F64(d) => {
+                        let mut v = vec![0f64; b.len.max(1)];
+                        queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
+                        v.truncate(b.len);
+                        Data::Float(v)
+                    }
+                }
+            };
+            outputs.push(Array::new(ty.scalar, Shape(ty.shape.0.clone()), data)?);
+        }
+        stats.download_ms = ms(phase);
+        stats.total_ms = ms(start);
+        Ok((outputs, stats))
+    }
 }
 
 fn const_array(c: &Const, scalar: Scalar, len: usize) -> Array {
@@ -467,5 +572,35 @@ mod tests {
             execute(&checked, &p, &HashMap::new(), 0).unwrap_err().0,
             "input %a (i64 [3]) is not bound"
         );
+    }
+
+    #[test]
+    fn prepared_repeats_rebinds_and_keeps_other_inputs() {
+        if devices().unwrap().is_empty() {
+            eprintln!("skipped: no OpenCL device");
+            return;
+        }
+        let c = check(text::parse("%x = input i64 [3]\n%w = input i64 [3]\n%p = map mul %x %w\n%s = reduce add %p\noutput %s\n").unwrap())
+            .unwrap();
+        let p = plan(&c, &Schedule::default());
+        let inputs = HashMap::from([
+            ("x".into(), Array::ints(Shape(vec![3]), vec![1, 2, 3])),
+            ("w".into(), Array::ints(Shape(vec![3]), vec![2, 3, 4])),
+        ]);
+        let (mut s, _) = Prepared::new(&c, &p, &inputs, 0).unwrap();
+        for _ in 0..3 {
+            let (out, stats) = s.run_timed().unwrap();
+            assert_eq!(format::show(&out[0]), "20");
+            assert_eq!((stats.setup_ms, stats.upload_ms), (0.0, 0.0));
+        }
+        s.rebind("x", &Array::ints(Shape(vec![3]), vec![3, 2, 1])).unwrap();
+        assert_eq!(format::show(&s.run_timed().unwrap().0[0]), "16");
+        assert!(s.rebind("x", &Array::ints(Shape(vec![1, 3]), vec![1, 2, 3])).is_err());
+        assert!(s.rebind("missing", &inputs["x"]).is_err());
+        assert_eq!(format::show(&s.run_timed().unwrap().0[0]), "16");
+        // Separate prepared sessions share neither weights nor mutable buffers.
+        let (mut other, _) = Prepared::new(&c, &p, &inputs, 0).unwrap();
+        assert_eq!(format::show(&other.run_timed().unwrap().0[0]), "20");
+        assert_eq!(format::show(&s.run_timed().unwrap().0[0]), "16");
     }
 }

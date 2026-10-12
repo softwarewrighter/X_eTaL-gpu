@@ -124,6 +124,12 @@ on the RTX. See [binary arrays](docs/binary-arrays.md) for the CLI
 converter and `gp:b_indFile`, and
 [the measurements](docs/rtx5060-binary-results.md).
 
+Prepared [GPU sessions](docs/gpu-sessions.md) now keep compiled kernels
+and bound weights resident across calls. The [OpenBLAS batch sweep](docs/rtx5060-session-results.md)
+compares fresh-input inference against optimized CPU arithmetic. This small
+model loses when input conversion and upload are included; resident-only
+timings are faster at larger batches but repeat identical data.
+
 ## Results by GPU
 
 Two GPUs so far, more to come; every number names its card. The

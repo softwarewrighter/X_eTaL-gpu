@@ -33,6 +33,7 @@ inputs one by one, run it, read its outputs one by one.
 | `bind_file` | `Int -> Char -> Int` | input n gets a checked binary array read from a host file path |
 | `schedule` | `Char -> Int` | the schedule for later runs, as the text of a `schedules/*.toml` (empty: the defaults) |
 | `run` | `Int -> Int` | run on `opencl:d`, or on the reference interpreter for -1; the number of outputs |
+| `rerun` | `Int -> Int` | reuse compiled kernels and device buffers; upload inputs rebound since the last run |
 | `output` | `Num a => Int -> a` | output i (from 1) of the last run: Ints as Ints, Floats as Floats |
 | `explain` | `Unit -> Char` | the last run's plan in words |
 | `kernel` | `Unit -> Char` | the last run's OpenCL C |
@@ -62,6 +63,7 @@ on `XETAL_PATH`.
 | `n gp:b_indFile path` | `Num a => a -> Char -> Int` | bind input n from a binary array file; only the path crosses the bridge |
 | `gp:s_chedule t` | `Char -> Int` | a schedule's TOML text, `""` for the defaults |
 | `gp:r_un d` | `Num a => a -> Int` | run on `opencl:d`, -1 the interpreter |
+| `gp:r_erun d` | `Num a => a -> Int` | reuse the session on this device, uploading changed bindings |
 | `gp:o_utput i` | `Num a => a -> Float` | output i as Floats |
 | `gp:o_utputInts i` | `Num a => a -> Int` | output i as Ints (exact to 2^53) |
 | `gp:e_xplain @` | `Unit -> Char` | the last plan in words |
@@ -84,7 +86,9 @@ not by printing it.
 For large inputs, `gp:b_indFile` avoids that text transfer by reading
 a checked binary array directly. On the RTX 5060 Ti the world model's
 input binding took 13 ms from files versus 460 ms as text, with the
-same exact counts. Device buffers are still uploaded each run.
+same exact counts. `gp:r_un` uploads each run; `gp:r_erun` keeps buffers resident and
+uploads only changed bindings. Loading another program, changing the
+schedule or switching devices rebuilds the session.
 See [binary arrays](../../docs/binary-arrays.md) for conversion and
 the file format, and [the report](../../docs/rtx5060-binary-results.md).
 

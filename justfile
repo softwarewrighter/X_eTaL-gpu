@@ -69,6 +69,16 @@ binary-bench *args:
     scripts/ml-bench.py --check
     python3 scripts/bench-binary.py "$@"
 
+# Set up an isolated OpenBLAS CPU baseline for repeated inference timing
+session-setup:
+    uv venv --python python3 work/session-python
+    uv pip install --python work/session-python/bin/python numpy==2.5.4 threadpoolctl==3.7.0
+
+# Repeated inference with resident weights; CPU OpenBLAS and GPU batch sweep
+session-bench *args:
+    scripts/ml-bench.py --check
+    work/session-python/bin/python scripts/bench-session.py "$@"
+
 # Check every Accel twin on the devices with a schedule file and Float tolerance
 check-schedule file tolerance="1e-5":
     scripts/check-equiv.sh "$1" "$2"
