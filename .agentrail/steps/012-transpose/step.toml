@@ -1,6 +1,6 @@
 number = 12
 slug = "transpose"
-status = "pending"
+status = "in-progress"
 description = '''GA2: transpose in the IR (X_eTaL's o_\ and t_ranspose with a permutation): ch...'''
 role = "production"
 context_files = []
