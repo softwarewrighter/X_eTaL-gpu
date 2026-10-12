@@ -76,7 +76,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <main>
 <header>
 <h1>X_eTaL on GPUs</h1>
-<p class="lede"><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> states a computation as whole-array operations, which already expose their parallelism. This repository runs the same typed X_eTaL programs on GPUs through OpenCL C 1.2, on old and new cards alike (Maxwell and Pascal Teslas that the newest CUDA toolkits retire, Turing to Blackwell, and Apple silicon), and proves every answer against the X_eTaL evaluator. The goal is the concept, not speed.</p>
+<p class="lede"><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> states a computation as whole-array operations, which already expose their parallelism. This repository runs the same typed X_eTaL programs on GPUs through OpenCL C 1.2, on old and new cards alike (a Kepler Quadro and Maxwell and Pascal Teslas that the newest CUDA toolkits retire, Turing to Blackwell, and Apple silicon), and proves every answer against the X_eTaL evaluator. The goal is the concept, not speed.</p>
 </header>
 
 <h2>One program, three executions</h2>

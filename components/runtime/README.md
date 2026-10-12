@@ -40,8 +40,9 @@ where `devices` reports none. The runtime's own tests run on device
   loader (`ocl-icd`, or `ocl-icd-libopencl1` elsewhere); `clinfo`
   should list the card before `xetal-gpu devices` can. A board with
   several GPUs (the Tesla M10) lists each as a device of its own. As
-  NVIDIA retires Maxwell and Pascal (Tesla M10, P4), an older driver
-  series may be needed for them; the gpu-hardware saga records which
+  NVIDIA retires Kepler, Maxwell and Pascal (Quadro K4200, Tesla M10,
+  P4), an older driver series may be needed for them (Kepler's is
+  NVIDIA's legacy branch); the gpu-hardware saga records which
   driver serves each card, its OpenCL version and whether it has fp64.
 
 ## Sizes and timings

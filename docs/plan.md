@@ -3,7 +3,7 @@
 X_eTaL programs on GPUs: the GPU compiler, runtime and scheduling for
 X_eTaL (the eXperimental Extensible Typed Array Language, developed in
 `../X_eTaL`), aimed at the user's own cards, old and new (the
-hardware table below: Tesla M10 and P4, GTX 1660 Super, RTX 3090,
+hardware table below: Quadro K4200, Tesla M10 and P4, GTX 1660 Super, RTX 3090,
 RTX 4070, RTX 5060, A2, and the Apple M1 Max and M3 Pro), by way of
 OpenCL C 1.2. The goal is to demonstrate the concept, that one
 typed array program runs unchanged as sequential software, as
@@ -22,9 +22,10 @@ examples; they are not the user's and are not targets.
 | ---- | ------------ | ------ | --------- | -------- |
 | Apple M1 Max (this Mac) | Apple GPU, OpenCL 1.2 | shared | development; every check so far; no fp64 | `apple-m1-max.toml` (run) |
 | Apple M3 Pro | Apple GPU, Apple's OpenCL | shared | a second Apple-silicon target; its OpenCL version, fp64 and work-group limit to be recorded when first run | `apple-m1-max.toml` until run (a file of its own if it differs) |
+| Quadro K4200 | Kepler | 4 GB | the oldest generation here and the smallest memory: the case where weights stay on the host (a schedule field, saga gpu-models); the user has several | `nvidia-legacy.toml` (template) |
 | Tesla M10 | Maxwell | four GPUs of 8 GB | an old card the newest CUDA toolkits retire; each GPU an OpenCL device | `nvidia-legacy.toml` (template) |
 | Tesla P4 | Pascal | 8 GB | an old card the newest CUDA toolkits retire | `nvidia-legacy.toml` (template) |
-| GTX 1660 Super | Turing | 6 GB | the smallest memory: the case where weights stay on the host (a schedule field, saga gpu-models) | `nvidia-modern.toml` (template) |
+| GTX 1660 Super | Turing | 6 GB | the smallest memory of the current cards | `nvidia-modern.toml` (template) |
 | RTX 3090 | Ampere | 24 GB | a current card; the most memory | `nvidia-modern.toml` (template) |
 | RTX 4070 | Ada Lovelace | 12 GB | a current card | `nvidia-modern.toml` (template) |
 | RTX 5060 | Blackwell | 8 GB | the newest generation | `nvidia-modern.toml` (template) |
@@ -94,7 +95,7 @@ is for.
 | A2 | **The evaluator is the specification.** Every example exists first as an ordinary `.xtl` program (or a function of an `.xtl` library) that the pinned `xetal` runs; its printed output is a reg-rs baseline; the GPU path must reproduce it (Ints exactly, Floats within a tolerance, since the device computes in f32 unless told otherwise). | research7: "X_eTaL becomes the specification"; "the existing evaluator is the golden reference implementation". |
 | A3 | **The acceleratable subset is a library**, `libs/Accel/` (alias `ac:`), in X_eTaL-libraries' layout (`src/Accel.xtl`, `tests/` with reg-rs baselines and pinned export types, `demos/*.xtl`, `docs/README.md`), written in the subset research7 says to accept first: static scalar types and ranks, pure functions, arithmetic, comparisons, scalar extension, elementwise operations, reductions, then inner products. Its demos are the example programs (vector add, saxpy, threshold, reduce, the acceptance pipeline multiply, add, select, reduce). | What the GPU runs must be ordinary, typed, tested X_eTaL; a library is the form X_eTaL has for that, and the same files can move to X_eTaL-libraries or X_eTaL-ML whole. |
 | A4 | **A provisional IR, to be replaced.** The accelerator IR and the lowering from Core belong to X_eTaL (asks G1, G2) and do not exist yet. This repo carries `components/xir` (crate `xetal-gpu-xir`): the IR of research7 (Input, Const, elementwise ops, Map, Reduce, later Dot and Matmul), typed values with static shapes, a textual form that round-trips, and a reference interpreter. Each example's `.xtl` has a hand-lowered `.xir` twin, and `scripts/check-equiv.sh` proves the twin's interpretation equals the evaluator's output. No bridge from `xetal core`'s dump is built (ask G4: it is an undocumented internal form). When X_eTaL's IR lands, `components/xir` becomes an adapter and the twins are deleted. | The GPU side (schedule, kernels, runtime) can be built and tested now, against the real evaluator, without inventing language semantics here or duplicating X_eTaL's compiler. |
-| A5 | **OpenCL C 1.2 first; CUDA is a later backend.** The emitter (`components/opencl`) writes plain OpenCL C 1.2 kernels as text (testable without a GPU: the kernel text is pinned); the runtime (`components/runtime`) is a thin host on the `opencl3` crate: buffers in, kernel, buffers out. No vendor extensions beyond `cl_khr_fp64` when f64 is asked for. | research7 sections 7 and 8: OpenCL reaches every generation in the hardware table, Maxwell to Blackwell, with one toolchain; CUDA would make this repo know NVIDIA's toolkit matrix. Apple's OpenCL (1.2, deprecated but present on this Mac) is enough for development; the old NVIDIA cards are the target. |
+| A5 | **OpenCL C 1.2 first; CUDA is a later backend.** The emitter (`components/opencl`) writes plain OpenCL C 1.2 kernels as text (testable without a GPU: the kernel text is pinned); the runtime (`components/runtime`) is a thin host on the `opencl3` crate: buffers in, kernel, buffers out. No vendor extensions beyond `cl_khr_fp64` when f64 is asked for. | research7 sections 7 and 8: OpenCL reaches every generation in the hardware table, Kepler to Blackwell, with one toolchain; CUDA would make this repo know NVIDIA's toolkit matrix. Apple's OpenCL (1.2, deprecated but present on this Mac) is enough for development; the old NVIDIA cards are the target. |
 | A6 | **Schedule is separate from semantics.** An XIR program is scheduled before it is emitted: which values become one fused elementwise kernel, how a reduction is split (work-group partials, then a second pass), the element type on the device (f32 by default for Float, i64 for Int), work-group size. The schedule is data (a Rust struct, later a TOML file per device), never written into the `.xtl` or the IR. | research7 "How scheduling should work": the model does not change, only the schedule; it is also the FPGA repo's natural counterpart. |
 | A7 | **One tool, `xetal-gpu`** (`components/cli`): `devices` (the OpenCL platforms and devices found), `check FILE.xir` (parse, type, shapes), `run FILE.xir [--device cpu or opencl:N]` (interpret, or run on a device; prints as `xetal` prints), `kernel FILE.xir` (the OpenCL C it would run), `explain FILE.xir` (the schedule: which operations became which kernels, how many work-items). Research7 section 10's `xetal run --device opencl:0 demo.xtl` waits on asks G2 and G6. | One command per question; the explain command is the seed of the "visual hardware explanation" milestone (H3). |
 | A8 | **Rust components in one workspace**, `components/` (`xir`, `opencl`, `runtime`, `cli`; crates `xetal-gpu-*`), each small, with its README, unit tests, `cargo fmt` and `clippy -D warnings` in the gate; `.cargo/config.toml` points every workspace at one `target/`. GPU tests run when a device is present and are skipped, loudly, when none is (CI without a GPU). | The same component discipline as X_eTaL; a test suite that is honest about hardware. |
@@ -241,7 +242,7 @@ then on the old cards.
 
 Goal: the cards of the hardware table, first those in the Arch
 machine the work moves to soon (the user, 2026-10-07), then the old
-Tesla M10 and P4; the Apple M3 Pro whenever it is at hand (it needs
+Quadro K4200, Tesla M10 and Tesla P4; the Apple M3 Pro whenever it is at hand (it needs
 no new setup, only a run).
 Nothing in the code changes on the move: the OpenCL library is
 loaded at run time and the checks use every device found. The
@@ -253,8 +254,8 @@ schedules become testable. Nothing here can be tested on this Mac.
 | - | --------- | -------- |
 | 0 | apple-m3-pro | the checks (`just gate`, `just sizes`, `just offload`) on the Apple M3 Pro: its row of the hardware table filled in from `xetal-gpu devices`, `apple-m1-max.toml` confirmed for it or a file of its own, its timings beside the M1 Max's |
 | 1 | nvidia-opencl | the runtime on the Arch machine's cards: the hardware table's row filled in (devices, driver, OpenCL version, fp64, work-group limit), `nvidia-modern.toml` run and marked tested, every example's equivalence and `just sizes` on each |
-| 2 | legacy | the Tesla M10 (four Maxwell GPUs) and the Tesla P4 (Pascal): the driver that still serves them recorded, `nvidia-legacy.toml` run and marked tested, every example on each |
-| 3 | generations | the one program on every card present, Maxwell to Blackwell, the GTX 1660 Super's 6 GB as the memory-limited case; a table of what ran where and how fast |
+| 2 | legacy | the Quadro K4200 (Kepler, 4 GB), the Tesla M10 (four Maxwell GPUs) and the Tesla P4 (Pascal): the driver that still serves each recorded (Kepler may need NVIDIA's legacy branch), whether `nvidia-legacy.toml` fits each or one needs a file of its own, `nvidia-legacy.toml` run and marked tested, every example on each |
+| 3 | generations | the one program on every card present, Kepler to Blackwell, the K4200's 4 GB as the memory-limited case; a table of what ran where and how fast |
 | 4 | quantized | f16, then i8, then the ternary (1.58-bit) Jev: the GPU schedule decides the physical representation (packed 2-bit storage, i32 accumulation) of the semantic type (research7 "1.58-bit becomes a terrific later experiment") |
 
 ### Saga 6 -- xetal-lowering (deferred: asks G1, G2, G6)
