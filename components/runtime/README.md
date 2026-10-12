@@ -27,6 +27,18 @@ feature), so the tool builds and runs on a machine without OpenCL,
 where `devices` reports none. The runtime's own tests run on device
 0 when there is one and print that they were skipped otherwise.
 
+## Timing
+
+`execute_timed` returns the outputs and a `Stats`: milliseconds for
+the setup (context, queue, compiling the kernels), the upload, the
+kernels as the device measured them (the queue is created with
+profiling on; each launch's event gives its start and end, summed),
+the launches as the host waited for them (enqueue to `finish`), the
+download, and the whole. `xetal-gpu run --time` prints it. Compiling
+dominates every run today (about 80 ms on this Mac for a few
+kernels); a kernel cache is the first speed step when speed becomes
+a goal.
+
 ## Platforms
 
 - **macOS**: Apple's OpenCL (1.2, deprecated but present) is found

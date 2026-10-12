@@ -58,12 +58,17 @@ evaluator is the reference, and the GPU must reproduce its answer:
                   the same arrays
 ```
 
-The accelerator IR and the lowering from X_eTaL's Core IR to it belong
-to X_eTaL and are not there yet (see
-[`docs/xetal-asks.md`](docs/xetal-asks.md), asks G1 to G4), so for now
-each example's `.xtl` has a hand-lowered `.xir` twin, and a check
-proves the twin's interpretation equals the evaluator's output. The
-twins go when X_eTaL's lowering lands.
+**What runs on the GPU today, plainly:** not X_eTaL code itself. Each
+example's `.xtl` has a hand-written translation beside it, a `.xir`
+twin (or, for X_eTaL-ML's benchmarks, one written by a script from
+the benchmark's definition), and that translation is what runs on the
+device. The checks prove each translation gives the evaluator's
+output, exactly on the interpreter and within f32's tolerance on the
+device, so the twins are trusted only as far as those checks reach.
+Translating X_eTaL automatically is the lowering that belongs to
+X_eTaL and is not there yet (see
+[`docs/xetal-asks.md`](docs/xetal-asks.md), asks G1 to G4); the twins
+go when it lands.
 
 ## Status
 
@@ -128,6 +133,7 @@ target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   #
 just sizes                           # a million-item reduction: evaluator, interpreter, GPU, timed
 just xetal-x && just gpu-ext         # X_eTaL-extensions' xetal-x and the gpu extension beside it
 just offload                         # X_eTaL calling the GPU itself: a 512 by 512 product, timed
+just ml-bench                        # X_eTaL-ML's benchmarks on every device, docs/ml-results.md
 ```
 
 X_eTaL-extensions is pinned the same way (`XETAL_EXTENSIONS_COMMIT`,
@@ -136,6 +142,11 @@ is X_eTaL's CLI plus native extensions, which the GPU extension
 needs. It embeds the X_eTaL that X_eTaL-extensions pins (v0.1.0),
 so the gate checks that every library program here prints the same
 under it.
+
+X_eTaL-ML is pinned too (`XETAL_ML_COMMIT`, cloned into
+`work/xetal-ml/` by `scripts/xetal-ml.sh`): its benchmarks and models
+run here on the devices, at its ask (`just ml-bench` writes
+[`docs/ml-results.md`](docs/ml-results.md)).
 
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit
 (one line, the full SHA), `just xetal` clones X_eTaL into `work/xetal/`
@@ -173,6 +184,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   subset, the roadmap
 - [`docs/xetal-asks.md`](docs/xetal-asks.md) -- what this repo needs
   from X_eTaL; the blockers first
+- [`docs/ml-results.md`](docs/ml-results.md) -- X_eTaL-ML's benchmarks
+  on every device here, the device's time and the bridge's apart
 - [`docs/tuple-plan.md`](docs/tuple-plan.md) -- where X_eTaL's
   tuples would help here, what blocks each use, and when to adopt them
 - [`docs/macros-and-extensions.md`](docs/macros-and-extensions.md) --

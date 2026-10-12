@@ -1,6 +1,6 @@
 number = 10
 slug = "ml-bench"
-status = "pending"
+status = "in-progress"
 description = "GA1, part 1 (X_eTaL-ML's docs/gpu-asks.md): pin X_eTaL-ML (XETAL_ML_COMMIT, s..."
 role = "production"
 context_files = []

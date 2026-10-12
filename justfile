@@ -44,6 +44,18 @@ gpu-ext:
 test-ext:
     scripts/test-ext.sh
 
+# Get X_eTaL-ML at XETAL_ML_COMMIT (clone in work/xetal-ml): its benchmarks and models run here
+xetal-ml:
+    @scripts/xetal-ml.sh
+
+# Pin a committed ref of ../X_eTaL-ML (default HEAD) in XETAL_ML_COMMIT; commit it on its own after just ml-bench
+ml-pin ref="HEAD":
+    scripts/xetal-ml.sh --pin "$1"
+
+# X_eTaL-ML's benchmarks on the evaluator, the interpreter, every device and the facade, timed: docs/ml-results.md
+ml-bench:
+    scripts/ml-bench.py
+
 # The offload demo: a 512 by 512 product and a million elementwise items, evaluator against GPU through the extension, timed (about 40 s)
 offload:
     @scripts/xx run extensions/gpu/demos/offload.xtl

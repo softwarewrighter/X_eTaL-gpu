@@ -11,8 +11,9 @@
 
 use std::collections::HashMap;
 use std::ptr;
+use std::time::Instant;
 
-use opencl3::command_queue::CommandQueue;
+use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
 use opencl3::device::{Device, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_ALL, CL_DEVICE_TYPE_CPU, CL_DEVICE_TYPE_GPU};
 use opencl3::kernel::{ExecuteKernel, Kernel};
@@ -117,9 +118,32 @@ enum DevBuf {
     F64(Buffer<f64>),
 }
 
+/// Where one execution's time went, in milliseconds: setting up the
+/// device (context, queue, compiling the kernels), uploading inputs and
+/// constants, the kernels as the device measured them (OpenCL
+/// profiling events, summed), the launches as the host saw them
+/// (enqueue to finish), reading the outputs back, and the whole.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct Stats {
+    pub setup_ms: f64,
+    pub upload_ms: f64,
+    pub kernels_ms: f64,
+    pub launch_ms: f64,
+    pub download_ms: f64,
+    pub total_ms: f64,
+}
+
 /// Execute a plan on device `index`, with the inputs bound by name;
 /// the outputs in order, as arrays of the program's types.
 pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, index: usize) -> Result<Vec<Array>> {
+    execute_timed(checked, plan, inputs, index).map(|(outputs, _)| outputs)
+}
+
+/// `execute`, and where its time went.
+pub fn execute_timed(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, index: usize) -> Result<(Vec<Array>, Stats)> {
+    let start = Instant::now();
+    let ms = |t: Instant| t.elapsed().as_secs_f64() * 1000.0;
+    let mut stats = Stats::default();
     let (info, dev) = device(index)?;
     if plan.needs_fp64() && !info.fp64 {
         return Err(Error(format!(
@@ -138,13 +162,15 @@ pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, 
     }
     let context = Context::from_device(&dev).map_err(cl)?;
     #[allow(deprecated)]
-    let queue = CommandQueue::create_default(&context, 0).map_err(cl)?;
+    let queue = CommandQueue::create_default(&context, CL_QUEUE_PROFILING_ENABLE).map_err(cl)?;
     let program = Program::create_and_build_from_source(&context, &plan.source, "")
         .map_err(|log| Error(format!("the OpenCL compiler of {} refused the kernels:\n{}", info.name, log.trim())))?;
     let mut kernels: HashMap<String, Kernel> = HashMap::new();
     for k in &plan.kernels {
         kernels.insert(k.name.clone(), Kernel::create(&program, &k.name).map_err(cl)?);
     }
+    stats.setup_ms = ms(start);
+    let phase = Instant::now();
     // Buffers: allocate each, upload inputs and constants.
     let mut bufs: Vec<DevBuf> = Vec::with_capacity(plan.buffers.len());
     for b in &plan.buffers {
@@ -200,6 +226,9 @@ pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, 
         };
         bufs.push(buf);
     }
+    stats.upload_ms = ms(phase);
+    let phase = Instant::now();
+    let mut events = Vec::with_capacity(plan.launches.len());
     // Launches, in order, on the in-order queue.
     for l in &plan.launches {
         let kernel = &kernels[&l.kernel];
@@ -224,13 +253,21 @@ pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, 
                     Arg::Local(bytes) => ex.set_arg_local_buffer(*bytes),
                 };
             }
-            ex.set_global_work_size(l.global)
-                .set_local_work_size(l.local)
-                .enqueue_nd_range(&queue)
-                .map_err(cl)?;
+            events.push(
+                ex.set_global_work_size(l.global)
+                    .set_local_work_size(l.local)
+                    .enqueue_nd_range(&queue)
+                    .map_err(cl)?,
+            );
         }
     }
     queue.finish().map_err(cl)?;
+    stats.launch_ms = ms(phase);
+    for e in &events {
+        let (a, b) = (e.profiling_command_start().map_err(cl)?, e.profiling_command_end().map_err(cl)?);
+        stats.kernels_ms += b.saturating_sub(a) as f64 / 1e6;
+    }
+    let phase = Instant::now();
     // Read the outputs back as the program's types.
     let mut outputs = Vec::with_capacity(plan.outputs.len());
     for (value, buf) in &plan.outputs {
@@ -266,7 +303,9 @@ pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, 
         };
         outputs.push(Array::new(ty.scalar, Shape(ty.shape.0.clone()), data)?);
     }
-    Ok(outputs)
+    stats.download_ms = ms(phase);
+    stats.total_ms = ms(start);
+    Ok((outputs, stats))
 }
 
 fn const_array(c: &Const, scalar: Scalar, len: usize) -> Array {
@@ -393,6 +432,23 @@ mod tests {
             let e = execute(&checked, &plan(&checked, &f64s), &HashMap::new(), 0).unwrap_err().0;
             assert!(e.contains("float = \"f64\""), "{e}");
         }
+    }
+
+    #[test]
+    fn stats_add_up() {
+        if devices().unwrap().is_empty() {
+            eprintln!("skipped: no OpenCL device");
+            return;
+        }
+        let checked =
+            check(text::parse("%a = const f64 [256 256] 0.5\n%c = matmul %a %a\n%s = reduce add %c\noutput %s\n").unwrap()).unwrap();
+        let (out, st) = execute_timed(&checked, &plan(&checked, &Schedule::default()), &HashMap::new(), 0).unwrap();
+        assert_eq!(format::show(&out[0]), "4194304.0");
+        assert!(st.kernels_ms > 0.0 && st.kernels_ms <= st.launch_ms + 1.0, "{st:?}");
+        assert!(
+            st.setup_ms + st.upload_ms + st.launch_ms + st.download_ms <= st.total_ms + 0.5,
+            "{st:?}"
+        );
     }
 
     #[test]

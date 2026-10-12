@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::process::ExitCode;
 
 use xetal_gpu_opencl::{explain, plan, Schedule, Width};
-use xetal_gpu_runtime::{devices, execute};
+use xetal_gpu_runtime::{devices, execute_timed};
 use xetal_gpu_xir::{check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
 
 const USAGE: &str = "\
@@ -24,6 +24,7 @@ usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   devices                        the OpenCL devices found (opencl:N)
   run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   an input's items (a file: whitespace-separated)
+      [--time]                       on a device, where the time went, to standard error
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
@@ -104,6 +105,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             let mut device = "cpu".to_string();
             let mut binds: Vec<String> = Vec::new();
             let mut rest: Vec<String> = Vec::new();
+            let mut timed = false;
             let mut i = 2;
             while i < args.len() {
                 match args[i].as_str() {
@@ -117,6 +119,10 @@ fn dispatch(args: &[String]) -> Result<()> {
                     "--bind" => {
                         binds.push(args.get(i + 1).cloned().ok_or_else(|| Error("--bind needs NAME=items".into()))?);
                         i += 2;
+                    }
+                    "--time" => {
+                        timed = true;
+                        i += 1;
                     }
                     _ => {
                         rest.push(args[i].clone());
@@ -132,7 +138,14 @@ fn dispatch(args: &[String]) -> Result<()> {
                 let index: usize = n
                     .parse()
                     .map_err(|_| Error(format!("--device opencl:N takes a number, got `{device}`")))?;
-                execute(&checked, &plan(&checked, &schedule), &inputs, index)?
+                let (outputs, st) = execute_timed(&checked, &plan(&checked, &schedule), &inputs, index)?;
+                if timed {
+                    eprintln!(
+                        "time: setup {:.2} ms, upload {:.2} ms, kernels {:.3} ms (device), launches {:.2} ms (host), download {:.2} ms, total {:.2} ms",
+                        st.setup_ms, st.upload_ms, st.kernels_ms, st.launch_ms, st.download_ms, st.total_ms
+                    );
+                }
+                outputs
             } else {
                 return Err(Error(format!(
                     "unknown device `{device}` (cpu, or opencl:N from `xetal-gpu devices`)"

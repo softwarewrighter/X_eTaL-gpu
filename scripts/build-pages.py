@@ -79,6 +79,9 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <p class="lede"><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> states a computation as whole-array operations, which already expose their parallelism. This repository runs the same typed X_eTaL programs on GPUs through OpenCL C 1.2, on old and new cards alike (a Kepler Quadro and Maxwell and Pascal Teslas that the newest CUDA toolkits retire, Turing to Blackwell, and Apple silicon), and proves every answer against the X_eTaL evaluator. The goal is the concept, not speed.</p>
 </header>
 
+<h2>What runs today</h2>
+<p class="cap">Not X_eTaL code itself, yet: each example program has a hand-written translation beside it (its <code>.xir</code> twin), and that is what runs on the device. The checks prove every translation gives the evaluator's output, exactly on the interpreter and within f32's tolerance on the GPU. Translating X_eTaL automatically is the lowering that belongs to X_eTaL (<a href="{repo}/blob/main/docs/xetal-asks.md">asks G1 to G4</a>); the twins go when it lands.</p>
+
 <h2>One program, three executions</h2>
 <pre class="flow">                X_eTaL program (.xtl)
                         |
@@ -107,7 +110,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <tr><td>512 by 512 product</td><td class="n">14545 ms</td><td class="n">462 ms</td><td class="good">31 times faster</td></tr>
 <tr><td>a million items, elementwise, summed</td><td class="n">188 ms</td><td class="n">2447 ms</td><td class="bad">13 times slower</td></tr>
 </table></div>
-<p class="cap">Products gain even through the bridge; elementwise work does not. Why, and which macros and extensions are justified: <a href="{repo}/blob/main/docs/macros-and-extensions.md">the analysis</a>.</p>
+<p class="cap">Products gain even through the bridge; elementwise work does not. Why, and which macros and extensions are justified: <a href="{repo}/blob/main/docs/macros-and-extensions.md">the analysis</a>. X_eTaL-ML's benchmarks on every device here, the device's time and the bridge's apart: <a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>.</p>
 
 <h2>More</h2>
 <div class="grid">

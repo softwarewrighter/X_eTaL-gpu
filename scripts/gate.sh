@@ -31,10 +31,12 @@ echo "ok: pages (built)"
 # The reductions beyond one work-group and a 64 by 64 product (the
 # larger sizes are `just sizes`).
 [ -x "$root/scripts/check-sizes.py" ] && "$root/scripts/check-sizes.py" 1024 65536 m64
+# X_eTaL-ML's benchmarks agree with the evaluator (the timed table is `just ml-bench`).
+"$root/scripts/ml-bench.py" --check
 # American spellings only (the checker checks itself first).
 "$root/scripts/check-spelling.py" --self-test
 "$root/scripts/check-spelling.py"
-md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md docs/tuple-plan.md extensions/gpu/README.md)
+md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md docs/tuple-plan.md docs/ml-results.md extensions/gpu/README.md)
 for f in libs/*/README.md libs/*/docs/README.md components/*/README.md; do [ -e "$f" ] && md+=("$f"); done
 for f in "${md[@]}"; do sw-markdown-checker -f "$f" >/dev/null || { sw-markdown-checker -f "$f"; exit 1; }; done
 echo "gate: ok"
