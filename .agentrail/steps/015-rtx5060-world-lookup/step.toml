@@ -1,0 +1,8 @@
+number = 15
+slug = "rtx5060-world-lookup"
+status = "pending"
+description = "lookup in the IR: X_eTaL's indexing (i s_elect v; rows of a matrix by an Int ..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T14:34:21"
+commits = []

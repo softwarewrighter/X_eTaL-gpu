@@ -1,8 +1,0 @@
-number = 15
-slug = "topk"
-status = "pending"
-description = "argmax and top-k in the IR: the index of the largest item of each row (the de..."
-role = "production"
-context_files = []
-created_at = "2026-10-12T14:34:21"
-commits = []

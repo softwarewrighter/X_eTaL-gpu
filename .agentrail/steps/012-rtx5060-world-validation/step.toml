@@ -1,0 +1,8 @@
+number = 12
+slug = "rtx5060-world-validation"
+status = "in-progress"
+description = "Validate and measure the committed X_eTaL-ML world model on the Arch RTX 5060..."
+role = "validation"
+context_files = []
+created_at = "2026-10-12T15:38:06"
+commits = []

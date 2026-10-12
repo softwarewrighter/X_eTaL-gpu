@@ -1,0 +1,1 @@
+Validate and measure the committed X_eTaL-ML world model on the Arch RTX 5060 Ti. Repin ML in its own validated commit, run the full gate and timed evaluator/interpreter/OpenCL/extension routes, document exact counts and separate RTX results, archive this lane and push a review branch.
