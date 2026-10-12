@@ -60,6 +60,15 @@ ml-bench *args:
 test-ml-bench:
     python3 scripts/selftest-ml-bench.py
 
+# Convert text weights to checked binary arrays; shape is 2,3 or scalar
+pack-array scalar shape input output:
+    target/release/xetal-gpu pack "$1" "$2" "$3" "$4"
+
+# Prepare the pinned model and compare binary file binding with the text bridge
+binary-bench *args:
+    scripts/ml-bench.py --check
+    python3 scripts/bench-binary.py "$@"
+
 # Check every Accel twin on the devices with a schedule file and Float tolerance
 check-schedule file tolerance="1e-5":
     scripts/check-equiv.sh "$1" "$2"

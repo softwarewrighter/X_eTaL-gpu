@@ -298,7 +298,7 @@ the gpu extension.
 | - | --------- | -------- |
 | 1 | kernel-cache | compiled programs cached by the source's hash and the device, in memory for a session and on disk under `work/`; `--time` shows setup fall from about 80 ms (M1 Max) and 200 to 300 ms (RTX 5060 Ti) to the cache's read |
 | 2 | resident-weights | the extension's session keeps bound inputs and their device buffers across runs: bind the weights once, rebind only the batch, run again (`gp:r_erun`); the offload demo rerun so: the product's time the kernels' own plus the batch's bind |
-| 3 | binary-arrays | `xetal-gpu run --bind w=@file` reading a binary file (f32, f64, i64, a header with the shape) beside the text form; the extension binds an input from a file path, so a model's weights never cross the text bridge; a converter from X_eTaL-ML's text weights; the million-Float round trip measured against the bridge's 401 ms |
+| 3 | binary-arrays | Input binding DONE in the independent Arch lane (2026-10-12): checked f32, f64 and i64 files, CLI `pack` and `--bind w=@file`, extension `gp:b_indFile`, world-model exact counts on the interpreter, RTX and bridge; text bind 460 ms versus file bind 13 ms, million-element bind 411 ms versus 10 ms (`docs/rtx5060-binary-results.md`). The million-item output round trip remains to measure; outputs still cross the text bridge. |
 | 4 | session-measure | the second call's time on every card at hand (the M1 Max, the RTX 5060 Ti, the RTX 3060 12 GB), the model table of `docs/ml-results.md` and the Arch reports regenerated with the session |
 
 ### Saga 6 -- gpu-gpt

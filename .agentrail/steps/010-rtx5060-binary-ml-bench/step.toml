@@ -1,0 +1,9 @@
+number = 10
+slug = "rtx5060-binary-ml-bench"
+status = "completed"
+description = "GA1, part 1 (X_eTaL-ML's docs/gpu-asks.md): pin X_eTaL-ML (XETAL_ML_COMMIT, s..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:25:13"
+completed_at = "2026-10-12T11:29:40"
+commits = ["d3370a0effbd65759dc8d3832b89d23cf1482f5c"]

@@ -1,5 +1,9 @@
 # xetal-gpu-xir
 
+The `binary` module reads and writes portable f32, f64 and i64 array
+files with checked shapes and payload lengths; it has no device
+dependencies. See [binary arrays](../../docs/binary-arrays.md).
+
 The provisional accelerator IR of X_eTaL-gpu (XIR): typed arrays,
 elementwise maps with scalar extension, a select by mask,
 reductions, casts; its text form, a checker that gives every value

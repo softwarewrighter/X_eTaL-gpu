@@ -1,0 +1,8 @@
+number = 12
+slug = "rtx5060-binary-arrays"
+status = "in-progress"
+description = "Implement checked binary array file binding for CLI and GPU extension, with a..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T15:46:48"
+commits = []

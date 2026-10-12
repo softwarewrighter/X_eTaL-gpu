@@ -36,6 +36,43 @@ fn floats(shape: &[usize], v: &[f64]) -> Value {
 const MATVEC: &str = "%a = input f64 [2 3]\n%v = input f64 [3]\n%y = matmul %a %v\n%s = reduce add %y\noutput %y\noutput %s\n";
 
 #[test]
+fn binary_binding_preserves_ints_and_rejects_bad_replacements() {
+    use xetal_gpu_xir::{binary, Array as XArray, Shape};
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "xetal-gpu-binary-{}-{stamp}.xta",
+        std::process::id()
+    ));
+    let a = XArray::ints(Shape(vec![2]), vec![9_007_199_254_740_993, -7]);
+    std::fs::write(&path, binary::encode(&a).unwrap()).unwrap();
+    let file = Value::Text(path.to_string_lossy().into_owned());
+    call(
+        "load",
+        &[Value::Text("%a = input i64 [2]\noutput %a\n".into())],
+    )
+    .unwrap();
+    assert_eq!(
+        call("bind_file", &[Value::Int(1), file.clone()]).unwrap(),
+        Value::Int(1)
+    );
+    // A corrupt replacement must leave the previous valid binding intact.
+    std::fs::write(&path, b"XTLARR01").unwrap();
+    assert!(call("bind_file", &[Value::Int(1), file])
+        .unwrap_err()
+        .message()
+        .contains("header"));
+    call("run", &[Value::Int(-1)]).unwrap();
+    assert_eq!(
+        call("output", &[Value::Int(1)]).unwrap(),
+        Value::Array(Array::new(vec![2], ArrayData::Int(vec![9_007_199_254_740_993, -7])).unwrap())
+    );
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
 fn descriptor_lists_every_function() {
     let names: Vec<String> = gpu()
         .functions()
@@ -44,7 +81,17 @@ fn descriptor_lists_every_function() {
         .collect();
     assert_eq!(
         names,
-        ["devices", "load", "bind", "schedule", "run", "output", "explain", "kernel"]
+        [
+            "devices",
+            "load",
+            "bind",
+            "bind_file",
+            "schedule",
+            "run",
+            "output",
+            "explain",
+            "kernel"
+        ]
     );
 }
 
