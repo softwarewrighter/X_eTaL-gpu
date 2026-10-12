@@ -186,7 +186,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
 - [`docs/xetal-asks.md`](docs/xetal-asks.md) -- what this repo needs
   from X_eTaL; the blockers first
 - [`docs/ml-results.md`](docs/ml-results.md) -- X_eTaL-ML's benchmarks
-  on every device here, the device's time and the bridge's apart
+  and its world model on every device here, the device's time and
+  the bridge's apart
 - [`docs/tuple-plan.md`](docs/tuple-plan.md) -- where X_eTaL's
   tuples would help here, what blocks each use, and when to adopt them
 - [`docs/macros-and-extensions.md`](docs/macros-and-extensions.md) --

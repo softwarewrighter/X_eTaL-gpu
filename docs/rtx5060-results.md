@@ -87,6 +87,13 @@ jobs; the direct and facade runs happen sequentially, so driver
 cache reuse can change the later run's setup cost. There is no
 application kernel cache or retained GPU session yet.
 
+These timings were collected before the Mac's world-model runner
+was integrated into this branch. Its newer runner reports a second
+GPU run after warming up; this saved report records the original
+single-run measurements. The model itself is not present in the
+unchanged ML pin, so its RTX measurement waits for a committed
+model program and a deliberate pin update.
+
 ## End-to-end extension demo
 
 `just offload` times the operations inside one X_eTaL program using

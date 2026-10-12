@@ -31,13 +31,16 @@ class BenchmarkReporting(unittest.TestCase):
             row = {"name": "dense", "what": "a product", "result": "1.0", "xetal_ms": 2, "cpu_ms": 1,
                    "opencl:0": {"diff": 0, "kernels": 0.01, "launch": 0.1, "total": 3, "process": 4},
                    "facade": [1, 2, 3, 4]}
+            model = dict(row, name="world-model", result="1897 and 348")
             with patch.object(bench, "RESULTS", original), \
                     patch.object(bench, "device_names", return_value={"opencl:0": "RTX 5060 Ti"}):
-                bench.write_results([row], ["opencl:0"], "ml-pin", "xetal-pin", True, destination)
+                bench.write_results([row], [model], "pinned ML", ["opencl:0"], "ml-pin", "xetal-pin", True, destination)
             self.assertEqual(original.read_text(), "Existing Mac measurements\n")
             report = destination.read_text()
             self.assertIn("RTX 5060 Ti", report)
             self.assertIn("| dense | 0 | 0.010 | 0.10 | 3 | 4 | 3 | 6 |", report)
+            self.assertIn("## The models", report)
+            self.assertIn("1897 and 348", report)
 
 
 if __name__ == "__main__":
