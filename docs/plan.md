@@ -122,6 +122,27 @@ Implementable work first (the GPU side, against hand-lowered
 examples); what needs an X_eTaL ask (the lowering, the one-command
 demo) is in the last saga and moves up when the ask lands.
 
+## Asks from other repositories
+
+What the sibling repositories ask of this one, and where each is
+answered. X_eTaL-ML filed GA1 to GA6 on 2026-10-12 (its
+`docs/gpu-asks.md`): its models are to be tested, measured and shown
+on real GPUs through this repository; it writes no GPU code itself,
+and gives each model as a batch X_eTaL program, its weights in
+`data/` and its expected outputs.
+
+| # | From | Ask | Status here | Answered by |
+| - | ---- | --- | ----------- | ----------- |
+| GA1 | X_eTaL-ML | Pin an X_eTaL-ML commit and run its batch models (the program, the weights, the expected outputs); a results table per model and device, the device's time and the bridge's apart | taken | saga gpu-models: ml-bench (its benchmarks, now), world-model (when its program lands there), denoiser (when its batch run lands); the table is `docs/ml-results.md` |
+| GA2 | X_eTaL-ML | `transpose` in the IR, for attention scores (`Q K^T`) and every backward pass | taken | saga gpu-models: transpose |
+| GA3 | X_eTaL-ML | The convolution's windows in the IR: reshape and rotate along an axis, or one windows operation | taken | saga gpu-models: windows (reshape and rotate first, as general X_eTaL primitives; one windows operation only if measurement asks for it) |
+| GA4 | X_eTaL-ML | A newer X_eTaL inside `xetal-x` (its libraries use `h:` and tuples) | ours already, asked of X_eTaL-extensions | `docs/tuple-plan.md`, X-1 |
+| GA5 | X_eTaL-ML | Arrays across the bridge in binary (the world model's batch is about 836,000 inputs, a third of a second as text) | ours already, asked of X_eTaL-extensions and X_eTaL | `docs/xetal-asks.md`, G5 and G8; meanwhile the bridge's time is reported apart from the device's |
+| GA6 | X_eTaL-ML | The accelerator IR and the lowering, so no model needs a hand-written twin | ours already, asked of X_eTaL | `docs/xetal-asks.md`, G1 to G3 |
+
+The world model is the "complete tiny trained network" that step
+tiny-nn asked for, so tiny-nn is answered by step world-model.
+
 ### Saga 1 -- gpu-foundation  [DONE]
 
 Goal: the process, the pinned X_eTaL, the acceleratable subset as a
@@ -235,7 +256,13 @@ then on the old cards.
 | 0b | repin-doc | DONE (2026-10-08, at the user's request): X_eTaL pinned at d284a8c, then 1998414 (each in its own commit, the gate unchanged); the live `/doc` now built by this repo's `xetal doc` (the sidebar grouped by directory and sorted; headers with or without a blank line), not `xetal-x`'s v0.1.0: documenting only expands Ffi.xtlm and never calls the bridge. `h:` and tuples work in the pinned `xetal` but not under `xetal-x`, so the Gpu facade keeps its bare helper (an ask of X_eTaL-extensions: a newer pin). |
 | 0b | repin-doc | DONE (2026-10-08, at the user's request): X_eTaL pinned at d284a8c, then 1998414, each in its own commit with the gate unchanged; the live `/doc` now built by this repo's `xetal doc` (the sidebar grouped by directory and sorted; headers with or without a blank line) instead of `xetal-x`'s v0.1.0, since documenting only expands Ffi.xtlm and never calls the bridge. `h:` and tuples work in the pinned `xetal` but not under `xetal-x`, so the Gpu facade keeps its bare helper (an ask of X_eTaL-extensions: a newer pin). |
 | 0c | tuple-plan | DONE (2026-10-08, at the user's request): `docs/tuple-plan.md`: no tuples used yet; five uses judged (a device per call, all outputs at once, a model's weights, training state, the lowering's inputs and outputs); which code may use them now (code run by the pinned `xetal`: the models) and which waits on X_eTaL-extensions' newer pin (X-1) or tuples in ABI V1 (X-2); ask G9. |
-| 1 | tiny-nn | a complete tiny trained network (two dense layers, from X_eTaL-ML's trainers or a std-only trainer here) in X_eTaL, weights as data files, on the GPU; the same decision on CPU and GPU |
+| 0e | take-gpu-asks | DONE (2026-10-12): X_eTaL-ML's asks GA1 to GA6 taken into the ledger above, the steps below queued |
+| 0f | ml-bench | GA1: X_eTaL-ML pinned (`XETAL_ML_COMMIT`); its benchmarks (dense, inner-wide, softmax) as IR twins on every device; the device's time apart from the host's (OpenCL profiling) and the bridge's; `docs/ml-results.md` |
+| 0g | world-model | GA1: X_eTaL-ML's world model, once its program lands there: the same exact-frames Int everywhere, timed; answers tiny-nn |
+| 0h | transpose | GA2: `transpose` in the IR, kernels, attention scores and a backward-pass product as twins |
+| 0i | windows | GA3: reshape and rotate along an axis in the IR; Conv's windows and a small convolution as twins; one windows operation only if measured worth it |
+| 0j | denoiser | GA1: X_eTaL-ML's denoiser, once its batch run lands there: about 20 calls, the fixed cost per call shown |
+| 1 | tiny-nn | answered by world-model (0g); closed when reached. Planned: a complete tiny trained network (two dense layers, from X_eTaL-ML's trainers or a std-only trainer here) in X_eTaL, weights as data files, on the GPU; the same decision on CPU and GPU |
 | 2 | jev-model | `examples/jev/`: `model.xtl` (embedding lookup, attention as array operations, normalization, feed-forward, classifier), `tokenizer.xtl`, `config.toml`, weights; the needed XIR operations added only when measurement says so (research7: attention decomposes, it is not an intrinsic) |
 | 3 | jev-train | a trainer for the typed-decision task (requests classified as DRAW, ARRAY_QUERY, EXPLAIN, EXECUTE, DOC_SEARCH), f32 |
 | 4 | jev-gpu | the whole inference scheduled as OpenCL kernels; the same prompt, model and weights giving the same decision on CPU and GPU; a visualization of which X_eTaL operations became which kernels |

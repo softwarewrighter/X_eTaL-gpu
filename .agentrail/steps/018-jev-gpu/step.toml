@@ -1,4 +1,4 @@
-number = 12
+number = 18
 slug = "jev-gpu"
 status = "pending"
 description = "The whole Jev inference on the GPU: its XIR twin (or written by a program wri..."

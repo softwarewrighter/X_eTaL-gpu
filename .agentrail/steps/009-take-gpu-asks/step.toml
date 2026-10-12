@@ -1,0 +1,8 @@
+number = 9
+slug = "take-gpu-asks"
+status = "in-progress"
+description = "Take X_eTaL-ML's asks (its docs/gpu-asks.md, GA1 to GA6, 2026-10-12) into thi..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:25:13"
+commits = []
