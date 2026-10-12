@@ -37,7 +37,7 @@ where `devices` reports none. The runtime's own tests run on device
   OpenCL (`libnvidia-opencl`; on Arch, `opencl-nvidia`) and an ICD
   loader (`ocl-icd`, or `ocl-icd-libopencl1` elsewhere); `clinfo`
   should list the card before `xetal-gpu devices` can. A board with
-  several GPUs (Tesla M10, A16) lists each as a device of its own. As
+  several GPUs (the Tesla M10) lists each as a device of its own. As
   NVIDIA retires Maxwell and Pascal (Tesla M10, P4), an older driver
   series may be needed for them; the gpu-hardware saga records which
   driver serves each card, its OpenCL version and whether it has fp64.

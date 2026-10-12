@@ -4,7 +4,7 @@ X_eTaL programs on GPUs: the GPU compiler, runtime and scheduling for
 X_eTaL (the eXperimental Extensible Typed Array Language, developed in
 `../X_eTaL`), aimed at the user's own cards, old and new (the
 hardware table below: Tesla M10 and P4, GTX 1660 Super, RTX 3090,
-RTX 4070, RTX 5060, A16), by way of OpenCL C 1.2. The goal is to demonstrate the concept, that one
+RTX 4070, RTX 5060, A2), by way of OpenCL C 1.2. The goal is to demonstrate the concept, that one
 typed array program runs unchanged as sequential software, as
 massively parallel software, and (in the sibling project) as spatial
 hardware, not to be fast.
@@ -26,7 +26,7 @@ examples; they are not the user's and are not targets.
 | RTX 3090 | Ampere | 24 GB | a current card; the most memory | `nvidia-modern.toml` (template) |
 | RTX 4070 | Ada Lovelace | 12 GB | a current card | `nvidia-modern.toml` (template) |
 | RTX 5060 | Blackwell | 8 GB | the newest generation | `nvidia-modern.toml` (template) |
-| A16 | Ampere | four GPUs of 16 GB | a data-center board; each GPU an OpenCL device | `nvidia-modern.toml` (template) |
+| A2 | Ampere | 16 GB | a low-power data-center card | `nvidia-modern.toml` (template) |
 
 The user has other cards too; one is added here when it is used.
 The Arch machine the work moves to holds one or more of the NVIDIA

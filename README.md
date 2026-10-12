@@ -21,7 +21,7 @@ device and back, and the scheduling that decides how a device
 realizes an array operation. The targets are old and new cards
 alike, all reached through OpenCL: Maxwell and Pascal Teslas (M10,
 P4) that the newest CUDA toolkits retire, and Turing to Blackwell
-(GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A16); the plan's
+(GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A2); the plan's
 hardware table lists them.
 
 The goal is the concept, one typed array program executing across

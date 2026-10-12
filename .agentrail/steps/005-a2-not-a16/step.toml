@@ -1,0 +1,8 @@
+number = 5
+slug = "a2-not-a16"
+status = "in-progress"
+description = "Correct the hardware: the user has an NVIDIA A2 (Ampere, 16 GB, one GPU), not..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T09:49:26"
+commits = []
