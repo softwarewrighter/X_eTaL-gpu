@@ -92,19 +92,43 @@ evaluator and the GPU alike, all agreeing (`just sizes`; step 6).
 Saga 2 (gpu-algebra): the macros-and-extensions analysis
 and reductions along an axis of a matrix (row sums, column sums, row
 maxima) and inner products (`'+ '* i_nner`, untiled and in tiles; a
-512 by 512 product in 0.13 s against the evaluator's 29 s), and a
-tiny two-layer network (dense, ReLU, dense, softmax) whose output on
-the GPU matches the evaluator's, and schedules as files per device
-are done (saga 2, finished 2026-10-07). Saga 3 made the GPU a native
-extension that X_eTaL programs call themselves, through
-X_eTaL-extensions' `xetal-x`: a 512 by 512 product runs 31 times
-faster than in the evaluator, even through the bridge (`just
-offload`). Next, saga 4: a tiny Jev-like model's whole inference on
-the GPU. The
-OpenCL code also runs on Arch Linux's RTX 5060 Ti (16 GB), with
-separate [hardware results](docs/rtx5060-results.md) and
-[ML measurements](docs/rtx5060-ml-results.md). See [`docs/plan.md`](docs/plan.md) for
-the roadmap and the architecture decisions.
+512 by 512 product in 0.13 s on the Apple M1 Max against 29 s in
+this Mac's evaluator), and a tiny two-layer network (dense, ReLU,
+dense, softmax) whose output on the M1 Max matches the evaluator's,
+and schedules as files per device are done (saga 2, finished
+2026-10-07). Saga 3 made the GPU a native extension that X_eTaL
+programs call themselves, through X_eTaL-extensions' `xetal-x`: on
+the M1 Max a 512 by 512 product runs 31 times faster than in the
+evaluator, even through the bridge (`just offload`). Saga 4
+(gpu-models, in progress) runs X_eTaL-ML's benchmarks and its world
+model on every device here. On 2026-10-12 the same code was run on
+the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its own lane:
+every check passes there too, with its own schedules
+(`schedules/nvidia-rtx5060-ti*.toml`) and reports. See
+[`docs/plan.md`](docs/plan.md) for the roadmap and the architecture
+decisions.
+
+## Results by GPU
+
+Two GPUs so far, more to come; every number names its card. The
+evaluator's time is its own host's, so each column compares a GPU
+with the evaluator beside it, not the cards with each other (speed
+is not the goal). Whole programs include starting the process,
+reading the data and compiling the kernels; the extension's times
+include the text bridge.
+
+| Work | Evaluator on the Mac | Apple M1 Max | Evaluator on the Arch host | RTX 5060 Ti |
+| ---- | -------------------- | ------------ | -------------------------- | ----------- |
+| 512 by 512 product, whole program (`just sizes m512`, 16 by 16 tiles) | 28.75 s | 0.13 s | 55.12 s | 0.30 s |
+| 512 by 512 product through the extension (`just offload`) | 14545 ms | 462 ms (31 times faster) | 24994 ms | 979 ms (25 times faster) |
+| a million elementwise items, summed, through the extension | 188 ms | 2447 ms (13 times slower) | 254 ms | 1440 ms (5.7 times slower) |
+
+The full tables: the M1 Max's in `components/runtime/README.md`,
+[`extensions/gpu/README.md`](extensions/gpu/README.md) and
+[`docs/ml-results.md`](docs/ml-results.md) (X_eTaL-ML's benchmarks
+and its world model); the RTX 5060 Ti's in
+[`docs/rtx5060-results.md`](docs/rtx5060-results.md) and
+[`docs/rtx5060-ml-results.md`](docs/rtx5060-ml-results.md).
 
 ## Build
 

@@ -85,10 +85,15 @@ not by printing it.
 evaluator and through this extension on `opencl:0`, checks they
 agree, and times both. On the Apple M1 Max:
 
-| Work | Evaluator | GPU through the extension | |
-| ---- | --------- | ------------------------- | - |
+| Work | Evaluator on the Mac | Apple M1 Max through the extension | |
+| ---- | -------------------- | ---------------------------------- | - |
 | 512 by 512 product | 14545 ms | 462 ms | 31 times faster |
 | a million items, `x + x * w`, positive parts summed | 188 ms | 2447 ms | 13 times slower |
+
+On the RTX 5060 Ti in the Arch Linux machine (`docs/rtx5060-results.md`),
+the same demo: the product 979 ms against 24994 ms in that host's
+evaluator (25 times faster), the million items 1440 ms against 254 ms
+(5.7 times slower).
 
 Of the product's 462 ms on the GPU side, loading the program and
 binding the two inputs took 289 ms, the run 12 ms (compiling the

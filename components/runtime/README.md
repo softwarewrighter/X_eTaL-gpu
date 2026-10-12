@@ -91,10 +91,11 @@ compiling the kernels; speed is not a goal yet):
 | 256 by 256 product | 3.48 | 0.04 | 0.08 | 0.09 |
 | 512 by 512 product | 28.75 | 0.45 | 0.14 | 0.13 |
 
-At 512 the GPU is about 200 times faster than the evaluator for the
-whole program, as `docs/macros-and-extensions.md` expects for
-products; tiling makes no difference yet at these sizes on this
-device.
+At 512 the M1 Max is about 200 times faster than this Mac's
+evaluator for the whole program, as `docs/macros-and-extensions.md`
+expects for products; tiling makes no difference yet at these sizes
+on this device. The RTX 5060 Ti's table is `docs/rtx5060-results.md`
+(0.30 s tiled against 55 s in that host's evaluator, 184 times).
 
 A million-item reduction is three launches (4096 partials, 16, 1);
 the Float sums agree with the evaluator's f64 right fold within

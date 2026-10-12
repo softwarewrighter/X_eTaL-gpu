@@ -104,13 +104,13 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 {lines}
 
 <h2>Measured</h2>
-<p class="cap">One X_eTaL program, <a href="doc/extensions-gpu-demos-offload.xtl.html">offload.xtl</a>, on an Apple M1 Max (OpenCL 1.2). The GPU side includes the bridge, which carries arrays as text.</p>
+<p class="cap">One X_eTaL program, <a href="doc/extensions-gpu-demos-offload.xtl.html">offload.xtl</a>, on two GPUs so far: an Apple M1 Max (OpenCL 1.2, this Mac) and an RTX 5060 Ti (16 GB, an Arch Linux machine). Each GPU is compared with the evaluator on its own host, not with the other card. The GPU side includes the bridge, which carries arrays as text.</p>
 <div class="scroll"><table>
-<tr><th>Work</th><th>Evaluator</th><th>GPU through the extension</th><th></th></tr>
-<tr><td>512 by 512 product</td><td class="n">14545 ms</td><td class="n">462 ms</td><td class="good">31 times faster</td></tr>
-<tr><td>a million items, elementwise, summed</td><td class="n">188 ms</td><td class="n">2447 ms</td><td class="bad">13 times slower</td></tr>
+<tr><th>Work</th><th>Evaluator on the Mac</th><th>Apple M1 Max</th><th>Evaluator on the Arch host</th><th>RTX 5060 Ti</th></tr>
+<tr><td>512 by 512 product</td><td class="n">14545 ms</td><td class="n">462 ms <span class="good">(31 times faster)</span></td><td class="n">24994 ms</td><td class="n">979 ms <span class="good">(25 times faster)</span></td></tr>
+<tr><td>a million items, elementwise, summed</td><td class="n">188 ms</td><td class="n">2447 ms <span class="bad">(13 times slower)</span></td><td class="n">254 ms</td><td class="n">1440 ms <span class="bad">(5.7 times slower)</span></td></tr>
 </table></div>
-<p class="cap">Products gain even through the bridge; elementwise work does not. Why, and which macros and extensions are justified: <a href="{repo}/blob/main/docs/macros-and-extensions.md">the analysis</a>. X_eTaL-ML's benchmarks on every device here, the device's time and the bridge's apart: <a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>.</p>
+<p class="cap">Products gain even through the bridge; elementwise work does not. Why, and which macros and extensions are justified: <a href="{repo}/blob/main/docs/macros-and-extensions.md">the analysis</a>. X_eTaL-ML's benchmarks and its world model, the device's time and the bridge's apart: on the M1 Max <a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>, on the RTX 5060 Ti <a href="{repo}/blob/main/docs/rtx5060-ml-results.md">docs/rtx5060-ml-results.md</a> and <a href="{repo}/blob/main/docs/rtx5060-results.md">its hardware report</a>.</p>
 
 <h2>More</h2>
 <div class="grid">
