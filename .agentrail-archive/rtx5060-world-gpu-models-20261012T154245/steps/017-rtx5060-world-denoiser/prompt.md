@@ -1,0 +1,1 @@
+GA1, part 3: X_eTaL-ML's learned denoiser (20 steps from given noise, 256 pictures at once) from the pinned X_eTaL-ML once its batch run has landed there: the IR twin, the same pictures' summary number on every device, about 20 calls timed so the fixed cost per call shows; a row of docs/ml-results.md. Docs, CHANGES, commit, push, publish.

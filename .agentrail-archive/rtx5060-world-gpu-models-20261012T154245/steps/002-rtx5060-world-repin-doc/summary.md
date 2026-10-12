@@ -1,0 +1,1 @@
+X_eTaL pinned d284a8c then 1998414 (own commits, gate unchanged); /doc built with the pinned xetal's newer doc tool (sorted directory sidebar) instead of xetal-x; h:/tuples unavailable under xetal-x so the facade keeps a bare helper (ask recorded). Gate passes.
