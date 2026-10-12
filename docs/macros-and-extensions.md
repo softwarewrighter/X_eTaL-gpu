@@ -218,6 +218,11 @@ To X_eTaL-extensions (recorded here; this repo does not change it):
   accepted) and cannot move it to `h:` until X_eTaL-extensions pins a
   newer X_eTaL (found 2026-10-08: `h:n_l` gives `unknown-namespace`
   under `xetal-x`);
+- the bindings `ffi:b_ind<` expands to are never read by the
+  expansion, so X_eTaL 27b3fd0's `xetal lint` reports an
+  `unused-binding` for each (found 2026-10-12, X-3); `_ :=` in the
+  macro would clear it, and until then this repo's lint step allows
+  that one lint for the facade (`scripts/lint-libs.sh`);
 - `xetal-x` looks for native libraries beside the path it was started
   from without resolving a symlink, so a repository that links
   `bin/xetal-x` to the binary finds none (found 2026-10-07; this repo

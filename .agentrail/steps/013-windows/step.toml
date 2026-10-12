@@ -1,6 +1,6 @@
 number = 13
 slug = "windows"
-status = "pending"
+status = "in-progress"
 description = "GA3: the convolution's windows in the IR: reshape (r_eshape with repetition) ..."
 role = "production"
 context_files = []

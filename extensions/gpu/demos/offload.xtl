@@ -20,17 +20,17 @@ f_loor gpu
 f_loor cpu / gpu m_ax 1.0
 
 "Where the GPU's time goes: load and bind (ms), run (ms), read back (ms):"
-f_loor '{ m -> n := gp:l_oad (s_hape m) gp:p_roductProgram s_hape m; n := 1 gp:b_ind m; 2 gp:b_ind m } ck:t_ime a
-f_loor '{ d -> gp:r_un d } ck:t_ime 0
-f_loor '{ i -> gp:o_utput i } ck:t_ime 1
+f_loor '{ m -> l := gp:l_oad (s_hape m) gp:p_roductProgram s_hape m; b := 1 gp:b_ind m; 2 gp:b_ind m } ck:t_ime a  # lint: allow unused-binding
+f_loor 'gp:r_un ck:t_ime 0
+f_loor 'gp:o_utput ck:t_ime 1
 
 "A million items, elementwise and summed, x + x * w, positive parts:"
 x := (r_ange 1048576) / 1048576
 w := 1048576 r_eshape 1.0 -1.0
-cpu := '{ v -> v ac:p_ipeline w } ck:t_ime x
+cpuE := '{ v -> v ac:p_ipeline w } ck:t_ime x
 p := "%x = input f64 [1048576]\n%w = input f64 [1048576]\n%xw = map mul %x %w\n%s = map add %x %xw\n%z = const f64 [] 0.0\n%r = map max %s %z\n%t = reduce add %r\noutput %t\n"
-gpu := '{ v -> n := gp:l_oad p; n := 1 gp:b_ind v; n := 2 gp:b_ind w; n := gp:r_un 0; gp:o_utput 1 } ck:t_ime x
+gpuE := '{ v -> l := gp:l_oad p; b1 := 1 gp:b_ind v; b2 := 2 gp:b_ind w; r := gp:r_un 0; gp:o_utput 1 } ck:t_ime x  # lint: allow unused-binding
 (x ac:p_ipeline w) gp:n_ear gp:o_utput 1
 "  evaluator (ms), GPU through the extension (ms): the bridge's text costs more than the work"
-f_loor cpu
-f_loor gpu
+f_loor cpuE
+f_loor gpuE

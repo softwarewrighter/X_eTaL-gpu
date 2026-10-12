@@ -50,6 +50,8 @@
 
 ### Programs, as text
 
+# lint: allow deprecated-private
+# (h:n_l is unknown-namespace under xetal-x's X_eTaL v0.1.0: ask X-1)
 ## A newline (private; bare, not h:n_l, because xetal-x's X_eTaL
 ## v0.1.0 has no h: namespace: docs/macros-and-extensions.md).
 n_l := { @ -> f_irst "\n" }
@@ -75,12 +77,10 @@ l:p_roductProgram := { sa sb ->
 l:d_enseProgram := { sx swb ->
   nl := n_l @
   rows := f_irst sx
-  t := "%x = input f64 [" c_at (f_ormat sx) c_at "]" c_at nl
-  t := t c_at "%wb = input f64 [" c_at (f_ormat swb) c_at "]" c_at nl
-  t := t c_at "%w = drop -1 %wb" c_at nl c_at "%t = take -1 %wb" c_at nl c_at "%v = ravel %t" c_at nl
-  t := t c_at "%o = const i64 [" c_at (f_ormat rows) c_at "] " c_at (f_ormat o_ffsets rows) c_at nl
-  t := t c_at "%bias = table right %o %v" c_at nl c_at "%xw = matmul %x %w" c_at nl
-  t c_at "%y = map add %xw %bias" c_at nl c_at "output %y" c_at nl
+  inputs := "%x = input f64 [" c_at (f_ormat sx) c_at "]" c_at nl c_at "%wb = input f64 [" c_at (f_ormat swb) c_at "]" c_at nl
+  split := "%w = drop -1 %wb" c_at nl c_at "%t = take -1 %wb" c_at nl c_at "%v = ravel %t" c_at nl
+  bias := "%o = const i64 [" c_at (f_ormat rows) c_at "] " c_at (f_ormat o_ffsets rows) c_at nl c_at "%bias = table right %o %v" c_at nl
+  inputs c_at split c_at bias c_at "%xw = matmul %x %w" c_at nl c_at "%y = map add %xw %bias" c_at nl c_at "output %y" c_at nl
 }
 
 ### In one call
@@ -88,18 +88,18 @@ l:d_enseProgram := { sx swb ->
 ## a gp:p_roduct b: a '+ '* i_nner b computed on opencl:0.
 l:p_roduct := { a b ->
   n := l:l_oad (s_hape a) l:p_roductProgram s_hape b
-  n := 1 l:b_ind a
-  n := 2 l:b_ind b
-  n := l:r_un 0
+  ba := 1 l:b_ind a
+  bb := 2 l:b_ind b
+  r := l:r_un 0
   l:o_utput 1
 }
 
 ## x gp:d_ense wb: the layer x W + b (ac:d_ense) computed on opencl:0.
 l:d_ense := { x wb ->
   n := l:l_oad (s_hape x) l:d_enseProgram s_hape wb
-  n := 1 l:b_ind x
-  n := 2 l:b_ind wb
-  n := l:r_un 0
+  bx := 1 l:b_ind x
+  bw := 2 l:b_ind wb
+  r := l:r_un 0
   l:o_utput 1
 }
 
