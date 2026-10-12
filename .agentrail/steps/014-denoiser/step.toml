@@ -1,0 +1,8 @@
+number = 14
+slug = "denoiser"
+status = "pending"
+description = "GA1, part 3: X_eTaL-ML's learned denoiser (20 steps from given noise, 256 pic..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:25:13"
+commits = []

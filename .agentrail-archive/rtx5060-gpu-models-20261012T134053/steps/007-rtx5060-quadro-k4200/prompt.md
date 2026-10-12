@@ -1,0 +1,1 @@
+Add the user's Quadro K4200 cards (Kepler, 4 GB; the user, 2026-10-12) to the target GPUs: the hardware table (now the smallest memory), the plan's first paragraph and gpu-hardware saga, the README, the runtime and opencl pages, the legacy schedule template, the landing page. Docs, CHANGES, commit, push, publish.

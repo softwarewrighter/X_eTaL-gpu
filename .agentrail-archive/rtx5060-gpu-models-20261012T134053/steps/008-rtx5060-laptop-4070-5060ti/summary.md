@@ -1,0 +1,1 @@
+Hardware corrected: RTX 4070 Laptop 8 GB (Asus ROG), RTX 5060 Ti 16 GB, RTX 3060 (12 GB PCIe) and RTX 3060 Laptop (System76, 6 GB to confirm) added; research7 example note fixed. Gate passes.
