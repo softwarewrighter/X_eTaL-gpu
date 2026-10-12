@@ -1,5 +1,10 @@
 # xetal-gpu-cli
 
+`--bind NAME=@FILE` accepts text or a checked binary array file.
+`xetal-gpu pack f64 2,3 INPUT.txt OUTPUT.xta` converts existing text
+weights; it refuses to replace an existing output. f32 and i64 are
+also supported. See [binary arrays](../../docs/binary-arrays.md).
+
 `xetal-gpu`, the X_eTaL-gpu tool.
 
 ```

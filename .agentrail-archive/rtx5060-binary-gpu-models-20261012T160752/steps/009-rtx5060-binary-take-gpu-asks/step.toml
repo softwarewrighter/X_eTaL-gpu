@@ -1,0 +1,9 @@
+number = 9
+slug = "rtx5060-binary-take-gpu-asks"
+status = "completed"
+description = "Take X_eTaL-ML's asks (its docs/gpu-asks.md, GA1 to GA6, 2026-10-12) into thi..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:25:13"
+completed_at = "2026-10-12T10:42:11"
+commits = ["040cf44c33926d0bbad42a1335e2676e30b15041"]

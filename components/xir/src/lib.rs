@@ -17,6 +17,7 @@
 //! the GPU backends are compared with, computing as X_eTaL's
 //! evaluator does.
 
+pub mod binary;
 pub mod check;
 pub mod format;
 pub mod interp;

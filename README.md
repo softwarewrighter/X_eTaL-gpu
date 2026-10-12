@@ -110,6 +110,20 @@ every check passes there too, with its own schedules
 [`docs/plan.md`](docs/plan.md) for the roadmap and the architecture
 decisions.
 
+The committed world model (ML fac586c) now passes the gate on the
+RTX too: the evaluator, interpreter, GPU and extension return the
+same counts, 1897 and 348. Its kernels take 0.237 ms, the CLI process
+317 ms, and the extension's text binding 458 ms before a 197 ms run.
+The evaluator's 15.12 s includes the complete demo and dream rollout;
+the GPU twin measures batched inference and counts only. See the
+Arch reports below for the timing boundaries.
+
+Binary file binding now avoids transferring input arrays as text:
+the same world-model counts, with binding at 13 ms versus 460 ms
+on the RTX. See [binary arrays](docs/binary-arrays.md) for the CLI
+converter and `gp:b_indFile`, and
+[the measurements](docs/rtx5060-binary-results.md).
+
 ## Results by GPU
 
 Two GPUs so far, more to come; every number names its card. The

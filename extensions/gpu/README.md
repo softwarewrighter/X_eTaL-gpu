@@ -30,6 +30,7 @@ inputs one by one, run it, read its outputs one by one.
 | `devices` | `Unit -> Char` | the OpenCL devices, one line each (`opencl:N`) |
 | `load` | `Char -> Int` | an XIR program, by its text: parsed and checked; the number of inputs |
 | `bind` | `Num a => Int -> a -> Int` | input n (from 1, in program order) gets an array of its declared shape; an Int input takes whole numbers only |
+| `bind_file` | `Int -> Char -> Int` | input n gets a checked binary array read from a host file path |
 | `schedule` | `Char -> Int` | the schedule for later runs, as the text of a `schedules/*.toml` (empty: the defaults) |
 | `run` | `Int -> Int` | run on `opencl:d`, or on the reference interpreter for -1; the number of outputs |
 | `output` | `Num a => Int -> a` | output i (from 1) of the last run: Ints as Ints, Floats as Floats |
@@ -58,6 +59,7 @@ on `XETAL_PATH`.
 | `gp:d_evices @` | `Unit -> Char` | the devices |
 | `gp:l_oad t` | `Char -> Int` | load an XIR program's text |
 | `n gp:b_ind a` | `(Num a, Num b) => a -> b -> Int` | bind input n |
+| `n gp:b_indFile path` | `Num a => a -> Char -> Int` | bind input n from a binary array file; only the path crosses the bridge |
 | `gp:s_chedule t` | `Char -> Int` | a schedule's TOML text, `""` for the defaults |
 | `gp:r_un d` | `Num a => a -> Int` | run on `opencl:d`, -1 the interpreter |
 | `gp:o_utput i` | `Num a => a -> Float` | output i as Floats |
@@ -70,7 +72,7 @@ on `XETAL_PATH`.
 | `x gp:d_ense wb` | `(Num a, Num b) => a -> b -> Float` | the layer x W + b on `opencl:0` |
 | `w gp:n_ear g` | `(Num a, Num b) => a -> b -> Char` | `ok` when g agrees with w within a relative 1e-5 |
 
-The first nine are one line each of X_eTaL-extensions' binding macro
+The native bindings are one line each of X_eTaL-extensions' binding macro
 (`"r_un : int -> int" ffi:b_ind< "gpu/run"`); the rest are ordinary
 X_eTaL. The program writers are functions, not macros: an XIR
 program is data handed to the device, not code for the evaluator.
@@ -78,6 +80,13 @@ program is data handed to the device, not code for the evaluator.
 Values cross the bridge as text, so a device's f32 result comes back
 widened (`1.100000023841858` for 1.1): compare it with `gp:n_ear`,
 not by printing it.
+
+For large inputs, `gp:b_indFile` avoids that text transfer by reading
+a checked binary array directly. On the RTX 5060 Ti the world model's
+input binding took 13 ms from files versus 460 ms as text, with the
+same exact counts. Device buffers are still uploaded each run.
+See [binary arrays](../../docs/binary-arrays.md) for conversion and
+the file format, and [the report](../../docs/rtx5060-binary-results.md).
 
 ## The offload demo
 

@@ -1,0 +1,1 @@
+Implement checked binary array file binding for CLI and GPU extension, with a converter, corruption and shape tests, and an RTX world-model comparison showing file binding versus the text bridge. Preserve Mac work and reports, run the full GPU gate, archive Arch lane and push review branch.

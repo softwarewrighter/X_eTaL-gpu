@@ -1,0 +1,1 @@
+Pinned committed ML fac586c in d25f3e9; full GPU gate passed and timed benchmarks plus world model agree through evaluator, interpreter, RTX and extension. Exact counts 1897 and 348. Separate Arch report records kernels 0.237 ms, process 317 ms, bridge bind 458 ms and run 197 ms, with timing boundaries documented. Ready to push review branch after archiving this lane.

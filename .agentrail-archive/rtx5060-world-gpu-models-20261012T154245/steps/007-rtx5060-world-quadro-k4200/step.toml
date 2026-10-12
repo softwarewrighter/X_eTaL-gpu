@@ -1,0 +1,9 @@
+number = 7
+slug = "rtx5060-world-quadro-k4200"
+status = "completed"
+description = "Add the user's Quadro K4200 cards (Kepler, 4 GB; the user, 2026-10-12) to the..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:07:03"
+completed_at = "2026-10-12T10:09:43"
+commits = ["a4d1e84ca30e21748b9ca820a29e132c96f9df64"]

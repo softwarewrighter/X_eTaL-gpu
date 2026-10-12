@@ -1,0 +1,1 @@
+Apple M3 Pro added to the target GPUs: hardware table row (limits to be recorded when first run), plan intro, gpu-hardware saga step 0, README, runtime page, landing page. Gate passes.

@@ -16,19 +16,20 @@ use std::process::ExitCode;
 
 use xetal_gpu_opencl::{explain, plan, Schedule, Width};
 use xetal_gpu_runtime::{devices, execute_timed};
-use xetal_gpu_xir::{check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
+use xetal_gpu_xir::{binary, check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
 
 const USAGE: &str = "\
 usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   check FILE.xir                 parse and check: every value with its type
   devices                        the OpenCL devices found (opencl:N)
   run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
-      [--bind NAME=1,2,3 | --bind NAME=@FILE]...   an input's items (a file: whitespace-separated)
+      [--bind NAME=1,2,3 | --bind NAME=@FILE]...   items, text file or XTLARR01 binary array
       [--time]                       on a device, where the time went, to standard error
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
     SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)  --schedule FILE (a schedules/*.toml; the flags override it)
+  pack f32|f64|i64 SHAPE INPUT.txt OUTPUT.xta   convert text items (shape: 2,3 or scalar)
   version";
 
 fn main() -> ExitCode {
@@ -45,6 +46,7 @@ fn main() -> ExitCode {
 fn dispatch(args: &[String]) -> Result<()> {
     let Some(cmd) = args.first() else { return Err(Error(USAGE.into())) };
     match cmd.as_str() {
+        "pack" => pack(&args[1..]),
         "version" | "--version" | "-V" => {
             println!("xetal-gpu {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -264,7 +266,17 @@ fn bindings(checked: &Checked, binds: &[String]) -> Result<HashMap<String, Array
         }
         let ty = checked.ty(id);
         let text = match items.strip_prefix('@') {
-            Some(path) => std::fs::read_to_string(path).map_err(|e| Error(format!("--bind {name}: {path}: {e}")))?,
+            Some(path) => {
+                let bytes = std::fs::read(path).map_err(|e| Error(format!("--bind {name}: {path}: {e}")))?;
+                if bytes.starts_with(binary::MAGIC) {
+                    let a = binary::decode(&bytes)
+                        .and_then(|a| binary::for_input(a, ty))
+                        .map_err(|e| Error(format!("--bind {name}: {path}: {e}")))?;
+                    inputs.insert(name.to_string(), a);
+                    continue;
+                }
+                String::from_utf8(bytes).map_err(|e| Error(format!("--bind {name}: {path}: {e}")))?
+            }
             None => items.replace(',', " "),
         };
         let toks: Vec<&str> = text.split_whitespace().collect();
@@ -283,4 +295,51 @@ fn parse_all<T: std::str::FromStr>(name: &str, toks: &[&str]) -> Result<Vec<T>> 
     toks.iter()
         .map(|t| t.parse::<T>().map_err(|_| Error(format!("--bind {name}: not a number: `{t}`"))))
         .collect()
+}
+
+/// Convert existing whitespace-separated weights without invoking an evaluator.
+fn pack(args: &[String]) -> Result<()> {
+    if args.len() != 4 {
+        return Err(Error("pack takes f32|f64|i64 SHAPE INPUT.txt OUTPUT.xta".into()));
+    }
+    let scalar = match args[0].as_str() {
+        "f32" => Scalar::F32,
+        "f64" => Scalar::F64,
+        "i64" => Scalar::I64,
+        _ => return Err(Error("pack scalar must be f32, f64 or i64".into())),
+    };
+    let dims = if args[1] == "scalar" {
+        vec![]
+    } else {
+        args[1]
+            .split(',')
+            .map(|d| {
+                d.parse::<usize>()
+                    .map_err(|_| Error("pack shape must be dimensions separated by commas, or scalar".into()))
+            })
+            .collect::<Result<Vec<_>>>()?
+    };
+    if dims.len() > 9 || dims.iter().try_fold(1usize, |n, d| n.checked_mul(*d)).is_none() {
+        return Err(Error("pack shape exceeds rank or size limits".into()));
+    }
+    if std::path::Path::new(&args[2]) == std::path::Path::new(&args[3]) {
+        return Err(Error("pack input and output must differ".into()));
+    }
+    let text = std::fs::read_to_string(&args[2]).map_err(|e| Error(format!("{}: {e}", args[2])))?;
+    let toks: Vec<_> = text.split_whitespace().collect();
+    let data = if scalar == Scalar::I64 {
+        Data::Int(parse_all("pack", &toks)?)
+    } else {
+        Data::Float(parse_all("pack", &toks)?)
+    };
+    let a = Array::new(scalar, Shape(dims), data)?;
+    let bytes = binary::encode(&a)?;
+    use std::io::Write;
+    // Do not replace an existing file, even through a symlink or hard link.
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&args[3])
+        .map_err(|e| Error(format!("{}: {e}", args[3])))?;
+    file.write_all(&bytes).map_err(|e| Error(format!("{}: {e}", args[3])))
 }

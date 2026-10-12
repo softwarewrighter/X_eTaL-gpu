@@ -1,6 +1,7 @@
 l:d_evices : Unit -> Char
 l:l_oad : Char -> Int
 l:b_ind : (Num a, Num b) => a -> b -> Int
+l:b_indFile : Num a => a -> Char -> Int
 l:s_chedule : Char -> Int
 l:r_un : Num a => a -> Int
 l:o_utput : Num a => a -> Float

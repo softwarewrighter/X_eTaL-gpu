@@ -16,7 +16,7 @@ use xetal_ext_sdk::{float_vector, number, text, Array as ExtArray, ArrayData, Ow
 use xetal_gpu_opencl::{explain as explain_plan, plan, Plan, Schedule};
 use xetal_gpu_runtime::{devices as list_devices, execute};
 use xetal_gpu_xir::{
-    check, run as interpret, text as xir_text, Array, Checked, Data, Scalar, Shape,
+    binary, check, run as interpret, text as xir_text, Array, Checked, Data, Scalar, Shape,
 };
 
 #[derive(Default)]
@@ -139,6 +139,38 @@ fn bind(args: &[Value]) -> Result<Value, OwnedError> {
     })
 }
 
+/// Bind a checked binary array from a host path; only the path crosses the bridge.
+fn bind_file(args: &[Value]) -> Result<Value, OwnedError> {
+    let n = whole(&args[0], "an input's number")?;
+    let path = text(&args[1])?;
+    SESSION.with(|s| {
+        let mut s = s.borrow_mut();
+        let checked = s
+            .program
+            .as_ref()
+            .ok_or_else(|| OwnedError::invalid_argument("no program loaded (gp:l_oad first)"))?;
+        let ids = checked.program.inputs();
+        let id = n
+            .checked_sub(1)
+            .and_then(|i| usize::try_from(i).ok())
+            .and_then(|i| ids.get(i).copied())
+            .ok_or_else(|| {
+                OwnedError::invalid_argument(format!(
+                    "the program has {} input(s); no input {n}",
+                    ids.len()
+                ))
+            })?;
+        let a = binary::for_input(
+            binary::read(&path).map_err(OwnedError::invalid_argument_from)?,
+            checked.ty(id),
+        )
+        .map_err(OwnedError::invalid_argument_from)?;
+        let name = checked.program.value(id).name.clone();
+        s.inputs.insert(name, a);
+        Ok(Value::Int(n))
+    })
+}
+
 /// The schedule for later runs, as a schedules/*.toml file's text
 /// ("" for the defaults). 0.
 fn schedule(args: &[Value]) -> Result<Value, OwnedError> {
@@ -249,6 +281,7 @@ xetal_ext_sdk::xetal_extension! {
         devices: 0, "Unit -> Char", "The OpenCL devices, one line each (opencl:N).";
         load: 1, "Char -> Int", "Load an XIR program (its text); the number of inputs.";
         bind: 2, "Num a => Int -> a -> Int", "Bind input n (from 1) to an array of its shape.";
+        bind_file: 2, "Int -> Char -> Int", "Bind input n from a checked XTLARR01 binary array file.";
         schedule: 1, "Char -> Int", "The schedule for later runs (a schedules/*.toml text; empty for the defaults).";
         run: 1, "Int -> Int", "Run on opencl:d (-1: the reference interpreter); the number of outputs.";
         output: 1, "Num a => Int -> a", "Output i (from 1) of the last run.";

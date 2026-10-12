@@ -21,6 +21,8 @@
 "l_oad : text -> int"          ffi:b_ind< "gpu/load"
 ## n gp:b_ind a: input n (from 1) gets the array a, of its declared shape.
 "b_ind : int float -> int"     ffi:b_ind< "gpu/bind"
+## n gp:b_indFile path: bind a binary array file; only its path crosses the bridge.
+"b_indFile : int text -> int"  ffi:b_ind< "gpu/bind_file"
 ## The schedule for later runs, as a schedules/*.toml text ("" for the defaults).
 "s_chedule : text -> int"      ffi:b_ind< "gpu/schedule"
 ## Run on opencl:d, or on the reference interpreter for -1; the number of outputs.
