@@ -4,7 +4,8 @@ X_eTaL programs on GPUs: the GPU compiler, runtime and scheduling for
 X_eTaL (the eXperimental Extensible Typed Array Language, developed in
 `../X_eTaL`), aimed at the user's own cards, old and new (the
 hardware table below: Tesla M10 and P4, GTX 1660 Super, RTX 3090,
-RTX 4070, RTX 5060, A2), by way of OpenCL C 1.2. The goal is to demonstrate the concept, that one
+RTX 4070, RTX 5060, A2, and the Apple M1 Max and M3 Pro), by way of
+OpenCL C 1.2. The goal is to demonstrate the concept, that one
 typed array program runs unchanged as sequential software, as
 massively parallel software, and (in the sibling project) as spatial
 hardware, not to be fast.
@@ -20,6 +21,7 @@ examples; they are not the user's and are not targets.
 | Card | Architecture | Memory | Role here | Schedule |
 | ---- | ------------ | ------ | --------- | -------- |
 | Apple M1 Max (this Mac) | Apple GPU, OpenCL 1.2 | shared | development; every check so far; no fp64 | `apple-m1-max.toml` (run) |
+| Apple M3 Pro | Apple GPU, Apple's OpenCL | shared | a second Apple-silicon target; its OpenCL version, fp64 and work-group limit to be recorded when first run | `apple-m1-max.toml` until run (a file of its own if it differs) |
 | Tesla M10 | Maxwell | four GPUs of 8 GB | an old card the newest CUDA toolkits retire; each GPU an OpenCL device | `nvidia-legacy.toml` (template) |
 | Tesla P4 | Pascal | 8 GB | an old card the newest CUDA toolkits retire | `nvidia-legacy.toml` (template) |
 | GTX 1660 Super | Turing | 6 GB | the smallest memory: the case where weights stay on the host (a schedule field, saga gpu-models) | `nvidia-modern.toml` (template) |
@@ -239,7 +241,8 @@ then on the old cards.
 
 Goal: the cards of the hardware table, first those in the Arch
 machine the work moves to soon (the user, 2026-10-07), then the old
-Tesla M10 and P4.
+Tesla M10 and P4; the Apple M3 Pro whenever it is at hand (it needs
+no new setup, only a run).
 Nothing in the code changes on the move: the OpenCL library is
 loaded at run time and the checks use every device found. The
 machine needs `ocl-icd`, the vendor's OpenCL (`opencl-nvidia`,
@@ -248,6 +251,7 @@ schedules become testable. Nothing here can be tested on this Mac.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
+| 0 | apple-m3-pro | the checks (`just gate`, `just sizes`, `just offload`) on the Apple M3 Pro: its row of the hardware table filled in from `xetal-gpu devices`, `apple-m1-max.toml` confirmed for it or a file of its own, its timings beside the M1 Max's |
 | 1 | nvidia-opencl | the runtime on the Arch machine's cards: the hardware table's row filled in (devices, driver, OpenCL version, fp64, work-group limit), `nvidia-modern.toml` run and marked tested, every example's equivalence and `just sizes` on each |
 | 2 | legacy | the Tesla M10 (four Maxwell GPUs) and the Tesla P4 (Pascal): the driver that still serves them recorded, `nvidia-legacy.toml` run and marked tested, every example on each |
 | 3 | generations | the one program on every card present, Maxwell to Blackwell, the GTX 1660 Super's 6 GB as the memory-limited case; a table of what ran where and how fast |

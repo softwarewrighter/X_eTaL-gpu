@@ -1,4 +1,4 @@
-number = 7
+number = 8
 slug = "jev-model"
 status = "pending"
 description = "examples/jev/: config.toml (vocabulary, sequence length, width, heads, layers..."

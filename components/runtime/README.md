@@ -32,7 +32,9 @@ where `devices` reports none. The runtime's own tests run on device
 - **macOS**: Apple's OpenCL (1.2, deprecated but present) is found
   without setup. This Mac: `Apple M1 Max (GPU, Apple; OpenCL 1.2), 32
   compute units, work-groups to 256, no fp64`, so the default
-  schedule (Float as `float`) is the one that runs here.
+  schedule (Float as `float`) is the one that runs here. The Apple M3
+  Pro is a target too (the plan's hardware table); its limits are
+  recorded when it is first run.
 - **Linux, NVIDIA cards** (the plan's hardware table): the driver's
   OpenCL (`libnvidia-opencl`; on Arch, `opencl-nvidia`) and an ICD
   loader (`ocl-icd`, or `ocl-icd-libopencl1` elsewhere); `clinfo`
