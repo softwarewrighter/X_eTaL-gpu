@@ -1,0 +1,8 @@
+number = 4
+slug = "gpu-roster"
+status = "in-progress"
+description = "Name the GPUs the user owns everywhere this repo names hardware (the user, 20..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T09:40:43"
+commits = []

@@ -33,13 +33,14 @@ where `devices` reports none. The runtime's own tests run on device
   without setup. This Mac: `Apple M1 Max (GPU, Apple; OpenCL 1.2), 32
   compute units, work-groups to 256, no fp64`, so the default
   schedule (Float as `float`) is the one that runs here.
-- **Linux, old NVIDIA cards**: the driver's OpenCL (`libnvidia-opencl`)
-  and an ICD loader (`ocl-icd`, package `ocl-icd` or
-  `ocl-icd-libopencl1`); `clinfo` should list the card before
-  `xetal-gpu devices` can. Kepler (K80) needs the 470 driver series,
-  Maxwell and Pascal the 5xx series; both report OpenCL 1.2 (3.0 on
-  newer drivers) and have fp64. The gpu-hardware saga records what each generation
-  does.
+- **Linux, NVIDIA cards** (the plan's hardware table): the driver's
+  OpenCL (`libnvidia-opencl`; on Arch, `opencl-nvidia`) and an ICD
+  loader (`ocl-icd`, or `ocl-icd-libopencl1` elsewhere); `clinfo`
+  should list the card before `xetal-gpu devices` can. A board with
+  several GPUs (Tesla M10, A16) lists each as a device of its own. As
+  NVIDIA retires Maxwell and Pascal (Tesla M10, P4), an older driver
+  series may be needed for them; the gpu-hardware saga records which
+  driver serves each card, its OpenCL version and whether it has fp64.
 
 ## Sizes and timings
 

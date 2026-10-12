@@ -18,9 +18,11 @@ or as a circuit (an FPGA, in
 repository is the GPU part: a small accelerator IR, OpenCL C 1.2
 kernels generated from it, a host runtime that moves arrays to a
 device and back, and the scheduling that decides how a device
-realizes an array operation. The target is deliberately old
-hardware: Kepler, Maxwell, Pascal, Turing and Ampere cards that the
-current CUDA toolkits have retired, reached through OpenCL.
+realizes an array operation. The targets are old and new cards
+alike, all reached through OpenCL: Maxwell and Pascal Teslas (M10,
+P4) that the newest CUDA toolkits retire, and Turing to Blackwell
+(GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A16); the plan's
+hardware table lists them.
 
 The goal is the concept, one typed array program executing across
 generations of parallel hardware with the same answer, not speed.

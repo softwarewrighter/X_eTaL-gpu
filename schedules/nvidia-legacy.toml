@@ -1,8 +1,9 @@
-# A template for the old NVIDIA cards (Kepler K80, Maxwell M40, Pascal
-# P40 and P100; the 470 driver series for Kepler, the 5xx series for
-# the others; OpenCL 1.2 or 3.0): work-groups of 1024, products in
-# 16 by 16 tiles. Not yet run on such a card.
-device = "NVIDIA Kepler, Maxwell, Pascal (template)"
+# A template for the user's old NVIDIA Teslas: the Tesla M10 (Maxwell,
+# four GPUs, each an OpenCL device) and the Tesla P4 (Pascal), which the
+# newest CUDA toolkits retire (docs/plan.md, the hardware table):
+# work-groups of 1024, products in 16 by 16 tiles. Not yet run on
+# either; adjust it there and set tested = true.
+device = "NVIDIA Maxwell and Pascal Teslas: M10, P4 (template)"
 tested = false
 float = "f32"
 int = "i64"

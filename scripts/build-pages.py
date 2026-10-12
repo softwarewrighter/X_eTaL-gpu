@@ -76,7 +76,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <main>
 <header>
 <h1>X_eTaL on GPUs</h1>
-<p class="lede"><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> states a computation as whole-array operations, which already expose their parallelism. This repository runs the same typed X_eTaL programs on GPUs through OpenCL C 1.2, aiming at old cards the current CUDA toolkits have retired, and proves every answer against the X_eTaL evaluator. The goal is the concept, not speed.</p>
+<p class="lede"><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> states a computation as whole-array operations, which already expose their parallelism. This repository runs the same typed X_eTaL programs on GPUs through OpenCL C 1.2, on old and new cards alike (Maxwell and Pascal Teslas that the newest CUDA toolkits retire, and Turing to Blackwell), and proves every answer against the X_eTaL evaluator. The goal is the concept, not speed.</p>
 </header>
 
 <h2>One program, three executions</h2>
@@ -111,7 +111,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 
 <h2>More</h2>
 <div class="grid">
-<div class="card"><h3>The plan</h3><p>Architecture decisions, the sagas done and to come: products, models, the newer GPU, then the old cards.</p><a class="go" href="{repo}/blob/main/docs/plan.md">docs/plan.md</a></div>
+<div class="card"><h3>The plan</h3><p>Architecture decisions, the hardware, the sagas done and to come: products, models, then each card.</p><a class="go" href="{repo}/blob/main/docs/plan.md">docs/plan.md</a></div>
 <div class="card"><h3>Asks for X_eTaL</h3><p>What this needs from the language: an accelerator IR and a lowering to it, static shapes, a native hook with binary arrays.</p><a class="go" href="{repo}/blob/main/docs/xetal-asks.md">docs/xetal-asks.md</a></div>
 <div class="card"><h3>Source</h3><p>The IR, the OpenCL emitter, the runtime, the tool, the extension, the tests.</p><a class="go" href="{repo}">GitHub</a></div>
 </div>

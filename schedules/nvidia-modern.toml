@@ -1,8 +1,9 @@
-# A template for the coming Arch machine's newer NVIDIA GPU (Turing,
-# Ampere, Ada and later, the driver's OpenCL 3.0): work-groups of
-# 1024, double precision available, products in 16 by 16 tiles. Not
-# yet run on such a card; adjust it there and set tested = true.
-device = "NVIDIA, Turing and later (template)"
+# A template for the user's current NVIDIA cards, Turing to Blackwell:
+# GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A16 (docs/plan.md, the
+# hardware table): work-groups of 1024, double precision available,
+# products in 16 by 16 tiles. Not yet run on any; adjust it there and
+# set tested = true.
+device = "NVIDIA Turing to Blackwell: GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A16 (template)"
 tested = false
 float = "f32"
 int = "i64"

@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-12
+
+- 10:00 `docs` The GPUs named are the user's own: a hardware table in `docs/plan.md` (Tesla M10, Tesla P4, GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A16, and this Mac), the one place that names cards; the plan's first paragraph and its gpu-hardware saga (the Arch machine's cards first, then the M10 and P4, the 1660 Super's 6 GB as the memory-limited case), the README, the opencl and runtime pages, the schedule templates and the landing page follow it. research7's K80, M40, P40, P100, RTX 2060 and RTX 3060 were examples, not the user's cards, and are no longer named as targets (a blog agent reading the plan had picked up the RTX 2060).
+
 ## 2026-10-08
 
 - 16:10 `docs` `docs/tuple-plan.md` (at the user's request): no code here uses X_eTaL's tuples yet; five uses judged (a device per call for the facade, a run's outputs at once, a model's weights as one value, training state through `p_ower`, tuple inputs and outputs in the lowering), checked against the pinned `xetal` (tuple patterns, results and `p_ower` work) and `xetal-x` (X_eTaL v0.1.0 rejects them); the rule: code run by the pinned `xetal` (the models) may use them now, code run by `xetal-x` waits on X_eTaL-extensions pinning a newer X_eTaL (X-1); tuples across ABI V1 asked (X-2); ask G9 to X_eTaL. README, CLAUDE.md, the analysis and the plan link it.
