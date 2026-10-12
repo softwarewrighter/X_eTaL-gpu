@@ -1,0 +1,1 @@
+Correct the hardware: the user has an NVIDIA A2 (Ampere, 16 GB, one GPU), not an A16 (2026-10-12). Every mention; docs, CHANGES, commit, push, publish.

@@ -1,0 +1,9 @@
+number = 12
+slug = "transpose"
+status = "completed"
+description = '''GA2: transpose in the IR (X_eTaL's o_\ and t_ranspose with a permutation): ch...'''
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:25:13"
+completed_at = "2026-10-12T15:51:07"
+commits = ["2231e8e8a17ded8641163cfa83a41eecea792d0d"]
