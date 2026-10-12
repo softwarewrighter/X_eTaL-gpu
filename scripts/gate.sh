@@ -24,8 +24,9 @@ if [ -f "$root/components/Cargo.toml" ]; then
   echo "ok: components (fmt, clippy, tests)"
 fi
 "$root/scripts/check-equiv.sh" || { echo "FAIL: check-equiv"; exit 1; }
-# The libraries' ## >> examples, and the site built (docs and landing page).
+# The libraries' ## >> examples, the linter, and the site built (docs and landing page).
 "$root/scripts/doc-test.sh"
+"$root/scripts/lint-libs.sh"
 "$root/scripts/build-pages.sh" >/dev/null
 echo "ok: pages (built)"
 # The reductions beyond one work-group and a 64 by 64 product (the

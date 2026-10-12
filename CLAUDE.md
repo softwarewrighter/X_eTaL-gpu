@@ -344,7 +344,12 @@ Read before working:
 5. Library code is documented with `##` blocks above each definition
    (`##` at the top documents the file, `###` is a section heading)
    and `## >>` examples, which `scripts/doc-test.sh` runs in the gate;
-   plain `#` comments are not documentation. The live site is built
+   plain `#` comments are not documentation. Every X_eTaL file is
+   linted by the pinned `xetal lint` in the gate (`just lint`,
+   scripts/lint-libs.sh): a warning fails; a file allows one lint
+   with a `# lint: allow NAME` comment that says why. A name is
+   bound once in X_eTaL now (`x!` for one that changes): no rebinding
+   in tests or facades. The live site is built
    locally into `pages/` (never tracked on main) and published as the
    `gh-pages` branch (`just publish`, then `just check-live`) after a
    step that changes what it shows.
@@ -382,7 +387,8 @@ Read before working:
 
 1. Tests exist for what the step delivered, and `just gate` passes
    (pinned X_eTaL, tooling self-tests, library baselines, pinned
-   types, components, equivalence checks, spelling, markdown).
+   types, components, equivalence checks, doc examples, lint,
+   spelling, markdown).
 2. Docs updated: README (status), the library's or component's
    pages, `CHANGES.md`, `docs/plan.md`, `docs/xetal-asks.md` as
    needed.

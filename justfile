@@ -139,6 +139,10 @@ sizes *n:
 doc-test:
     scripts/doc-test.sh
 
+# Lint every X_eTaL file (libraries, tests, demos, the gpu facade) with the pinned xetal's linter; a warning fails
+lint:
+    scripts/lint-libs.sh
+
 # Build the live site into pages/ (not tracked): the docs (pages/doc) and the landing page
 pages:
     scripts/build-pages.sh

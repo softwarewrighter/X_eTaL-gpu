@@ -311,8 +311,8 @@ done here.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
-| 1 | gpt-model | `examples/gpt/`: `model.xtl` (token and position embeddings by lookup, causal attention with a mask by table and select, layer norm from axis reductions, GELU, the head), `config.toml` (vocabulary, context, width, heads, layers; about a million parameters), random weights as data files, a tokenizer; the evaluator's output the baseline |
-| 2 | gpt-twin | the XIR program written by a generator from the config (`scripts/gpt-twin.py`, as `ml-bench.py` writes the benchmarks'), not by hand; the interpreter exact, every device within tolerance; `explain` shows which X_eTaL lines became which kernels |
+| 1 | gpt-model | X_eTaL-ML's micro-gpt (`demos/micro-gpt/`: Karpathy's microgpt, one layer, 16 wide, 4 heads, 4,192 weights, trained on baby names, its scores equal to its Rust trainer's to 1e-9; on the Norm, Attention and Sample libraries), taken from the pinned X_eTaL-ML as the model (the user, 2026-10-12: start from it rather than write a GPT here); its forward pass over a whole name under the causal mask as the reference, the evaluator's output the baseline; what its libraries use that the IR lacks, listed |
+| 2 | gpt-twin | the XIR program written by a generator from micro-gpt's config and weights (`scripts/gpt-twin.py`, as `ml-bench.py` writes the benchmarks'), not by hand; the interpreter exact, every device within tolerance; `explain` shows which X_eTaL lines became which kernels |
 | 3 | gpt-batch | a batch of prompts as one run; tokens per second against the evaluator on the M1 Max, the RTX 5060 Ti and the RTX 3060; the results table on the landing page |
 | 4 | jev-head | the typed-decision classifier (DRAW, ARRAY_QUERY, EXPLAIN, EXECUTE, DOC_SEARCH): the block above with a classification head and argmax (saga 4's topk); the same decision on every card |
 
