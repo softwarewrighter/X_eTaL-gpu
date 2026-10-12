@@ -23,7 +23,7 @@ yet. The [Mac's ML report](ml-results.md) is preserved; the
 | Double precision | `cl_khr_fp64` available |
 | Profiling timer resolution | 1000 ns |
 | X_eTaL pin | 1998414 |
-| X_eTaL-ML pin | 0ff84e8 |
+| X_eTaL-ML pin | fac586c (world model; initial measurements used 0ff84e8) |
 | X_eTaL-extensions pin | 7bdd827 |
 
 Arch packages `opencl-nvidia`, `ocl-icd` and `clinfo` are installed.
@@ -87,12 +87,45 @@ jobs; the direct and facade runs happen sequentially, so driver
 cache reuse can change the later run's setup cost. There is no
 application kernel cache or retained GPU session yet.
 
-These timings were collected before the Mac's world-model runner
-was integrated into this branch. Its newer runner reports a second
-GPU run after warming up; this saved report records the original
-single-run measurements. The model itself is not present in the
-unchanged ML pin, so its RTX measurement waits for a committed
-model program and a deliberate pin update.
+The initial benchmark timings used ML 0ff84e8 and single GPU runs.
+The [Arch ML report](rtx5060-ml-results.md) was regenerated after
+pinning the committed model at fac586c. It reports the second GPU
+run after warming up; the original size and extension measurements
+on this page are unchanged.
+
+## World model
+
+ML fac586c includes the trained model, weights and reg-rs baseline:
+432 pixels in, 64 ReLU units, 144 sigmoid outputs, with all 1,936
+states as one batch and another batch of 387 held-out states.
+The evaluator, f64 reference interpreter, f32 RTX kernels and
+extension bridge all give exactly 1897 and 348 predicted frames.
+These counts describe the model's accuracy, not numerical errors.
+
+| Route or component | Time (ms) |
+| ------------------ | --------- |
+| Pinned evaluator, complete world-model demo | 15120 |
+| XIR interpreter, inference and counts | 147 |
+| RTX kernels, profiling events | 0.237 |
+| RTX launches, host interval | 0.46 |
+| RTX runtime total | 158 |
+| RTX CLI whole process | 317 |
+| Extension: bind arrays through text | 458 |
+| Extension: device run | 197 |
+| Extension: output counts | 0 (rounded to milliseconds) |
+
+The CLI GPU sample is the second of two separate process runs.
+The extension is a separate call, not part of that CLI timing;
+binding and running together take about 655 ms. Text binding costs
+more than twice the device run, supporting the planned binary-array
+bridge and resident-weight session work.
+
+The evaluator runs the whole demo, including its windows, displays
+and dream rollout. The twin runs only batched inference and the two
+counts using prepared input files. Its process time includes reading
+those files but excludes generating the windows. These are useful
+route costs, not an identical-work speedup comparison or an optimized
+CPU library baseline. Each timing is one sample, not a median.
 
 ## End-to-end extension demo
 
@@ -134,8 +167,9 @@ target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0 --s
 
 The specific schedules use work-groups of 256 and 16 by 16 tiles,
 with f32 or f64 respectively. The shared `nvidia-modern` templates
-remain untested on the other cards. Model inference beyond these
-existing benchmarks remains separate work.
+remain untested on the other cards. The model runner currently uses
+the default f32 schedule; additional f64 model timing and repeated
+inference with resident weights remain separate work.
 
 The shared modern template's work-group size of 1024 was refused
 on this card: although the device permits 1024, its compiled
