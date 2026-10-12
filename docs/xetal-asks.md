@@ -5,7 +5,7 @@ not have yet, and bugs it uncovers. This repo does not change X_eTaL:
 each ask is filed here (and taken to `../X_eTaL`), the work here uses
 the workaround noted below or waits, and the workaround is removed
 when the ask lands in the X_eTaL commit this repo pins
-(`XETAL_COMMIT`, now 75e6a5c, X_eTaL main of 2026-10-06).
+(`XETAL_COMMIT`, now 1998414).
 
 Each entry: status (open, filed, landed, dropped), kind (feature, bug
 or speed), what here needs it, why, a minimal repro or example, and
@@ -35,6 +35,7 @@ provisional IR is to be replaced by X_eTaL's, not kept.
 | G8 | open | feature | **The native hook, with arrays passed in binary** (X_eTaL-extensions' E1, X_eTaL Saga 23, planned): today extensions are reached through `xetal-x`'s text channel, measured here at 401 ms for a million Floats out and back, slower than X_eTaL's own 152 ms pipeline on them (`docs/macros-and-extensions.md`) | the `Gpu` extension (saga gpu-extension): only products and models gain through the bridge | run with `xetal-x`; offload only compute-heavy work |
 | G9 | open | feature | **Tuples in the lowering** (`docs/tuple-plan.md`, T5): when the accelerator IR and the lowering (G1, G2) are designed, a function's tuple parameter (`{ (x, w) -> ... }`) should become several IR inputs and a tuple result several IR outputs, so a kernel with several results needs no extra calls | a model layer with several outputs; every program with several inputs | inputs bound one by one and outputs read one by one through the extension |
 | G7 | open | docs | **Fold orders specified** (found 2026-10-07): `r_/` and `'+ '* i_nner` fold from the right, and `'+ r_/_12` of a matrix folds down the columns first and then the column results, not the ravel; none is written in `docs/reference.md`, and Float results depend on it (a 64 by 64 product's sum differed in the last digits until this repo matched it). Also **Float printing specified**: the equivalence checks compare the evaluator's printed Floats (shortest round-trip, `3.0`, `0.30000000000000004`) with an f32 device's results; the rule for printing (and for very large or small values, `1e21`) is not written down in `docs/reference.md` | `scripts/check-equiv.sh` | Floats are compared numerically within a relative tolerance (1e-5 for f32, exact for Int) |
+| G10 | open | docs | **Declare the minimum Rust version** (found on Arch, 2026-10-12): building pinned 1998414 with rustc 1.88 fails at `xetal-prim-types/src/sig.rs:57`, an `if let` match guard stabilized in Rust 1.95; document the requirement and declare `rust-version` so the build fails with a clear toolchain requirement | fresh builds of the pinned evaluator and the extension host | select the installed newer toolchain with `RUSTUP_TOOLCHAIN=nightly` on this host; no vendored source edits; details in `docs/rtx5060-results.md` |
 
 ## Details
 

@@ -25,7 +25,9 @@ tree not yet committed); the table says so.
   scripts/ml-bench.py --check          # the equivalences only (the gate)
   scripts/ml-bench.py                  # timed, docs/ml-results.md rewritten
   scripts/ml-bench.py --no-facade      # timed, without the xetal-x route
+  scripts/ml-bench.py --require-device --output docs/rtx5060-ml-results.md
 """
+import argparse
 import os
 import re
 import subprocess
@@ -218,8 +220,14 @@ def facade_driver(name, b, outputs=1):
 
 
 def main():
-    check_only = "--check" in sys.argv
-    facade = "--no-facade" not in sys.argv and not check_only
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--no-facade", action="store_true")
+    parser.add_argument("--require-device", action="store_true", help="fail instead of skipping the GPU when no device is visible")
+    parser.add_argument("--output", type=Path, default=RESULTS, help="destination for the timed Markdown report")
+    args = parser.parse_args()
+    check_only = args.check
+    facade = not args.no_facade and not check_only
     subprocess.run([ROOT / "scripts" / "xetal-ml.sh"], check=True, capture_output=True)
     subprocess.run(["cargo", "build", "-q", "--release", "-p", "xetal-gpu-cli"], cwd=ROOT / "components", check=True)
     if facade:
@@ -227,6 +235,8 @@ def main():
     WORK.mkdir(parents=True, exist_ok=True)
     devs = devices()
     if not devs:
+        if args.require_device:
+            sys.exit("ml-bench: no OpenCL device found; --require-device refuses to skip GPU measurements")
         print("ml-bench: no OpenCL device here; the device columns are skipped")
     ml_commit = (ROOT / "XETAL_ML_COMMIT").read_text()[:7]
     xetal_commit = (ROOT / "XETAL_COMMIT").read_text()[:7]
@@ -287,8 +297,8 @@ def main():
     if check_only or fail:
         print(f"ml-bench: {len(rows)} benchmarks, {len(model_rows)} model(s)" + (", all agree with the evaluator" if not fail else ", FAILURES"))
         sys.exit(fail)
-    write_results(rows, model_rows, source, devs, ml_commit, xetal_commit, facade)
-    print(f"ml-bench: {len(rows)} benchmarks, {len(model_rows)} model(s), all agree; {RESULTS.relative_to(ROOT)} written")
+    write_results(rows, model_rows, source, devs, ml_commit, xetal_commit, facade, args.output)
+    print(f"ml-bench: {len(rows)} benchmarks, {len(model_rows)} model(s), all agree; {args.output} written")
 
 
 def run_models(ml_demos, devs, check_only, facade):
@@ -370,7 +380,7 @@ def run_models(ml_demos, devs, check_only, facade):
     return rows, fail, source
 
 
-def write_results(rows, model_rows, source, devs, ml_commit, xetal_commit, facade):
+def write_results(rows, model_rows, source, devs, ml_commit, xetal_commit, facade, output=RESULTS):
     import platform
     host = platform.node()
     out = [
@@ -446,7 +456,7 @@ def write_results(rows, model_rows, source, devs, ml_commit, xetal_commit, facad
                     line += f" {f[1]:.0f} | {f[2]:.0f} | {f[3]:.0f} |" if (dev == "opencl:0" and f) else " -- | -- | -- |"
                 out.append(line)
     out += ["", "The interpreter is this repository's reference interpreter (`--device cpu`), f64.", ""]
-    RESULTS.write_text("\n".join(out))
+    output.write_text("\n".join(out))
 
 
 def device_names():

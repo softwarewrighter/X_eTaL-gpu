@@ -57,6 +57,16 @@ a goal.
   NVIDIA's legacy branch); the gpu-hardware saga records which
   driver serves each card, its OpenCL version and whether it has fp64.
 
+On Arch Linux's RTX 5060 Ti (16 GB), NVIDIA 615.78.08 reports OpenCL
+3.0 and supports these OpenCL C 1.2 kernels, 36 compute units,
+work-groups to 1024, 48 KiB local memory and fp64. See
+[the hardware results](../../docs/rtx5060-results.md) and
+[the separate ML measurements](../../docs/rtx5060-ml-results.md).
+When a sandbox hides the GPU, a device-free check skips GPU work;
+run the checks with device access and use `just ml-bench
+--require-device --output docs/rtx5060-ml-results.md` to require GPU
+measurements and preserve the Mac's report.
+
 ## Sizes and timings
 
 `just sizes` (`scripts/check-sizes.py`) generates Ints and Floats

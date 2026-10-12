@@ -1,0 +1,1 @@
+RTX 5060 validation lane finished for parallel review; inherited model steps remain owned by the Mac lane. Restore its main saga from the committed main snapshot.
