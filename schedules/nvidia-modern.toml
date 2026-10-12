@@ -1,9 +1,10 @@
 # A template for the user's current NVIDIA cards, Turing to Blackwell:
-# GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A2 (docs/plan.md, the
+# GTX 1660 Super, RTX 3060 and 3060 Laptop, RTX 3090, RTX 4070 Laptop,
+# RTX 5060 Ti, A2 (docs/plan.md, the
 # hardware table): work-groups of 1024, double precision available,
 # products in 16 by 16 tiles. Not yet run on any; adjust it there and
 # set tested = true.
-device = "NVIDIA Turing to Blackwell: GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A2 (template)"
+device = "NVIDIA Turing to Blackwell: GTX 1660 Super, RTX 3060, RTX 3060 Laptop, RTX 3090, RTX 4070 Laptop, RTX 5060 Ti, A2 (template)"
 tested = false
 float = "f32"
 int = "i64"

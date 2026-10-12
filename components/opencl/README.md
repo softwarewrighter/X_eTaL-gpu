@@ -41,7 +41,7 @@ xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml 
 | File | For | Run there |
 | ---- | --- | --------- |
 | `apple-m1-max.toml` | this repository's Mac; the defaults | yes |
-| `nvidia-modern.toml` | Turing to Blackwell (GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A2): work-groups of 1024, 16 by 16 tiles | not yet |
+| `nvidia-modern.toml` | Turing to Blackwell (GTX 1660 Super, RTX 3060 and 3060 Laptop, RTX 3090, RTX 4070 Laptop, RTX 5060 Ti, A2): work-groups of 1024, 16 by 16 tiles | not yet |
 | `nvidia-modern-f64.toml` | the same, Float as `double` | not yet |
 | `nvidia-legacy.toml` | the Kepler Quadro K4200 and the Maxwell and Pascal Teslas (M10, P4) | not yet |
 

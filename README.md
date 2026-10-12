@@ -22,7 +22,8 @@ realizes an array operation. The targets are old and new cards
 alike, all reached through OpenCL: a Kepler Quadro (K4200) and
 Maxwell and Pascal Teslas (M10, P4) that the newest CUDA toolkits
 retire, and Turing to Blackwell
-(GTX 1660 Super, RTX 3090, RTX 4070, RTX 5060, A2), and Apple silicon
+(GTX 1660 Super, RTX 3060, RTX 3060 Laptop, RTX 3090, RTX 4070 Laptop,
+RTX 5060 Ti, A2), and Apple silicon
 (M1 Max, where it is developed, and M3 Pro); the plan's hardware
 table lists them.
 

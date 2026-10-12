@@ -1,0 +1,8 @@
+number = 8
+slug = "laptop-4070-5060ti"
+status = "in-progress"
+description = "Correct the hardware (the user, 2026-10-12): the RTX 4070 is a laptop GPU (Sy..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:10:36"
+commits = []

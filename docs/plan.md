@@ -3,8 +3,8 @@
 X_eTaL programs on GPUs: the GPU compiler, runtime and scheduling for
 X_eTaL (the eXperimental Extensible Typed Array Language, developed in
 `../X_eTaL`), aimed at the user's own cards, old and new (the
-hardware table below: Quadro K4200, Tesla M10 and P4, GTX 1660 Super, RTX 3090,
-RTX 4070, RTX 5060, A2, and the Apple M1 Max and M3 Pro), by way of
+hardware table below: Quadro K4200, Tesla M10 and P4, GTX 1660 Super, RTX 3060 and RTX 3060 Laptop, RTX 3090,
+RTX 4070 Laptop, RTX 5060 Ti, A2, and the Apple M1 Max and M3 Pro), by way of
 OpenCL C 1.2. The goal is to demonstrate the concept, that one
 typed array program runs unchanged as sequential software, as
 massively parallel software, and (in the sibling project) as spatial
@@ -15,8 +15,8 @@ hardware, not to be fast.
 The cards this work runs on are the user's (2026-10-12); this table
 is the one place that names them, and the README, the component
 pages and the schedule templates follow it. `docs/research7.txt`
-named other cards (K80, M40, P40, P100, RTX 2060, RTX 3060) as
-examples; they are not the user's and are not targets.
+named other cards (K80, M40, P40, P100, RTX 2060) as examples; they
+are not the user's and are not targets.
 
 | Card | Architecture | Memory | Role here | Schedule |
 | ---- | ------------ | ------ | --------- | -------- |
@@ -25,10 +25,12 @@ examples; they are not the user's and are not targets.
 | Quadro K4200 | Kepler | 4 GB | the oldest generation here and the smallest memory: the case where weights stay on the host (a schedule field, saga gpu-models); the user has several | `nvidia-legacy.toml` (template) |
 | Tesla M10 | Maxwell | four GPUs of 8 GB | an old card the newest CUDA toolkits retire; each GPU an OpenCL device | `nvidia-legacy.toml` (template) |
 | Tesla P4 | Pascal | 8 GB | an old card the newest CUDA toolkits retire | `nvidia-legacy.toml` (template) |
-| GTX 1660 Super | Turing | 6 GB | the smallest memory of the current cards | `nvidia-modern.toml` (template) |
+| GTX 1660 Super | Turing | 6 GB | with the RTX 3060 Laptop, the smallest memory of the current cards | `nvidia-modern.toml` (template) |
+| RTX 3060 | Ampere | 12 GB | current PCIe cards; the user has several | `nvidia-modern.toml` (template) |
+| RTX 3060 Laptop | Ampere | 6 GB (NVIDIA's specification for the laptop part; to be confirmed on the machine) | a current card, in a System76 laptop | `nvidia-modern.toml` (template) |
 | RTX 3090 | Ampere | 24 GB | a current card; the most memory | `nvidia-modern.toml` (template) |
-| RTX 4070 | Ada Lovelace | 12 GB | a current card | `nvidia-modern.toml` (template) |
-| RTX 5060 | Blackwell | 8 GB | the newest generation | `nvidia-modern.toml` (template) |
+| RTX 4070 Laptop | Ada Lovelace | 8 GB | a current card, in an Asus ROG laptop | `nvidia-modern.toml` (template) |
+| RTX 5060 Ti | Blackwell | 16 GB | the newest generation | `nvidia-modern.toml` (template) |
 | A2 | Ampere | 16 GB | a low-power data-center card | `nvidia-modern.toml` (template) |
 
 The user has other cards too; one is added here when it is used.
