@@ -23,14 +23,14 @@ if [ -f "$root/components/Cargo.toml" ]; then
   (cd "$root/components" && cargo test -q >/dev/null 2>&1) || { (cd "$root/components" && cargo test); echo "FAIL: cargo test"; exit 1; }
   echo "ok: components (fmt, clippy, tests)"
 fi
-[ -x "$root/scripts/check-equiv.sh" ] && "$root/scripts/check-equiv.sh"
+"$root/scripts/check-equiv.sh" || { echo "FAIL: check-equiv"; exit 1; }
 # The libraries' ## >> examples, and the site built (docs and landing page).
 "$root/scripts/doc-test.sh"
 "$root/scripts/build-pages.sh" >/dev/null
 echo "ok: pages (built)"
 # The reductions beyond one work-group and a 64 by 64 product (the
 # larger sizes are `just sizes`).
-[ -x "$root/scripts/check-sizes.py" ] && "$root/scripts/check-sizes.py" 1024 65536 m64
+"$root/scripts/check-sizes.py" 1024 65536 m64 || { echo "FAIL: check-sizes"; exit 1; }
 # X_eTaL-ML's benchmarks agree with the evaluator (the timed table is `just ml-bench`).
 python3 "$root/scripts/selftest-ml-bench.py"
 "$root/scripts/ml-bench.py" --check

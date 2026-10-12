@@ -38,7 +38,7 @@ for xtl in libs/*/demos/*.xtl; do
   # Each device with the default schedule and with products in 8 by 8 tiles.
   for dev in "${devices[@]}"; do for sched in "" "--tile 8"; do
     label="$dev${sched:+ $sched}"
-    if ! "$gpu" run "$xir" --device "$dev" "${schedule_file[@]}" $sched > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
+    if ! "$gpu" run "$xir" --device "$dev" ${schedule_file[@]+"${schedule_file[@]}"} $sched > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
       echo "FAIL: $xir on $label:"; cat "$tmp/gpu.err"; fail=1; continue
     fi
     if out="$(scripts/compare-out.py "$want" "$tmp/gpu.out" "$tolerance")"; then echo "ok: $lib/$name on $label, $out"
