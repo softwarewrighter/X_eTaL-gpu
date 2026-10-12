@@ -96,7 +96,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <h2>Read the code</h2>
 <div class="grid">
 <div class="card"><h3>Documentation</h3><p>Every library, example program and the GPU facade: doc comments, examples that run, the source drawn decorated, every name linked to its definition and uses.</p><a class="go" href="doc/index.html">Browse the docs</a></div>
-<div class="card"><h3>Accel</h3><p>The acceleratable subset of X_eTaL as a library: elementwise arithmetic, masks, reductions, products, a dense layer, a softmax. Each export is one array expression.</p><a class="go" href="doc/libs-Accel-src-Accel.xtl.html">Accel's reference</a></div>
+<div class="card"><h3>Accel</h3><p>The acceleratable subset of X_eTaL as a library: elementwise arithmetic, masks, reductions, products, transposes (attention scores, a weight gradient), a dense layer, a softmax. Each export is one array expression.</p><a class="go" href="doc/libs-Accel-src-Accel.xtl.html">Accel's reference</a></div>
 <div class="card"><h3>The gpu extension</h3><p>X_eTaL programs that call the GPU themselves, through X_eTaL-extensions' native ABI and its <code>xetal-x</code> bridge.</p><a class="go" href="doc/extensions-gpu-lib-Gpu.xtl.html">Gpu's reference</a></div>
 </div>
 

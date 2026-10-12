@@ -4,6 +4,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use xetal_gpu_xir::ir::{is_identity, permutation, transpose_layout};
 use xetal_gpu_xir::{Checked, Const, MapOp, Op, ReduceOp, Scalar, Shape, TableOp, Ty, ValueId};
 
 use crate::{Arg, Buffer, BufferId, Elem, Init, KernelInfo, Launch, Plan, Schedule};
@@ -103,6 +104,18 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 b.flush(&outputs);
                 b.matmul(id, *a, *rhs);
             }
+            Op::Transpose { perm, arg } => {
+                b.flush(&outputs);
+                let perm = permutation(checked.ty(*arg).shape.rank(), perm).expect("checked");
+                if is_identity(&perm) {
+                    // A vector, a single value or `1 2 t_ranspose`: the same
+                    // items in the same order, so the same buffer, no launch.
+                    let place = b.places[arg].clone();
+                    b.places.insert(id, place);
+                } else {
+                    b.transpose(id, *arg, &perm);
+                }
+            }
             Op::Reduce { op, arg, axis } => {
                 b.flush(&outputs);
                 match axis {
@@ -120,10 +133,18 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         .map(|o| match &b.places[o] {
             Place::Buffer(buf) => (*o, *buf),
             Place::Literal(_) => {
-                // An output that is a single constant: give it a buffer of its own.
+                // An output that is a single constant (or its ravel or its
+                // transpose, which are itself): give it a buffer of its own.
                 let ty = checked.ty(*o);
-                let Op::Const(c) = &program.value(*o).op else { unreachable!() };
-                let buf = b.buffer(Some(*o), b.schedule.elem(ty.scalar), 1, Init::Const(c.clone()));
+                let mut v = *o;
+                let c = loop {
+                    match &program.value(v).op {
+                        Op::Const(c) => break c.clone(),
+                        Op::Ravel { arg } | Op::Transpose { arg, .. } => v = *arg,
+                        _ => unreachable!("a literal is a single constant"),
+                    }
+                };
+                let buf = b.buffer(Some(*o), b.schedule.elem(ty.scalar), 1, Init::Const(c));
                 (*o, buf)
             }
             Place::Register(_) => unreachable!("an output is written to a buffer when its kernel is flushed"),
@@ -426,6 +447,128 @@ __kernel void {kname}({}) {{
         self.places.insert(id, Place::Buffer(result));
     }
 
+    /// A transpose that moves axes: a gather, one work-item per result
+    /// item, its position taken apart into the result's coordinates and
+    /// put together again with the argument's strides.
+    fn transpose(&mut self, id: ValueId, arg: ValueId, perm: &[usize]) {
+        let elem = self.elem_of(arg);
+        let Place::Buffer(src) = self.places[&arg].clone() else {
+            unreachable!("a transpose that moves axes reads a buffer (rank 2 or more)")
+        };
+        let shape = self.ty(arg).shape.clone();
+        let (out, strides) = transpose_layout(&shape, perm);
+        let n = out.len();
+        let rank = perm.len();
+        let swaps_last_two = rank >= 2
+            && perm[..rank - 2].iter().enumerate().all(|(i, &a)| a == i + 1)
+            && perm[rank - 2] == rank
+            && perm[rank - 1] == rank - 1;
+        if self.schedule.tile > 0 && swaps_last_two {
+            return self.transpose_tiled(id, arg, src, &shape, &out);
+        }
+        let kname = format!("transpose{}", self.launches.len());
+        let mut body = String::new();
+        for j in (0..out.rank()).rev() {
+            if j == 0 {
+                body.push_str(&format!("    src += r * {};\n", strides[0]));
+            } else {
+                body.push_str(&format!("    src += (r % {}) * {}; r /= {};\n", out.0[j], strides[j], out.0[j]));
+            }
+        }
+        let result = self.buffer(Some(id), elem, n, Init::Device);
+        let name = self.checked.program.value(id).name.clone();
+        let src_name = self.buffers[src.0].name.clone();
+        let out_name = self.buffers[result.0].name.clone();
+        let reversed = perm.iter().enumerate().all(|(i, &a)| a == perm.len() - i);
+        let how = if reversed {
+            "o_\\, the axes reversed".to_string()
+        } else {
+            format!("{} t_ranspose", perm.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "))
+        };
+        self.source.push_str(&format!(
+            "
+// {kname}: %{name} := {how}, {shape} to {out}; a gather, one work-item per result item.
+__kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_name}) {{
+    long k = get_global_id(0);
+    if (k >= {n}) return;
+    long r = k, src = 0;
+{body}    {out_name}[k] = {src_name}[src];
+}}
+"
+        ));
+        let total = n.max(1);
+        let local = self.schedule.work_group.min(total.next_power_of_two());
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args: vec![Arg::Buffer(src), Arg::Buffer(result)],
+            global: total.div_ceil(local) * local,
+            local,
+            note: format!(
+                "%{name}: {how}, {shape} to {out}, {n} item{} gathered",
+                if n == 1 { "" } else { "s" }
+            ),
+        });
+        self.kernels.push(KernelInfo {
+            name: kname,
+            computes: vec![id],
+            writes: vec![id],
+            elements: n,
+            about: String::new(),
+        });
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A transpose of the last two axes (`o_\` of a matrix, `o_\_23`),
+    /// in T by T tiles: a work-group stages a block of the argument in
+    /// local memory, reading along the rows, and writes it out along the
+    /// result's rows, so both sides of the copy are contiguous (the
+    /// gather above reads a column: every work-item of a group a row
+    /// apart, which the measured 4096 by 4096 case showed nine times
+    /// slower than a copy on the Apple M1 Max).
+    fn transpose_tiled(&mut self, id: ValueId, arg: ValueId, src: BufferId, shape: &Shape, out: &Shape) {
+        let elem = self.elem_of(arg);
+        let t = self.schedule.tile;
+        let rank = shape.rank();
+        let (rows, cols) = (shape.0[rank - 2], shape.0[rank - 1]);
+        let planes: usize = shape.0[..rank - 2].iter().product();
+        let kname = format!("transpose_tiled{t}_{elem}");
+        if !self.source.contains(&format!("__kernel void {kname}(")) {
+            self.source.push_str(&transpose_tiled_kernel(&kname, elem, t));
+            self.kernels.push(KernelInfo {
+                name: kname.clone(),
+                computes: vec![],
+                writes: vec![],
+                elements: 0,
+                about: about(&kname),
+            });
+        }
+        let result = self.buffer(Some(id), elem, out.len(), Init::Device);
+        let groups = planes * rows.div_ceil(t) * cols.div_ceil(t);
+        let name = self.checked.program.value(id).name.clone();
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args: vec![
+                Arg::Buffer(src),
+                Arg::Buffer(result),
+                Arg::Long(planes as i64),
+                Arg::Long(rows as i64),
+                Arg::Long(cols as i64),
+            ],
+            global: groups.max(1) * t * t,
+            local: t * t,
+            note: format!(
+                "%{name}: the last two axes swapped in {t} by {t} tiles, {shape} to {out}: {groups} work-group{} of {}",
+                if groups == 1 { "" } else { "s" },
+                t * t
+            ),
+        });
+        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+            k.computes.push(id);
+            k.writes.push(id);
+        }
+        self.places.insert(id, Place::Buffer(result));
+    }
+
     /// An inner product: one work-item per result item, its sum folded
     /// from the right (the evaluator's order); with a tile, the operands
     /// staged through local memory a T by T block at a time, the same
@@ -631,7 +774,9 @@ __kernel void {kname}({}) {{
 
 /// What a shared kernel does, by its name, for `explain`.
 fn about(kname: &str) -> String {
-    if kname.starts_with("reduce_axis_") {
+    if kname.starts_with("transpose_tiled") {
+        "the last two axes swapped in tiles staged in local memory, read and written along the rows".into()
+    } else if kname.starts_with("reduce_axis_") {
         "along one axis, one work-item per result item folding its line from the right".into()
     } else if kname.starts_with("reduce_") {
         "a tree reduction in local memory, one partial per work-group".into()
@@ -784,6 +929,35 @@ __kernel void {name}(__global const {elem}* a, __global const {elem}* b, __globa
         barrier(CLK_LOCAL_MEM_FENCE);
     }}
     if (i < m && j < p) c[i * p + j] = acc;
+}}
+"
+    )
+}
+
+fn transpose_tiled_kernel(name: &str, elem: Elem, t: usize) -> String {
+    format!(
+        "
+// {name}: the last two axes of a (planes of rows by cols) swapped in
+// {t} by {t} tiles: each work-group reads a block along the rows into
+// local memory and writes it along the result's rows, so both the read
+// and the write are contiguous. The padding column keeps the local
+// reads off one bank.
+__kernel void {name}(__global const {elem}* in, __global {elem}* out, const long planes, const long rows, const long cols) {{
+    __local {elem} tile[{t}][{t} + 1];
+    // Block arithmetic in int: a 64-bit division is emulated on a GPU.
+    int lid = get_local_id(0);
+    int ty = lid / {t}, tx = lid % {t};
+    int nr = (int)rows, nc = (int)cols;
+    int brows = (nr + {t} - 1) / {t}, bcols = (nc + {t} - 1) / {t};
+    int g = get_group_id(0);
+    int plane = g / (brows * bcols), rem = g % (brows * bcols);
+    int br = rem / bcols, bc = rem % bcols;
+    int r = br * {t} + ty, c = bc * {t} + tx;
+    long base = (long)plane * rows * cols;
+    if (plane < planes && r < nr && c < nc) tile[ty][tx] = in[base + (long)r * cols + c];
+    barrier(CLK_LOCAL_MEM_FENCE);
+    int orow = bc * {t} + ty, ocol = br * {t} + tx;
+    if (plane < planes && orow < nc && ocol < nr) out[base + (long)orow * rows + ocol] = tile[tx][ty];
 }}
 "
     )
@@ -953,6 +1127,57 @@ mod tests {
         assert!(p.source.contains("b_t[k] = (b_b[k / nb] * 2.0f);"));
         // ravel is the same buffer: no launch of its own.
         assert_eq!(p.launches.len(), 4);
+    }
+
+    #[test]
+    fn a_transpose_is_a_gather_and_an_identity_is_nothing() {
+        let p = plan_of(
+            "%t = const i64 [2 3 4] 1\n%r = transpose %t\n%p = transpose 3 1 2 %t\n%v = const f64 [3] 1.0\n%vt = transpose %v\n%m = const i64 [2 3] 1\n%i = transpose 1 2 %m\n%k = const f64 [] 2.0\n%kt = transpose %k\noutput %r\noutput %p\noutput %vt\noutput %i\noutput %kt\n",
+            &Schedule::default(),
+        );
+        // o_\ t: [2 3 4] to [4 3 2], the argument's strides 12 4 1 reversed.
+        assert!(p
+            .source
+            .contains("    src += (r % 2) * 12; r /= 2;\n    src += (r % 3) * 4; r /= 3;\n    src += r * 1;\n    b_r[k] = b_t[src];"));
+        // 3 1 2 t_ranspose t: [3 4 2]; axis 1 (stride 12) to the end, 2 (4) first, 3 (1) second.
+        assert!(p
+            .source
+            .contains("    src += (r % 2) * 12; r /= 2;\n    src += (r % 4) * 1; r /= 4;\n    src += r * 4;\n    b_p[k] = b_t[src];"));
+        // The vector, the identity permutation and the single value: no launch, the argument's buffer.
+        assert_eq!(p.launches.len(), 2);
+        assert_eq!((p.launches[0].global, p.launches[0].local), (32, 32));
+        assert_eq!(
+            p.launches[0].note,
+            "%r: o_\\, the axes reversed, [2 3 4] to [4 3 2], 24 items gathered"
+        );
+        assert_eq!(p.launches[1].note, "%p: 3 1 2 t_ranspose, [2 3 4] to [3 4 2], 24 items gathered");
+        let holder = |v: usize| p.buffer(p.outputs.iter().find(|(o, _)| o.0 == v).unwrap().1).name.clone();
+        assert_eq!((holder(4), holder(6), holder(8)), ("b_v".into(), "b_m".into(), "b_kt".into()));
+    }
+
+    #[test]
+    fn a_transpose_of_the_last_two_axes_is_tiled_when_the_schedule_tiles() {
+        let sched = Schedule {
+            tile: 4,
+            ..Schedule::default()
+        };
+        let p = plan_of(
+            "%m = const f64 [5 7] 1.0\n%mt = transpose %m\n%t = const i64 [2 3 4] 1\n%ts = transpose 1 3 2 %t\n%tr = transpose %t\noutput %mt\noutput %ts\noutput %tr\n",
+            &sched,
+        );
+        // [5 7]: 2 by 2 blocks of 16 work-items; [2 3 4] with axes 2 and 3 swapped: 2 planes of 1 by 1 blocks.
+        assert_eq!(p.launches[0].args[2..], [Arg::Long(1), Arg::Long(5), Arg::Long(7)]);
+        assert_eq!((p.launches[0].global, p.launches[0].local), (64, 16));
+        assert_eq!(p.launches[1].args[2..], [Arg::Long(2), Arg::Long(3), Arg::Long(4)]);
+        assert_eq!((p.launches[1].global, p.launches[1].local), (32, 16));
+        assert!(p.source.contains("__kernel void transpose_tiled4_float("));
+        assert!(p.source.contains("__kernel void transpose_tiled4_long("));
+        // The axes reversed on rank 3 is not a swap of the last two: the gather.
+        assert!(p.launches[2].kernel.starts_with("transpose") && !p.launches[2].kernel.contains("tiled"));
+        assert!(p.source.contains("__local float tile[4][4 + 1];"));
+        assert!(p.launches[0]
+            .note
+            .starts_with("%mt: the last two axes swapped in 4 by 4 tiles, [5 7] to [7 5]: 4 work-groups of 16"));
     }
 
     #[test]

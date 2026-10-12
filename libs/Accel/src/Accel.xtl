@@ -1,4 +1,4 @@
-## Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, a layer
+## Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, transposes, a layer
 ##
 ## Import it with an alias of your choice: "ac:" u_se< "Accel".
 ## Put libs/Accel/src on XETAL_PATH ("just path"); the reference is libs/Accel/docs.
@@ -6,7 +6,8 @@
 ## Every function here is one whole-array expression in the subset a
 ## GPU (or an FPGA) can take on directly: static scalar types, pure
 ## functions, arithmetic and comparisons item by item with scalar
-## extension, a select by mask, reductions, inner products and tables.
+## extension, a select by mask, reductions, inner products, tables and
+## transposes.
 ## No recursion, no nested arrays, no input or output. The X_eTaL
 ## evaluator is the reference: X_eTaL-gpu runs the same functions on a
 ## GPU and must give the same answers (the demos are the programs it
@@ -104,6 +105,28 @@ l:r_owMax := { m -> 'm_ax r_/_2 m }
 ## >> (2 3 r_eshape r_ange 6) ac:m_atmul 1 0 2
 ## 7 16
 l:m_atmul := { x w -> x '+ '* i_nner w }
+
+### Transposes
+
+## q ac:s_cores k: attention scores, every query row against every
+## key row (q k^T): the inner product of q with the transpose of k. On
+## a GPU the transpose is a gather, one work-item per item, and the
+## product follows (research7: attention decomposes into array
+## operations; it is not an intrinsic).
+## >> "ac:" u_se< "Accel"
+## >> (2 3 r_eshape r_ange 6) ac:s_cores 4 3 r_eshape r_ange 12
+## 14 32  50  68
+## 32 77 122 167
+l:s_cores := { q k -> q '+ '* i_nner o_\ k }
+
+## x ac:w_eightGrad dy: the gradient of a dense layer's weights, for
+## a batch x (a row per example) and the gradient dy at the layer's
+## output: x^T dy, the product every backward pass is made of.
+## >> "ac:" u_se< "Accel"
+## >> (4 2 r_eshape r_ange 8) ac:w_eightGrad 4 3 r_eshape r_ange 12
+## 118 134 150
+## 140 160 180
+l:w_eightGrad := { x dy -> (o_\ x) '+ '* i_nner dy }
 
 ### A layer of a network
 

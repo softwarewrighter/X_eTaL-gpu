@@ -213,6 +213,14 @@ pub fn check(program: Program) -> Result<Checked> {
                 scalar: op.to,
                 shape: ty_of(*arg).shape.clone(),
             },
+            Op::Transpose { perm, arg } => {
+                let t = ty_of(*arg);
+                let perm = permutation(t.shape.rank(), perm).map_err(|e| crate::Error(format!("%{name}: transpose: {e}")))?;
+                Ty {
+                    scalar: t.scalar,
+                    shape: transpose_layout(&t.shape, &perm).0,
+                }
+            }
         };
         if let Some(declared) = &v.ty {
             if *declared != ty {
@@ -369,6 +377,39 @@ mod tests {
         assert_eq!(
             error_of("%r = const f64 [2] 1.0\n%i = const i64 [2] 0\n%o = table add %r %i\noutput %o\n"),
             "%o: table add needs arguments of one scalar type, got f64 and i64"
+        );
+    }
+
+    #[test]
+    fn transposes() {
+        // s_hape o_\ 2 3 4 r_eshape 0 is 4 3 2; s_hape 3 1 2 t_ranspose ... is 3 4 2; o_\_23 is 1 3 2.
+        let t = types_of("%t = const i64 [2 3 4] 0\n%r = transpose %t\n%p = transpose 3 1 2 %t\n%s = transpose 1 3 2 %t\n%v = const f64 [5] 1.0\n%vt = transpose %v\n%k = const f64 [] 1.0\n%kt = transpose %k\n%m = const i64 [2 3] 0\n%mt = transpose 2 1 %m\noutput %mt\n");
+        assert_eq!(
+            t,
+            [
+                "i64 [2 3 4]",
+                "i64 [4 3 2]",
+                "i64 [3 4 2]",
+                "i64 [2 4 3]",
+                "f64 [5]",
+                "f64 [5]",
+                "f64 []",
+                "f64 []",
+                "i64 [2 3]",
+                "i64 [3 2]"
+            ]
+        );
+        assert_eq!(
+            error_of("%t = const i64 [2 3 4] 0\n%p = transpose 2 %t\noutput %p\n"),
+            "%p: transpose: the permutation lists 1 axis, the array has rank 3"
+        );
+        assert_eq!(
+            error_of("%m = const i64 [2 3] 0\n%p = transpose 1 1 %m\noutput %p\n"),
+            "%p: transpose: a permutation lists each axis once, got 1 1"
+        );
+        assert_eq!(
+            error_of("%m = const i64 [2 3] 0\n%p = transpose 1 3 %m\noutput %p\n"),
+            "%p: transpose: a permutation lists each axis once, got 1 3"
         );
     }
 

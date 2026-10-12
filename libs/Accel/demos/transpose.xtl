@@ -1,0 +1,22 @@
+#!/usr/bin/env xetal
+# Transposes: a matrix's rows as its columns (o_\), the axes of a
+# rank-3 array reversed, permuted (t_ranspose) and two of them swapped
+# (o_\_23), a vector (unchanged); then the two products a model needs
+# them for: attention scores (every query row against every key row,
+# q k^T) and a layer's weight gradient (x^T dy). On a GPU a transpose
+# is a gather, one work-item per item; a vector's is no launch at all.
+# Run with "just demo-lib Accel transpose".
+"ac:" u_se< "Accel"
+m := 2 3 r_eshape r_ange 6
+o_\ m
+t := 2 3 4 r_eshape r_ange 24
+o_\ t
+3 1 2 t_ranspose t
+o_\_23 t
+o_\ 1 2 3
+q := 2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25
+k := 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0
+q ac:s_cores k
+x := 4 2 r_eshape 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0
+dy := 4 3 r_eshape 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2
+x ac:w_eightGrad dy

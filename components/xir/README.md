@@ -32,6 +32,7 @@ becomes an adapter and the twins go.
 %d = drop -1 %wb                     # n d_rop along the first axis
 %v = ravel %t                        # r_avel: every item as one vector
 %s = table right %o %v               # a 'f t_able b: every pairing; f a two-argument map, left or right
+%tt = transpose %a                   # o_\: the axes reversed; transpose 3 1 2 %t is 3 1 2 t_ranspose t
 output %c                            # what the program prints, in order
 output %f
 ```
@@ -43,6 +44,7 @@ output %f
 | map operations | `add sub mul min max neg abs` (any number); `div exp log` (Floats only: X_eTaL's `/` gives a Float, so an Int is cast first); `idiv mod` (Ints, floored as `d_iv` and `m_od`); `eq ne` (any one type, give bool); `lt le gt ge` (numbers, give bool); `and or not` (bool) |
 | reduce operations | `add mul min max`, folded from the right as `r_/` is; the whole array (`r_/_12`, or `r_/` of a vector) without `axis=`, one axis with it (`axis=2` is `r_/_2`, `axis=1` is `r_/` of a matrix) |
 | structure | `take n`, `drop n` (rows along the first axis, a negative n from the end; no padding), `ravel`, `table f` (APL's outer product; `left` and `right` spread a vector along a new axis, as `'l_eft t_able` and `'r_ight t_able` do in X_eTaL-ML's NN) |
+| transpose | `transpose` (`o_\`: the axes reversed) and `transpose p` (`p t_ranspose`: axis i of the argument becomes axis p[i], 1 the first, each listed once; `o_\_23` is `transpose 1 3 2`); a vector or a single value is unchanged |
 | cast | Int to Float exactly, Float to Int toward negative infinity (`f_loor`), Bool to 0 or 1, a number to bool when not 0 |
 
 Rules: a value is defined once, before it is used; a map's arguments
@@ -91,6 +93,7 @@ against the evaluator's baseline, exactly.
 
 ## Not yet
 
-Lookup comes later (the model saga); a map still extends only a single value, as
+Lookup (the embedding gather) and top-k are the model saga's next
+operations; a map still extends only a single value, as
 X_eTaL does (a vector across the rows of a matrix is a shape error
 there too).

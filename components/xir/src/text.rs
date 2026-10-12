@@ -266,6 +266,27 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 },
             ))
         }
+        "transpose" => {
+            let Some((last, axes)) = rest.split_last() else {
+                return err("transpose takes an optional permutation and a value: transpose %m, transpose 3 1 2 %t");
+            };
+            let perm: Vec<usize> = axes
+                .iter()
+                .map(|t| {
+                    t.parse::<usize>()
+                        .ok()
+                        .filter(|a| *a >= 1)
+                        .ok_or_else(|| crate::Error(format!("transpose: an axis is a whole number from 1, got `{t}`")))
+                })
+                .collect::<Result<_>>()?;
+            Ok((
+                None,
+                Op::Transpose {
+                    perm: if perm.is_empty() { None } else { Some(perm) },
+                    arg: reference(program, last)?,
+                },
+            ))
+        }
         "matmul" => {
             if rest.len() != 2 {
                 return err("matmul takes two values: matmul %a %b");
@@ -279,7 +300,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         other => err(format!(
-            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table)"
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose)"
         )),
     }
 }
@@ -345,6 +366,12 @@ pub fn print(program: &Program) -> String {
             Op::Drop { n, arg } => out.push_str(&format!("drop {n} {}", name(*arg))),
             Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
             Op::Table { op, a, b } => out.push_str(&format!("table {op} {} {}", name(*a), name(*b))),
+            Op::Transpose { perm: None, arg } => out.push_str(&format!("transpose {}", name(*arg))),
+            Op::Transpose { perm: Some(p), arg } => out.push_str(&format!(
+                "transpose {} {}",
+                p.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "),
+                name(*arg)
+            )),
         }
         out.push('\n');
     }
@@ -376,6 +403,8 @@ mod tests {
 %dr = drop 1 %mm
 %rv = ravel %tk
 %tb = table left %v %rv
+%tr = transpose %mm
+%tp = transpose 2 1 %mm
 output %c
 output %f
 ";
@@ -429,7 +458,15 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose)"
+        );
+        assert_eq!(
+            e("%a = const i64 [2 2] 1\n%b = transpose 2 0 %a\n"),
+            "line 2: transpose: an axis is a whole number from 1, got `0`"
+        );
+        assert_eq!(
+            e("%a = transpose\n"),
+            "line 1: transpose takes an optional permutation and a value: transpose %m, transpose 3 1 2 %t"
         );
         assert_eq!(e("%a = const bool [1] 2\n"), "line 1: not a Bool (0, 1, false, true): `2`");
     }
