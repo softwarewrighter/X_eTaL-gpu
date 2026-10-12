@@ -25,6 +25,11 @@ fn convert_bind_and_refuse_existing_output_and_wrong_shape() {
     let out = call(&["run", "model.xir", "--bind", "a=@weights.xta"]);
     assert!(out.status.success());
     assert_eq!(String::from_utf8(out.stdout).unwrap(), "9007199254740993 -7\n");
+    let repeated = call(&["run", "model.xir", "--bind", "a=@weights.xta", "--repeat", "3", "--time"]);
+    assert!(repeated.status.success());
+    assert_eq!(String::from_utf8(repeated.stdout).unwrap(), "9007199254740993 -7\n");
+    assert_eq!(String::from_utf8(repeated.stderr).unwrap().lines().count(), 3);
+    assert!(!call(&["run", "model.xir", "--repeat", "0"]).status.success());
     std::fs::write(dir.join("model.xir"), "%a = input i64 [1 2]\noutput %a\n").unwrap();
     let out = call(&["run", "model.xir", "--bind", "a=@weights.xta"]);
     assert!(!out.status.success());

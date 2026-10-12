@@ -36,10 +36,11 @@ echo "ok: pages (built)"
 python3 "$root/scripts/selftest-ml-bench.py"
 "$root/scripts/ml-bench.py" --check
 python3 "$root/scripts/bench-binary.py" --check
+python3 "$root/scripts/bench-session.py" --check
 # American spellings only (the checker checks itself first).
 "$root/scripts/check-spelling.py" --self-test
 "$root/scripts/check-spelling.py"
-md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md docs/tuple-plan.md docs/binary-arrays.md docs/ml-results.md extensions/gpu/README.md)
+md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md docs/tuple-plan.md docs/binary-arrays.md docs/gpu-sessions.md docs/ml-results.md extensions/gpu/README.md)
 for f in docs/rtx5060-*.md; do [ -e "$f" ] && md+=("$f"); done
 for f in libs/*/README.md libs/*/docs/README.md components/*/README.md; do [ -e "$f" ] && md+=("$f"); done
 for f in "${md[@]}"; do sw-markdown-checker -f "$f" >/dev/null || { sw-markdown-checker -f "$f"; exit 1; }; done

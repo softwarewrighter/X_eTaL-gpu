@@ -1,0 +1,8 @@
+number = 14
+slug = "rtx5060-session-windows"
+status = "in-progress"
+description = "GA3: the convolution's windows in the IR: reshape (r_eshape with repetition) ..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T10:25:13"
+commits = []

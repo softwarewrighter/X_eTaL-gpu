@@ -36,6 +36,9 @@
 ## >> gp:o_utputInts 1
 ## 2 4 6
 "r_un : int -> int"            ffi:b_ind< "gpu/run"
+## Rerun on opencl:d with resident kernels and inputs; only rebound inputs upload.
+## Changing the program, schedule or device prepares a new session.
+"r_erun : int -> int"          ffi:b_ind< "gpu/rerun"
 ## Output i (from 1) of the last run, as Floats.
 "o_utput : int -> floats"      ffi:b_ind< "gpu/output"
 ## Output i (from 1) of the last run, as Ints (exact to 2^53).

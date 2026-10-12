@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::process::ExitCode;
 
 use xetal_gpu_opencl::{explain, plan, Schedule, Width};
-use xetal_gpu_runtime::{devices, execute_timed};
+use xetal_gpu_runtime::{devices, Prepared};
 use xetal_gpu_xir::{binary, check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
 
 const USAGE: &str = "\
@@ -25,6 +25,7 @@ usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
   run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   items, text file or XTLARR01 binary array
       [--time]                       on a device, where the time went, to standard error
+      [--repeat N] [--refresh NAME]...   reuse kernels/buffers; reupload named inputs each repeat
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
@@ -108,9 +109,27 @@ fn dispatch(args: &[String]) -> Result<()> {
             let mut binds: Vec<String> = Vec::new();
             let mut rest: Vec<String> = Vec::new();
             let mut timed = false;
+            let mut repeat = 1usize;
+            let mut refresh = Vec::new();
             let mut i = 2;
             while i < args.len() {
                 match args[i].as_str() {
+                    "--repeat" => {
+                        repeat = args
+                            .get(i + 1)
+                            .and_then(|n| n.parse().ok())
+                            .filter(|n| *n > 0)
+                            .ok_or_else(|| Error("--repeat needs a positive integer".into()))?;
+                        i += 2;
+                    }
+                    "--refresh" => {
+                        refresh.push(
+                            args.get(i + 1)
+                                .cloned()
+                                .ok_or_else(|| Error("--refresh needs an input name".into()))?,
+                        );
+                        i += 2;
+                    }
                     "--device" => {
                         device = args
                             .get(i + 1)
@@ -134,18 +153,47 @@ fn dispatch(args: &[String]) -> Result<()> {
             }
             let schedule = schedule(&rest)?;
             let inputs = bindings(&checked, &binds)?;
+            for name in &refresh {
+                if !inputs.contains_key(name) {
+                    return Err(Error(format!("--refresh {name}: no bound input")));
+                }
+            }
             let outputs = if device == "cpu" {
-                run(&checked, &inputs)?
+                let mut outputs = Vec::new();
+                for n in 1..=repeat {
+                    let start = std::time::Instant::now();
+                    outputs = run(&checked, &inputs)?;
+                    if timed {
+                        eprintln!("repeat {n} cpu time: total {:.3} ms", start.elapsed().as_secs_f64() * 1000.0);
+                    }
+                }
+                outputs
             } else if let Some(n) = device.strip_prefix("opencl:") {
                 let index: usize = n
                     .parse()
                     .map_err(|_| Error(format!("--device opencl:N takes a number, got `{device}`")))?;
-                let (outputs, st) = execute_timed(&checked, &plan(&checked, &schedule), &inputs, index)?;
-                if timed {
-                    eprintln!(
-                        "time: setup {:.2} ms, upload {:.2} ms, kernels {:.3} ms (device), launches {:.2} ms (host), download {:.2} ms, total {:.2} ms",
+                let first = std::time::Instant::now();
+                let (mut session, initial) = Prepared::new(&checked, &plan(&checked, &schedule), &inputs, index)?;
+                let mut outputs = Vec::new();
+                for n in 1..=repeat {
+                    let start = std::time::Instant::now();
+                    let mut upload = 0.0;
+                    if n > 1 {
+                        for name in &refresh {
+                            upload += session.rebind(name, &inputs[name])?;
+                        }
+                    }
+                    let (out, mut st) = session.run_timed()?;
+                    outputs = out;
+                    st.upload_ms = if n == 1 { initial.upload_ms } else { upload };
+                    st.setup_ms = if n == 1 { initial.setup_ms } else { 0.0 };
+                    st.total_ms = if n == 1 { first.elapsed() } else { start.elapsed() }.as_secs_f64() * 1000.0;
+                    if timed {
+                        eprintln!(
+                        "repeat {n} time: setup {:.3} ms, upload {:.3} ms, kernels {:.3} ms (device), launches {:.3} ms (host), download {:.3} ms, total {:.3} ms",
                         st.setup_ms, st.upload_ms, st.kernels_ms, st.launch_ms, st.download_ms, st.total_ms
                     );
+                    }
                 }
                 outputs
             } else {

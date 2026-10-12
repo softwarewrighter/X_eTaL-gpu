@@ -115,7 +115,7 @@ def offsets(n):
     return " ".join(str(i) for i in range(n))
 
 
-def world_model_twin():
+def world_model_twin(batch=1936, held=387):
     """The world model's batch: a dense layer with its bias row (NN's
     d_ense: matmul, then the bias spread down the batch by a table),
     ReLU (max with 0), a second dense layer, the sigmoid
@@ -123,11 +123,11 @@ def world_model_twin():
     row minimum of (P > 0.5) = (T > 0.5), for all 1,936 states and for
     the 387 held out."""
     out = [
-        "%X = input f64 [1936 432]", "%T = input f64 [1936 144]",
-        "%Xh = input f64 [387 432]", "%Th = input f64 [387 144]",
+        f"%X = input f64 [{batch} 432]", f"%T = input f64 [{batch} 144]",
+        f"%Xh = input f64 [{held} 432]", f"%Th = input f64 [{held} 144]",
         "%w1 = input f64 [432 64]", "%b1 = input f64 [64]",
         "%w2 = input f64 [64 144]", "%b2 = input f64 [144]",
-        "%o = const i64 [1936] " + offsets(1936), "%oh = const i64 [387] " + offsets(387),
+        f"%o = const i64 [{batch}] " + offsets(batch), f"%oh = const i64 [{held}] " + offsets(held),
         "%half = const f64 [] 0.5", "%zero = const f64 [] 0.0", "%one = const f64 [] 1.0",
     ]
     for tag, x, t, o in (("", "%X", "%T", "%o"), ("h", "%Xh", "%Th", "%oh")):

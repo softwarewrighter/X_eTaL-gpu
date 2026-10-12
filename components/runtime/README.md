@@ -34,10 +34,14 @@ the setup (context, queue, compiling the kernels), the upload, the
 kernels as the device measured them (the queue is created with
 profiling on; each launch's event gives its start and end, summed),
 the launches as the host waited for them (enqueue to `finish`), the
-download, and the whole. `xetal-gpu run --time` prints it. Compiling
-dominates every run today (about 80 ms on this Mac for a few
-kernels); a kernel cache is the first speed step when speed becomes
-a goal.
+download, and the whole. `xetal-gpu run --time` prints it. `Prepared::new` compiles and uploads once. Its `run_timed` reuses
+the context, kernels and buffers; setup and upload are zero on repeated
+resident calls. `rebind` uploads one validated input while keeping the
+others resident. Each run reads outputs back. Programs, shapes, schedules
+and devices are fixed for a prepared session; construct another session
+to change them. No application disk cache is implemented. See
+[GPU sessions](../../docs/gpu-sessions.md) and the
+[OpenBLAS comparison](../../docs/rtx5060-session-results.md).
 
 ## Platforms
 
