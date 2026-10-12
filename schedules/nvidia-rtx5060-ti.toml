@@ -1,0 +1,10 @@
+# Arch Linux, large12, NVIDIA 615.78.08, OpenCL C 1.2, 2026-10-12.
+# Device limit 1024 work-items; local memory 48 KiB; fp64 available.
+# The compiled reduction kernel limits work-groups to 256.
+# All Accel twins and six generated sizes checked against the evaluator.
+device = "NVIDIA GeForce RTX 5060 Ti, 16 GB (large12)"
+tested = true
+float = "f32"
+int = "i64"
+work_group = 256
+tile = 16

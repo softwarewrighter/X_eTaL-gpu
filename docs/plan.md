@@ -30,12 +30,12 @@ are not the user's and are not targets.
 | RTX 3060 Laptop | Ampere | 6 GB (NVIDIA's specification for the laptop part; to be confirmed on the machine) | a current card, in a System76 laptop | `nvidia-modern.toml` (template) |
 | RTX 3090 | Ampere | 24 GB | a current card; the most memory | `nvidia-modern.toml` (template) |
 | RTX 4070 Laptop | Ada Lovelace | 8 GB | a current card, in an Asus ROG laptop | `nvidia-modern.toml` (template) |
-| RTX 5060 Ti | Blackwell | 16 GB | the newest generation | `nvidia-modern.toml` (template) |
+| RTX 5060 Ti | Blackwell | 16 GB | Arch Linux, large12; NVIDIA 615.78.08, OpenCL 3.0, 36 compute units, work-groups to 1024, fp64 | `nvidia-rtx5060-ti.toml` and `nvidia-rtx5060-ti-f64.toml` (run) |
 | A2 | Ampere | 16 GB | a low-power data-center card | `nvidia-modern.toml` (template) |
 
 The user has other cards too; one is added here when it is used.
-The Arch machine the work moves to holds one or more of the NVIDIA
-cards; which ones is recorded here when it is set up.
+The Arch machine `large12` holds the RTX 5060 Ti; measurements are
+in `docs/rtx5060-results.md` and `docs/rtx5060-ml-results.md`.
 
 Source: `docs/research7.txt`, the user's planning conversation
 (archival, NOT normative), which places the work in three
@@ -268,6 +268,16 @@ then on the old cards.
 | 4 | jev-gpu | the whole inference scheduled as OpenCL kernels; the same prompt, model and weights giving the same decision on CPU and GPU; a visualization of which X_eTaL operations became which kernels |
 
 ### Saga 5 -- gpu-hardware
+
+The RTX 5060 Ti validation was brought forward on 2026-10-12 in an
+independent `rtx5060` branch and saga lane while the Mac continues
+gpu-models. Its hardware and ML results are recorded separately in
+`docs/rtx5060-results.md` and `docs/rtx5060-ml-results.md`; the ML
+runner accepts `--output` and `--require-device` so another host's
+measurements are preserved and a hidden GPU cannot produce a report
+that silently skips the device. The pins are unchanged. Other NVIDIA
+cards still need their own runs; the shared modern schedule remains
+a template. The remaining model steps belong to the Mac's lane.
 
 Goal: the cards of the hardware table, first those in the Arch
 machine the work moves to soon (the user, 2026-10-07), then the old

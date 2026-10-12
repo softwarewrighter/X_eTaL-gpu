@@ -6,13 +6,16 @@
 #   - on each OpenCL device found (when the runtime exists and a
 #     device is present): Floats within 1e-5, Ints exactly.
 # A demo program without a twin fails, unless it says "# no twin".
-#   scripts/check-equiv.sh
+#   scripts/check-equiv.sh [SCHEDULE_FILE [FLOAT_TOLERANCE]]
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 (cd components && cargo build -q --release -p xetal-gpu-cli)
 gpu="$root/target/release/xetal-gpu"
 fail=0; n=0
+schedule_file=()
+if [ $# -gt 0 ]; then schedule_file=(--schedule "$1"); fi
+tolerance="${2:-1e-5}"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 # The OpenCL devices present (none is not a failure: it is said).
 devices=()
@@ -35,10 +38,10 @@ for xtl in libs/*/demos/*.xtl; do
   # Each device with the default schedule and with products in 8 by 8 tiles.
   for dev in "${devices[@]}"; do for sched in "" "--tile 8"; do
     label="$dev${sched:+ $sched}"
-    if ! "$gpu" run "$xir" --device "$dev" $sched > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
+    if ! "$gpu" run "$xir" --device "$dev" "${schedule_file[@]}" $sched > "$tmp/gpu.out" 2> "$tmp/gpu.err"; then
       echo "FAIL: $xir on $label:"; cat "$tmp/gpu.err"; fail=1; continue
     fi
-    if out="$(scripts/compare-out.py "$want" "$tmp/gpu.out" 1e-5)"; then echo "ok: $lib/$name on $label, $out"
+    if out="$(scripts/compare-out.py "$want" "$tmp/gpu.out" "$tolerance")"; then echo "ok: $lib/$name on $label, $out"
     else echo "FAIL: $lib/$name on $label: $out"; fail=1; fi
   done; done
 done

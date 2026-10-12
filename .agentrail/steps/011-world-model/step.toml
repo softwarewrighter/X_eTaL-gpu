@@ -1,8 +1,0 @@
-number = 11
-slug = "world-model"
-status = "pending"
-description = "GA1, part 2: X_eTaL-ML's world model (432 -> 64 ReLU -> 144 sigmoid, all 1,93..."
-role = "production"
-context_files = []
-created_at = "2026-10-12T10:25:13"
-commits = []

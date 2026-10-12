@@ -2,6 +2,7 @@
 /target/
 **/target/
 **/*.rs.bk
+__pycache__/
 
 # reg-rs: .rgt + .out/.err baselines are committed; .tdb* files are caches
 *.tdb*

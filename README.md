@@ -101,15 +101,16 @@ X_eTaL-extensions' `xetal-x`: a 512 by 512 product runs 31 times
 faster than in the evaluator, even through the bridge (`just
 offload`). Next, saga 4: a tiny Jev-like model's whole inference on
 the GPU. The
-work moves to an Arch machine with a newer GPU soon; nothing in the
-code changes for it (see Build). See [`docs/plan.md`](docs/plan.md) for
+OpenCL code also runs on Arch Linux's RTX 5060 Ti (16 GB), with
+separate [hardware results](docs/rtx5060-results.md) and
+[ML measurements](docs/rtx5060-ml-results.md). See [`docs/plan.md`](docs/plan.md) for
 the roadmap and the architecture decisions.
 
 ## Build
 
 Prerequisites:
 
-- [Rust](https://rustup.rs) (stable) and
+- [Rust](https://rustup.rs) (1.95 or newer for the pinned X_eTaL) and
   [`just`](https://github.com/casey/just)
   (`brew install just` or `cargo install just`)
 - an OpenCL runtime for the GPU parts: on macOS it is built in

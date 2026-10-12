@@ -1,0 +1,8 @@
+# Same RTX 5060 Ti as nvidia-rtx5060-ti.toml, Float as double.
+# All Accel twins and six generated sizes checked within 1e-12.
+device = "NVIDIA GeForce RTX 5060 Ti, 16 GB, fp64 (large12)"
+tested = true
+float = "f64"
+int = "i64"
+work_group = 256
+tile = 16

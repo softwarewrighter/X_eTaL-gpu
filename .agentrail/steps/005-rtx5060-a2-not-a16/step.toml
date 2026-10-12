@@ -1,0 +1,9 @@
+number = 5
+slug = "rtx5060-a2-not-a16"
+status = "completed"
+description = "Correct the hardware: the user has an NVIDIA A2 (Ampere, 16 GB, one GPU), not..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T09:49:26"
+completed_at = "2026-10-12T09:51:14"
+commits = ["e0604c43839b933af0d84497010e263a744cd466"]

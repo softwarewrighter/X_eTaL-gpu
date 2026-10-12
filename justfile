@@ -53,8 +53,16 @@ ml-pin ref="HEAD":
     scripts/xetal-ml.sh --pin "$1"
 
 # X_eTaL-ML's benchmarks on the evaluator, the interpreter, every device and the facade, timed: docs/ml-results.md
-ml-bench:
-    scripts/ml-bench.py
+ml-bench *args:
+    scripts/ml-bench.py "$@"
+
+# Check benchmark reporting and refusal to skip a required GPU
+test-ml-bench:
+    python3 scripts/selftest-ml-bench.py
+
+# Check every Accel twin on the devices with a schedule file and Float tolerance
+check-schedule file tolerance="1e-5":
+    scripts/check-equiv.sh "$1" "$2"
 
 # The offload demo: a 512 by 512 product and a million elementwise items, evaluator against GPU through the extension, timed (about 40 s)
 offload:
