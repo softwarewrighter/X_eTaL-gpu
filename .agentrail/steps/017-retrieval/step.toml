@@ -1,6 +1,6 @@
 number = 17
 slug = "retrieval"
-status = "pending"
+status = "in-progress"
 description = "Retrieval over a resident index, the first example built to beat the CPU's BL..."
 role = "production"
 context_files = []
