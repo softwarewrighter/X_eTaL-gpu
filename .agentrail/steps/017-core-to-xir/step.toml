@@ -1,6 +1,6 @@
 number = 17
 slug = "core-to-xir"
-status = "pending"
+status = "in-progress"
 description = "The lowering (plan A4b, 0n): components/lower (crate xetal-gpu-lower) takes X..."
 role = "production"
 context_files = []
