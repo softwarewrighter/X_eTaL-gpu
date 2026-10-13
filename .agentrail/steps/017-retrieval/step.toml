@@ -1,0 +1,8 @@
+number = 17
+slug = "retrieval"
+status = "pending"
+description = "Retrieval over a resident index, the first example built to beat the CPU's BL..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T18:29:49"
+commits = []

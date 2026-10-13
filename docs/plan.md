@@ -137,7 +137,17 @@ lowering when X_eTaL has it (saga 11). The rule for what to demo:
 the batch is the array and the work is products, since products win
 on every card measured (31 and 25 times, through the bridge) and
 elementwise work through the bridge loses; a tiny model on one
-prompt never looks good.
+prompt never looks good. Refined by the session measurements
+(2026-10-12, `docs/*-session-results.md`): to beat the CPU's BLAS an
+example needs hundreds of operations per byte it uploads (upload
+token ids, queries or parameters; keep weights, an index and state
+resident) and tens of milliseconds of CPU work per call (the fixed
+cost is about 0.2 ms a call on the RTX 5060 Ti and 1.3 ms on the M1
+Max); the world model, at about 40 operations per byte, cannot win
+and is not chased. Every example is an ML use case (inference,
+retrieval, training, memory, experts) on a GPU without CUDA; graphics,
+physics and pure-math demonstrations (n-body, Mandelbrot) are not
+wanted (the user, 2026-10-12: any card runs graphics already).
 
 ## Asks from other repositories
 
@@ -280,6 +290,7 @@ then on the old cards.
 | 0i | windows | DONE (2026-10-12): `rotate axis=k n ...` (`o_-`, one copy per amount), `take` and `drop` along any axis, `reshape` (items cycled) in the IR, checked and interpreted as the evaluator computes them; the slice kernel (replacing the first-axis copy), a rotate gather with its amounts as a constant table, a cycle and a fill; the formatter prints rank 4 and 5 as xetal does (one blank line per rank above two); Accel `w_indows` (Conv's expression) and `c_onv` (f filters as one product), the windows demo and twin (10 twins agree on the interpreter and the M1 Max, tiled and untiled). Measured: the six gathers of a 64 by 28 by 28 batch cost 0.04 ms more than one transpose on the M1 Max, so no im2col operation yet |
 | 0k | lookup | `lookup` in the IR: X_eTaL's indexing (`i s_elect v`; rows of a matrix by an Int vector), the embedding gather of every transformer and the memory of Engram (saga 8); a gather kernel, one work-item per result item; a twin (an embedding table and a batch of token ids); equivalence |
 | 0l | topk | the index of the largest item of each row (argmax: the decision, the next token) and the k largest with their indices (a router's choice, saga 9) in the IR, as the evaluator computes them (ties: the first); kernels; twins; equivalence |
+| 0m | retrieval | the first example built to beat the CPU's BLAS: an embedding index (hundreds of thousands of documents by 256 Floats, a fixed seed) resident on the device through the session, a batch of queries scored by one product and the best few per query by top-k (about 100,000 operations per uploaded byte); the X_eTaL program with its baseline, the twin from a generator, the same answers on the interpreter and every device; measured against NumPy's BLAS with `bench-session.py`'s method (fresh queries each call) on the M1 Max and, by the Arch lane, the RTX 5060 Ti; the README's against-tuned-CPU table gains the row |
 | 0j | denoiser | GA1: X_eTaL-ML's denoiser, once its batch run lands there: about 20 calls, the fixed cost per call shown |
 | 1 | tiny-nn | answered by world-model (0g); closed when reached. Planned: a complete tiny trained network (two dense layers, from X_eTaL-ML's trainers or a std-only trainer here) in X_eTaL, weights as data files, on the GPU; the same decision on CPU and GPU |
 | 2 | jev-model | moved to saga 6 (gpt-model and jev-head: the classifier is the GPT block with a classification head); closed when reached. Planned: `examples/jev/`: `model.xtl` (embedding lookup, attention as array operations, normalization, feed-forward, classifier), `tokenizer.xtl`, `config.toml`, weights; the needed XIR operations added only when measurement says so (research7: attention decomposes, it is not an intrinsic) |
@@ -304,17 +315,19 @@ the gpu extension.
 
 ### Saga 6 -- gpu-gpt
 
-Goal: a tiny character-level GPT written in X_eTaL, its whole
-forward pass as one XIR program on a batch of prompts, measured on
-every card; the Jev-like typed-decision classifier is the same block
-with a classification head, so saga 4's jev-model and jev-gpu are
-done here.
+Goal: a GPT in X_eTaL, X_eTaL-ML's micro-gpt as the trained anchor,
+its whole forward pass as one XIR program on a batch of prompts with
+only token ids uploaded, run at widths from 16 to 1,024 so the
+crossover where each card overtakes the CPU's BLAS is measured, not
+claimed (micro-gpt itself, 4,192 weights, is below every crossover);
+the Jev-like typed-decision classifier is the same block with a
+classification head, so saga 4's jev-model and jev-gpu are done here.
 
 | # | Step slug | Delivers |
 | - | --------- | -------- |
 | 1 | gpt-model | X_eTaL-ML's micro-gpt (`demos/micro-gpt/`: Karpathy's microgpt, one layer, 16 wide, 4 heads, 4,192 weights, trained on baby names, its scores equal to its Rust trainer's to 1e-9; on the Norm, Attention and Sample libraries), taken from the pinned X_eTaL-ML as the model (the user, 2026-10-12: start from it rather than write a GPT here); its forward pass over a whole name under the causal mask as the reference, the evaluator's output the baseline; what its libraries use that the IR lacks, listed |
 | 2 | gpt-twin | the XIR program written by a generator from micro-gpt's config and weights (`scripts/gpt-twin.py`, as `ml-bench.py` writes the benchmarks'), not by hand; the interpreter exact, every device within tolerance; `explain` shows which X_eTaL lines became which kernels |
-| 3 | gpt-batch | a batch of prompts as one run; tokens per second against the evaluator on the M1 Max, the RTX 5060 Ti and the RTX 3060; the results table on the landing page |
+| 3 | gpt-sweep | the same program at widths 16, 64, 256 and 1,024 (layers 1 to 4; random weights with a fixed seed where no trained ones exist, the shapes and the operations exactly micro-gpt's) on a batch of prompts, token ids the only upload, weights resident: tokens per second against NumPy's BLAS on the same host and against the evaluator, per card (the M1 Max; the RTX 5060 Ti and the RTX 3060 by the Arch lane); the crossover per card on the landing page |
 | 4 | jev-head | the typed-decision classifier (DRAW, ARRAY_QUERY, EXPLAIN, EXECUTE, DOC_SEARCH): the block above with a classification head and argmax (saga 4's topk); the same decision on every card |
 
 ### Saga 7 -- gpu-train
