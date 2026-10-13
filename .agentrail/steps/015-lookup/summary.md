@@ -1,0 +1,1 @@
+lookup (s_elect, any axis) in the IR, checked, interpreted and gathered on the device; stray positions refused on the host at bind and rebind; Accel e_mbed; the lookup demo and twin; eleven twins agree
