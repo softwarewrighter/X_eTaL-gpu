@@ -1,8 +1,9 @@
 number = 13
 slug = "windows"
-status = "in-progress"
+status = "completed"
 description = "GA3: the convolution's windows in the IR: reshape (r_eshape with repetition) ..."
 role = "production"
 context_files = []
 created_at = "2026-10-12T10:25:13"
-commits = []
+completed_at = "2026-10-12T17:49:24"
+commits = ["f0d7316156dad347137266b98cc4dc0bde301553"]
