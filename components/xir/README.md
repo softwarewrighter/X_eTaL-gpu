@@ -13,10 +13,11 @@ X_eTaL evaluator does, and printing as `xetal` prints.
 It stands in for the accelerator IR that belongs in X_eTaL
 (`docs/xetal-asks.md`, G1) and is written to `docs/research7.txt`'s
 description. It knows nothing of OpenCL, CUDA or Verilog, and nothing
-of X_eTaL's syntax: a program reaches it as text, today written by
-hand beside each `.xtl` example (the twins in `libs/Accel/demos/`),
-tomorrow by X_eTaL's lowering (G2). When that lands this crate
-becomes an adapter and the twins go.
+of X_eTaL's syntax: a program reaches it as text, or from
+`components/lower`, which lowers X_eTaL source to it through X_eTaL's
+own crates (since 2026-10-13; the hand-written twins it replaced are
+gone). When X_eTaL's own lowering lands (G2) this crate becomes an
+adapter.
 
 ## The text form
 
@@ -102,8 +103,8 @@ for a in &outputs { println!("{}", format::show(a)); }
 `text::print` gives the canonical text back (`parse(print(p)) == p`).
 The tests in `src/` cover parsing errors, the typing rules, the
 arithmetic, the fold order, casts, narrow types and printing; the
-equivalence script (`scripts/check-equiv.sh`) proves every twin
-against the evaluator's baseline, exactly.
+equivalence script (`scripts/check-equiv.sh`) proves every demo,
+lowered from its source, against the evaluator's baseline, exactly.
 
 ## Not yet
 
