@@ -1,0 +1,1 @@
+argmax as Accel a_rgmax from existing operations (no per-row grade in X_eTaL; NN's definition); topk k %m in the IR with a one-work-item-per-line kernel, measured 122 ms against the composition's 190 on 256 by 100,000 scores; Accel t_opk; the topk demo and twin; twelve twins agree
