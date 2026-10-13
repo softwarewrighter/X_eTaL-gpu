@@ -1,0 +1,8 @@
+number = 18
+slug = "run-from-source"
+status = "pending"
+description = "xetal-gpu run FILE.xtl --device opencl:N (plan 0o): the program's statements ..."
+role = "production"
+context_files = []
+created_at = "2026-10-13T08:12:03"
+commits = []

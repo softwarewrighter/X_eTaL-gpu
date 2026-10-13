@@ -1,0 +1,8 @@
+number = 19
+slug = "accel-macro"
+status = "pending"
+description = "The macro and the runner (plan 0p, the user's framework): gp:a_ccel< (an .xtl..."
+role = "production"
+context_files = []
+created_at = "2026-10-13T08:12:03"
+commits = []

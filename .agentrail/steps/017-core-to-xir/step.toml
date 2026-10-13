@@ -1,0 +1,8 @@
+number = 17
+slug = "core-to-xir"
+status = "pending"
+description = "The lowering (plan A4b, 0n): components/lower (crate xetal-gpu-lower) takes X..."
+role = "production"
+context_files = []
+created_at = "2026-10-13T08:12:03"
+commits = []

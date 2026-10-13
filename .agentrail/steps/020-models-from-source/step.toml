@@ -1,0 +1,8 @@
+number = 20
+slug = "models-from-source"
+status = "pending"
+description = "X_eTaL-ML's world model from its own world-model.xtl through the macro (the g..."
+role = "production"
+context_files = []
+created_at = "2026-10-13T08:12:03"
+commits = []
