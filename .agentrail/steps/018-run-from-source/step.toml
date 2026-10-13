@@ -1,6 +1,6 @@
 number = 18
 slug = "run-from-source"
-status = "pending"
+status = "in-progress"
 description = "xetal-gpu run FILE.xtl --device opencl:N (plan 0o): the program's statements ..."
 role = "production"
 context_files = []
