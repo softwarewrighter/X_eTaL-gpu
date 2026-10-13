@@ -1,8 +1,9 @@
 number = 14
 slug = "m1max-cpu-compare"
-status = "in-progress"
+status = "completed"
 description = "The session benchmark (scripts/bench-session.py, the Arch lane's) on the Appl..."
 role = "production"
 context_files = []
 created_at = "2026-10-12T18:06:02"
-commits = []
+completed_at = "2026-10-12T18:10:23"
+commits = ["0c04f2189dee1767f83d0151876d5705680d93b2"]
