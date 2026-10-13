@@ -1,7 +1,7 @@
 # Accel
 
 The acceleratable subset of X_eTaL: elementwise arithmetic, masks and
-a select, reductions, products, transposes, windows, lookups, a layer. Each function is one whole-array expression in
+a select, reductions, products, transposes, windows, lookups, choices, a layer. Each function is one whole-array expression in
 the subset research7 (`docs/research7.txt`) says an accelerator
 should accept first: static scalar types, pure functions, arithmetic
 and comparisons item by item with scalar extension, a select by
@@ -52,6 +52,8 @@ recommended alias.
 | `t ac:e_mbed ids` | `a -> Int -> a` | the rows of a table at the positions ids (from 1), in the shape of ids: a batch of token ids picks a batch of embeddings (`ids s_elect t`) |
 | `ac:w_indows x` | `a -> a` | every 3 by 3 window of every picture of a batch (n by h by w) as 9 rows, a column per picture and place, as X_eTaL-ML's Conv builds them: rotations along the last two axes, the edges dropped, a reshape |
 | `k ac:c_onv x` | `Num a => a -> a -> a` | f filters (rows of 9) over every window of every picture, one matrix product: the maps n by f by (h - 2) by (w - 2), no bias |
+| `ac:a_rgmax m` | `Num a => a -> Int` | the position (from 1) of each row's largest item, the first on a tie (X_eTaL-ML's `nn:a_rgmax`) |
+| `k ac:t_opk m` | `Int -> Float -> Float` | a mask of each row's k largest items, the largest taken out k times with its ties (X_eTaL-ML's `sm:t_op` and its router) |
 | `x ac:d_ense wb` | `Num a => a -> a -> a` | the layer x W + b for a batch x (a row per example), W with the bias b as its last row (X_eTaL-ML's NN convention) |
 | `ac:s_oftmax m` | `Num a => a -> Float` | each row of a matrix into probabilities (its largest taken off first) |
 | `x ac:p_ipeline w` | `Num a => a -> a -> a` | the sum of the positive items of x + x * w: multiply, add, select, reduce |
@@ -115,6 +117,9 @@ The example programs, each the reference for a GPU run:
 - [`demos/lookup.xtl`](../demos/lookup.xtl): items, rows and columns
   at given positions; an embedding table and a batch of two prompts
   of three token ids, the embeddings summed per prompt.
+- [`demos/topk.xtl`](../demos/topk.xtl): the position of each row's
+  largest item and a mask of its k largest, then both on a batch of
+  scores: the chosen class and the candidate set.
 - [`demos/windows.xtl`](../demos/windows.xtl): a rotation by one
   amount and by three (one copy each), a convolution's windows built
   as array operations, and a small convolution of two filters over a

@@ -15,6 +15,8 @@ l:w_eightGrad : Num a => a -> a -> a
 l:e_mbed : a -> Int -> a
 l:w_indows : a -> a
 l:c_onv : Num a => a -> a -> a
+l:a_rgmax : Num a => a -> Int
+l:t_opk : Int -> Float -> Float
 l:d_ense : Num a => a -> a -> a
 l:s_oftmax : Num a => a -> Float
 l:p_ipeline : Num a => a -> a -> a

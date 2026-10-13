@@ -294,6 +294,7 @@ fn describe(program: &Program, op: &Op) -> String {
         ),
         Op::Reshape { shape, arg } => format!("reshape {shape} {}", name(*arg)),
         Op::Lookup { axis, idx, arg } => format!("lookup axis={axis} {} {}", name(*idx), name(*arg)),
+        Op::TopK { k, axis, arg } => format!("topk {k} axis={axis} {}", name(*arg)),
         Op::Ravel { arg } => format!("ravel {}", name(*arg)),
         Op::Table { op, a, b } => format!("table {op} {} {}", name(*a), name(*b)),
         Op::Transpose { perm: None, arg } => format!("transpose {}", name(*arg)),

@@ -175,6 +175,31 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
                 }
                 gather(a, &index, ty)?
             }
+            Op::TopK { k, axis, arg } => {
+                let a = &values[arg.0];
+                let axis = topk_axis(*axis, a.shape.rank());
+                let (outer, len, inner) = axis_split(&a.shape, axis);
+                let mut mask = vec![false; a.shape.len()];
+                for o in 0..outer {
+                    for i in 0..inner {
+                        let at = |j: usize| (o * len + j) * inner + i;
+                        // The line's k-th largest distinct value is the threshold.
+                        let threshold = match &a.data {
+                            Data::Int(x) => Item::Int(kth_distinct((0..len).map(|j| x[at(j)]), *k)),
+                            Data::Float(x) => Item::Float(kth_distinct((0..len).map(|j| x[at(j)]), *k)),
+                            Data::Bool(_) => unreachable!("checked: numbers"),
+                        };
+                        for j in 0..len {
+                            mask[at(j)] = match (a.at(at(j)), threshold) {
+                                (Item::Int(x), Item::Int(t)) => x >= t,
+                                (Item::Float(x), Item::Float(t)) => x >= t,
+                                _ => unreachable!(),
+                            };
+                        }
+                    }
+                }
+                Array::new(Scalar::Bool, ty.shape.clone(), Data::Bool(mask))?
+            }
             Op::Reshape { arg, .. } => {
                 let a = &values[arg.0];
                 let n = a.shape.len();
@@ -440,6 +465,33 @@ fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array
         Data::Bool(_) => unreachable!("checked: numbers"),
     };
     Array::new(ty.scalar, Shape::scalar(), data)
+}
+
+/// The axis a `topk` works along: the last when none was written (0).
+pub fn topk_axis(axis: usize, rank: usize) -> usize {
+    if axis == 0 {
+        rank
+    } else {
+        axis
+    }
+}
+
+/// The k-th largest of the distinct values of a line, or its least
+/// value when it has fewer than k distinct ones: the threshold of a
+/// `topk` mask (the largest taken out k times with its ties).
+pub fn kth_distinct<T: PartialOrd + Copy>(line: impl Iterator<Item = T>, k: usize) -> T {
+    let mut best: Vec<T> = Vec::with_capacity(k + 1);
+    for x in line {
+        if best.contains(&x) {
+            continue;
+        }
+        let pos = best.iter().position(|b| x > *b).unwrap_or(best.len());
+        if pos < k {
+            best.insert(pos, x);
+            best.truncate(k);
+        }
+    }
+    *best.last().expect("checked: a line has an item")
 }
 
 /// The items of an array gathered by position into a new one.
@@ -732,6 +784,24 @@ mod tests {
                 "10 10 10\n20 20 20"
             ]
         );
+    }
+
+    #[test]
+    fn topk_as_the_rounds_do() {
+        // 2 ac:t_opk m and 1 ac:t_opk m (ties go with the taken one), 3 ac:t_opk of a 1 by 4, along axis 1.
+        let out = eval("%m = const f64 [3 4] 5.0 1.0 9.0 9.0 2.0 2.0 2.0 2.0 7.0 8.0 6.0 8.0\n%a = topk 2 %m\n%b = topk 1 %m\n%p = const f64 [1 4] 0.1 0.5 0.15 0.25\n%c = topk 3 %p\n%d = topk 1 axis=1 %m\n%v = const i64 [5] 3 9 9 1 7\n%e = topk 2 %v\noutput %a\noutput %b\noutput %c\noutput %d\noutput %e\n");
+        assert_eq!(
+            out,
+            [
+                "1 0 1 1\n1 1 1 1\n1 1 0 1",
+                "0 0 1 1\n1 1 1 1\n0 1 0 1",
+                "0 1 1 1",
+                "0 0 1 1\n0 0 0 0\n1 1 0 0",
+                "0 1 1 0 1"
+            ]
+        );
+        assert_eq!(kth_distinct([5.0, 1.0, 9.0, 9.0].into_iter(), 2), 5.0);
+        assert_eq!(kth_distinct([2, 2, 2].into_iter(), 3), 2);
     }
 
     #[test]

@@ -101,6 +101,10 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 b.flush(&outputs);
                 b.lookup(id, *idx, *arg, *axis);
             }
+            Op::TopK { k, axis, arg } => {
+                b.flush(&outputs);
+                b.topk(id, *arg, *k, xetal_gpu_xir::interp::topk_axis(*axis, checked.ty(*arg).shape.rank()));
+            }
             Op::Reshape { shape, arg } => {
                 b.flush(&outputs);
                 if shape.len() == checked.ty(*arg).shape.len() {
@@ -558,6 +562,57 @@ __kernel void {kname}({}) {{
             elements: n,
             about: String::new(),
         });
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A top-k mask: one work-item per line, which finds the line's k
+    /// largest distinct values in private memory (k baked into the
+    /// kernel) and then marks the items at or above the k-th; two
+    /// passes over the line instead of the composition's four per
+    /// round. A line along a leading axis is read with its stride.
+    fn topk(&mut self, id: ValueId, arg: ValueId, k: usize, axis: usize) {
+        let elem = self.elem_of(arg);
+        let Place::Buffer(src) = self.places[&arg].clone() else {
+            unreachable!("a topk reads a buffer (rank 1 or more)")
+        };
+        let (outer, len, inner) = xetal_gpu_xir::interp::axis_split(&self.ty(arg).shape, axis);
+        let kname = format!("topk{k}_{elem}");
+        if !self.source.contains(&format!("__kernel void {kname}(")) {
+            self.source.push_str(&topk_kernel(&kname, elem, k));
+            self.kernels.push(KernelInfo {
+                name: kname.clone(),
+                computes: vec![],
+                writes: vec![],
+                elements: 0,
+                about: about(&kname),
+            });
+        }
+        let n = self.ty(id).shape.len();
+        let result = self.buffer(Some(id), Elem::I32, n, Init::Device);
+        let lines = outer * inner;
+        let local = self.schedule.work_group.min(lines.max(1).next_power_of_two());
+        let global = lines.max(1).div_ceil(local) * local;
+        let name = self.checked.program.value(id).name.clone();
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args: vec![
+                Arg::Buffer(src),
+                Arg::Buffer(result),
+                Arg::Long(outer as i64),
+                Arg::Long(len as i64),
+                Arg::Long(inner as i64),
+            ],
+            global,
+            local,
+            note: format!(
+                "%{name}: the {k} largest of each line along axis {axis}: {lines} line{} of {len}, one work-item each",
+                if lines == 1 { "" } else { "s" }
+            ),
+        });
+        if let Some(kinfo) = self.kernels.iter_mut().find(|kinfo| kinfo.name == kname) {
+            kinfo.computes.push(id);
+            kinfo.writes.push(id);
+        }
         self.places.insert(id, Place::Buffer(result));
     }
 
@@ -1033,7 +1088,9 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
 
 /// What a shared kernel does, by its name, for `explain`.
 fn about(kname: &str) -> String {
-    if kname.starts_with("transpose_tiled") {
+    if kname.starts_with("topk") {
+        "a top-k mask: one work-item per line finds its k largest distinct values, then marks the items at or above the k-th".into()
+    } else if kname.starts_with("transpose_tiled") {
         "the last two axes swapped in tiles staged in local memory, read and written along the rows".into()
     } else if kname.starts_with("reduce_axis_") {
         "along one axis, one work-item per result item folding its line from the right".into()
@@ -1190,6 +1247,41 @@ __kernel void {name}(__global const {elem}* a, __global const {elem}* b, __globa
         barrier(CLK_LOCAL_MEM_FENCE);
     }}
     if (i < m && j < p) c[i * p + j] = acc;
+}}
+"
+    )
+}
+
+fn topk_kernel(name: &str, elem: Elem, k: usize) -> String {
+    format!(
+        "
+// {name}: a mask of each line's {k} largest items, the largest taken
+// out {k} times with its ties (X_eTaL-ML's sm:t_op): one work-item per
+// line keeps the {k} largest distinct values it has seen, in order, then
+// marks the items at or above the last of them (all of a line with
+// fewer distinct values).
+__kernel void {name}(__global const {elem}* in, __global int* out, const long outer, const long len, const long inner) {{
+    long line = get_global_id(0);
+    if (line >= outer * inner) return;
+    long o = line / inner, i = line % inner;
+    long base = o * len * inner + i;
+    {elem} best[{k}];
+    int found = 0;
+    for (long j = 0; j < len; j++) {{
+        {elem} x = in[base + j * inner];
+        int pos = 0, dup = 0;
+        for (int b = 0; b < found; b++) {{
+            if (best[b] == x) {{ dup = 1; break; }}
+            if (best[b] > x) pos = b + 1;
+        }}
+        if (dup || pos >= {k}) continue;
+        int last = found < {k} ? found : {k} - 1;
+        for (int b = last; b > pos; b--) best[b] = best[b - 1];
+        best[pos] = x;
+        if (found < {k}) found++;
+    }}
+    {elem} threshold = best[found - 1];
+    for (long j = 0; j < len; j++) out[base + j * inner] = in[base + j * inner] >= threshold;
 }}
 "
     )
@@ -1490,6 +1582,26 @@ mod tests {
         assert!(p.source.contains("long p = (long)2L;"));
         assert!(p.source.contains("b_col[k] = b_m[(o * 2 + p - 1) * 1 + i];"));
         assert_eq!(p.launches[1].note, "%col: 1 position along axis 2 of [3 2], 3 items gathered");
+    }
+
+    #[test]
+    fn a_topk_is_one_work_item_per_line() {
+        let p = plan_of(
+            "%m = const f64 [3 4] 1.0\n%a = topk 2 %m\n%b = topk 1 axis=1 %m\n%f = cast f64 %a\noutput %f\noutput %b\n",
+            &Schedule::default(),
+        );
+        assert!(p.source.contains("__kernel void topk2_float("));
+        assert!(p.source.contains("__kernel void topk1_float("));
+        assert!(p.source.contains("float best[2];"));
+        // Along the last axis: 3 lines of 4, 1 apart; along axis 1: 4 lines of 3, 4 apart.
+        assert_eq!(p.launches[0].args[2..], [Arg::Long(3), Arg::Long(4), Arg::Long(1)]);
+        assert_eq!(p.launches[1].args[2..], [Arg::Long(1), Arg::Long(3), Arg::Long(4)]);
+        assert_eq!((p.launches[0].global, p.launches[0].local), (4, 4));
+        assert_eq!(
+            p.launches[0].note,
+            "%a: the 2 largest of each line along axis 2: 3 lines of 4, one work-item each"
+        );
+        assert!(p.source.contains("float t_f = (float)b_a[i];"));
     }
 
     #[test]

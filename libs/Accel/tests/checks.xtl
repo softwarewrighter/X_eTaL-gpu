@@ -49,3 +49,8 @@ p := 2 4 5 r_eshape r_ange 40
 tb := 6 4 r_eshape r_ange 24
 tb u:c_heck tb ac:e_mbed r_ange 6
 (2 4 r_eshape 21 22 23 24 1 2 3 4) u:c_heck tb ac:e_mbed 6 1
+sc := 5 6 r_eshape (f_loat r_ange 30) / 7.0
+(5 r_eshape 6) u:c_heck ac:a_rgmax sc
+(5 6 r_eshape 1.0) u:c_heck 6 ac:t_opk sc
+('m_ax r_/_2 sc) u:c_heck 'm_ax r_/_2 sc * 1 ac:t_opk sc
+(5 r_eshape 1.0) u:c_heck '+ r_/_2 1 ac:t_opk sc

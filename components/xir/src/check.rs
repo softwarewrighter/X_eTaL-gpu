@@ -223,6 +223,25 @@ pub fn check(program: Program) -> Result<Checked> {
                     shape: Shape(dims),
                 }
             }
+            Op::TopK { k, axis, arg } => {
+                let t = ty_of(*arg);
+                if !t.scalar.is_num() {
+                    return err(format!("%{name}: topk needs numbers, got {}", t.scalar));
+                }
+                if t.shape.is_scalar() {
+                    return err(format!("%{name}: topk needs an array of rank 1 or more, got a single value"));
+                }
+                if *axis > t.shape.rank() {
+                    return err(format!("%{name}: topk axis={axis}: the array has rank {}", t.shape.rank()));
+                }
+                if *k == 0 {
+                    return err(format!("%{name}: topk needs a count from 1"));
+                }
+                Ty {
+                    scalar: Scalar::Bool,
+                    shape: t.shape.clone(),
+                }
+            }
             Op::Reshape { shape, arg } => {
                 let t = ty_of(*arg);
                 if t.shape.is_empty() && !shape.is_empty() {
@@ -476,6 +495,21 @@ mod tests {
         assert_eq!(
             error_of("%x = const i64 [0]\n%r = reshape [2 2] %x\noutput %r\n"),
             "%r: reshape [2 2] of an empty array: there is no item to repeat"
+        );
+    }
+
+    #[test]
+    fn topk_masks() {
+        let t =
+            types_of("%m = const f64 [3 4] 1.0\n%a = topk 2 %m\n%b = topk 1 axis=1 %m\n%v = const i64 [5] 1\n%c = topk 3 %v\noutput %a\n");
+        assert_eq!(t, ["f64 [3 4]", "bool [3 4]", "bool [3 4]", "i64 [5]", "bool [5]"]);
+        assert_eq!(
+            error_of("%m = const f64 [3 4] 1.0\n%a = topk 2 axis=3 %m\noutput %a\n"),
+            "%a: topk axis=3: the array has rank 2"
+        );
+        assert_eq!(
+            error_of("%m = const bool [4] 1\n%a = topk 2 %m\noutput %a\n"),
+            "%a: topk needs numbers, got bool"
         );
     }
 

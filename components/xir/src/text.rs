@@ -294,6 +294,27 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 },
             ))
         }
+        "topk" => {
+            // `topk 2 %m` (along the last axis), or `topk 2 axis=1 %m`.
+            let (k, axis, v) = match rest {
+                [k, v] => (*k, None, *v),
+                [k, "axis", "=", a, v] => (*k, Some(axis_number(a)?), *v),
+                _ => return err("topk takes a count, an optional axis and a value: topk 2 %m, topk 2 axis=1 %m"),
+            };
+            let k: usize = k
+                .parse()
+                .ok()
+                .filter(|k| *k >= 1)
+                .ok_or_else(|| crate::Error(format!("topk: a count is a whole number from 1, got `{k}`")))?;
+            Ok((
+                None,
+                Op::TopK {
+                    k,
+                    axis: axis.unwrap_or(0),
+                    arg: reference(program, v)?,
+                },
+            ))
+        }
         "reshape" => {
             let (shape, rest) = shape(rest)?;
             if rest.len() != 1 {
@@ -371,7 +392,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         other => err(format!(
-            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup)"
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup, topk)"
         )),
     }
 }
@@ -458,6 +479,8 @@ pub fn print(program: &Program) -> String {
                 }
             }
             Op::Reshape { shape, arg } => out.push_str(&format!("reshape {shape} {}", name(*arg))),
+            Op::TopK { k, axis: 0, arg } => out.push_str(&format!("topk {k} {}", name(*arg))),
+            Op::TopK { k, axis, arg } => out.push_str(&format!("topk {k} axis={axis} {}", name(*arg))),
             Op::Lookup { axis: 1, idx, arg } => out.push_str(&format!("lookup {} {}", name(*idx), name(*arg))),
             Op::Lookup { axis, idx, arg } => out.push_str(&format!("lookup axis={axis} {} {}", name(*idx), name(*arg))),
             Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
@@ -507,6 +530,8 @@ mod tests {
 %rh = reshape [3 2] %mm
 %lk = lookup %v %mm
 %lc = lookup axis=2 %v %mm
+%tk2 = topk 2 %mm
+%tk1 = topk 1 axis=1 %mm
 output %c
 output %f
 ";
@@ -560,7 +585,7 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup, topk)"
         );
         assert_eq!(
             e("%a = const i64 [2 2] 1\n%b = rotate axis=0 1 %a\n"),

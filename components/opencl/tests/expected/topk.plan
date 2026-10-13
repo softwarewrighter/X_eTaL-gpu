@@ -1,0 +1,77 @@
+schedule: Float as float, Int as long, work-group 256, products and transposes untiled
+buffers:
+  b_m: float 12 items, %m f64 [3 4]; constant, uploaded by the host
+  b_o4: long 4 items, %o4 i64 [4]; constant, uploaded by the host
+  b_o3: long 3 items, %o3 i64 [3]; constant, uploaded by the host
+  b_r4: float 4 items, %r4 f64 [4]; constant, uploaded by the host
+  b_amx: float 3 items, %amx f64 [3]; written on the device
+  b_asp: float 12 items, %asp f64 [3 4]; written on the device
+  b_ahit: float 12 items, %ahit f64 [3 4]; written on the device
+  b_apos: float 12 items, %apos f64 [3 4]; written on the device
+  b_as: float 12 items, %as f64 [3 4]; written on the device
+  b_amn: float 3 items, %amn f64 [3]; written on the device
+  b_argm: long 3 items, %argm i64 [3]; written on the device
+  b_k2: int 12 items, %k2 bool [3 4]; written on the device
+  b_top2: float 12 items, %top2 f64 [3 4]; written on the device
+  b_k1: int 12 items, %k1 bool [3 4]; written on the device
+  b_s: float 20 items, %s f64 [4 5]; constant, uploaded by the host
+  b_o5: long 5 items, %o5 i64 [5]; constant, uploaded by the host
+  b_r5: float 5 items, %r5 f64 [5]; constant, uploaded by the host
+  b_top1: float 12 items, %top1 f64 [3 4]; written on the device
+  b_bmx: float 4 items, %bmx f64 [4]; written on the device
+  b_bsp: float 20 items, %bsp f64 [4 5]; written on the device
+  b_bhit: float 20 items, %bhit f64 [4 5]; written on the device
+  b_bpos: float 20 items, %bpos f64 [4 5]; written on the device
+  b_bs: float 20 items, %bs f64 [4 5]; written on the device
+  b_bmn: float 4 items, %bmn f64 [4]; written on the device
+  b_args: long 4 items, %args i64 [4]; written on the device
+  b_k3: int 20 items, %k3 bool [4 5]; written on the device
+  b_top3: float 20 items, %top3 f64 [4 5]; written on the device
+  b_kept: float 20 items, %kept f64 [4 5]; written on the device
+kernels:
+  reduce_axis_max_float: along one axis, one work-item per result item folding its line from the right; computes %amx %bmx
+  table1: 12 elements, one work-item each; computes %asp; writes %asp
+  k1: 12 elements, one work-item each; computes %aeq %ahit; writes %ahit
+  table3: 12 elements, one work-item each; computes %apos; writes %apos
+  k3: 12 elements, one work-item each; computes %aa %anh %ab %as; writes %as
+  reduce_axis_min_float: along one axis, one work-item per result item folding its line from the right; computes %amn %bmn
+  k4: 3 elements, one work-item each; computes %argm; writes %argm
+  topk2_float: a top-k mask: one work-item per line finds its k largest distinct values, then marks the items at or above the k-th; computes %k2
+  k5: 12 elements, one work-item each; computes %top2; writes %top2
+  topk1_float: a top-k mask: one work-item per line finds its k largest distinct values, then marks the items at or above the k-th; computes %k1
+  k6: 12 elements, one work-item each; computes %top1; writes %top1
+  table12: 20 elements, one work-item each; computes %bsp; writes %bsp
+  k8: 20 elements, one work-item each; computes %beq %bhit; writes %bhit
+  table14: 20 elements, one work-item each; computes %bpos; writes %bpos
+  k10: 20 elements, one work-item each; computes %ba %bnh %bb %bs; writes %bs
+  k11: 4 elements, one work-item each; computes %args; writes %args
+  topk3_float: a top-k mask: one work-item per line finds its k largest distinct values, then marks the items at or above the k-th; computes %k3
+  k12: 20 elements, one work-item each; computes %top3 %kept; writes %top3 %kept
+launches:
+  1: reduce_axis_max_float(b_m, b_amx, 3, 4, 1) global 4 local 4: %amx: max along axis 2: 3 lines of 4, one work-item each
+  2: table1(b_amx, b_o4, b_asp) global 16 local 16: %asp: left table, 3 by 4 items
+  3: k1(b_m, b_asp, b_ahit) global 16 local 16: 12 elements (1 group of 16)
+  4: table3(b_o3, b_r4, b_apos) global 16 local 16: %apos: right table, 3 by 4 items
+  5: k3(b_ahit, b_apos, b_as) global 16 local 16: 12 elements (1 group of 16)
+  6: reduce_axis_min_float(b_as, b_amn, 3, 4, 1) global 4 local 4: %amn: min along axis 2: 3 lines of 4, one work-item each
+  7: k4(b_amn, b_argm) global 4 local 4: 3 elements (1 group of 4)
+  8: topk2_float(b_m, b_k2, 3, 4, 1) global 4 local 4: %k2: the 2 largest of each line along axis 2: 3 lines of 4, one work-item each
+  9: k5(b_k2, b_top2) global 16 local 16: 12 elements (1 group of 16)
+  10: topk1_float(b_m, b_k1, 3, 4, 1) global 4 local 4: %k1: the 1 largest of each line along axis 2: 3 lines of 4, one work-item each
+  11: k6(b_k1, b_top1) global 16 local 16: 12 elements (1 group of 16)
+  12: reduce_axis_max_float(b_s, b_bmx, 4, 5, 1) global 4 local 4: %bmx: max along axis 2: 4 lines of 5, one work-item each
+  13: table12(b_bmx, b_o5, b_bsp) global 32 local 32: %bsp: left table, 4 by 5 items
+  14: k8(b_s, b_bsp, b_bhit) global 32 local 32: 20 elements (1 group of 32)
+  15: table14(b_o4, b_r5, b_bpos) global 32 local 32: %bpos: right table, 4 by 5 items
+  16: k10(b_bhit, b_bpos, b_bs) global 32 local 32: 20 elements (1 group of 32)
+  17: reduce_axis_min_float(b_bs, b_bmn, 4, 5, 1) global 4 local 4: %bmn: min along axis 2: 4 lines of 5, one work-item each
+  18: k11(b_bmn, b_args) global 4 local 4: 4 elements (1 group of 4)
+  19: topk3_float(b_s, b_k3, 4, 5, 1) global 4 local 4: %k3: the 3 largest of each line along axis 2: 4 lines of 5, one work-item each
+  20: k12(b_k3, b_s, b_top3, b_kept) global 32 local 32: 20 elements (1 group of 32)
+outputs:
+  %argm from b_argm, read back by the host
+  %top2 from b_top2, read back by the host
+  %top1 from b_top1, read back by the host
+  %args from b_args, read back by the host
+  %top3 from b_top3, read back by the host
+  %kept from b_kept, read back by the host

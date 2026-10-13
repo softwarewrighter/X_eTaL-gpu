@@ -1,4 +1,4 @@
-## Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, transposes, windows, lookups, a layer
+## Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, transposes, windows, lookups, choices, a layer
 ##
 ## Import it with an alias of your choice: "ac:" u_se< "Accel".
 ## Put libs/Accel/src on XETAL_PATH ("just path"); the reference is libs/Accel/docs.
@@ -180,6 +180,39 @@ l:c_onv := { k x ->
   h := (2 s_elect s_hape x) - 2
   w := (3 s_elect s_hape x) - 2
   (n c_at (t_ally k) c_at h c_at w) r_eshape 2 1 3 t_ranspose ((t_ally k) c_at n c_at h * w) r_eshape k '+ '* i_nner l:w_indows x
+}
+
+### Choices
+
+## ac:a_rgmax m: for each row of m, the position (from 1) of its
+## largest item, the first on a tie: the decision of a classifier,
+## the next token of a greedy sampler. X_eTaL-ML's nn:a_rgmax, as
+## array operations the IR has: the row's largest spread along the
+## row, a mask where the row equals it, the smallest position under
+## the mask (n + 1 elsewhere). No new GPU operation: a row reduction,
+## a table, a fused mask and a second row reduction.
+## >> "ac:" u_se< "Accel"
+## >> ac:a_rgmax 3 4 r_eshape 5.0 1.0 9.0 9.0 2.0 2.0 2.0 2.0 7.0 8.0 6.0 8.0
+## 3 1 2
+l:a_rgmax := { m ->
+  n := f_irst -1 t_ake s_hape m
+  hit := f_loat m = ('m_ax r_/_2 m) 'l_eft t_able o_ffsets n
+  f_loor 'm_in r_/_2 (hit * (o_ffsets t_ally m) 'r_ight t_able f_loat r_ange n) + (1.0 - hit) * f_loat n + 1
+}
+
+## k ac:t_opk m: a mask of each row's k largest items (1.0 there,
+## 0.0 elsewhere): the row's largest taken out k times, as X_eTaL-ML's
+## Sample (sm:t_op) and its mixture-of-experts router choose; items
+## tied with a taken one go with it, so a tie at the k-th keeps all
+## tied. The choice of a router, the candidates of a retrieval.
+## >> "ac:" u_se< "Accel"
+## >> 2 ac:t_opk 2 4 r_eshape 0.1 0.5 0.15 0.25 7.0 8.0 6.0 8.0
+## 0.0 1.0 0.0 1.0
+## 1.0 1.0 0.0 1.0
+l:t_opk := { k m ->
+  n := f_irst -1 t_ake s_hape m
+  left := k '{ q -> q - 1.0e300 * f_loat q = ('m_ax r_/_2 q) 'l_eft t_able o_ffsets n } p_ower m
+  f_loat (m - left) > 0.0
 }
 
 ### A layer of a network

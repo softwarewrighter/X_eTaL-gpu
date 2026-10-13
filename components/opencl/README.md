@@ -100,6 +100,19 @@ xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml 
   (`Plan::position_checks`) and the runtime checks them when an
   input is bound or rebound, with the evaluator's message; positions
   written in the program are checked by the checker.
+- **Top-k.** A `topk` is one kernel per k and element type
+  (`topk5_float`), one work-item per line: it keeps the line's k
+  largest distinct values in private memory as it reads the line,
+  then marks the items at or above the last of them; two passes
+  where the composition (a row max, a spread, a mask, a subtraction,
+  k times) makes 4k. Measured on the Apple M1 Max on a retrieval-sized
+  matrix of 256 queries by 100,000 scores, the 5 largest per row: the
+  composition 190 ms (16 launches), the kernel 122 ms, the scoring
+  product that makes such a matrix 92 ms (host launch times, which on
+  this Mac are the real ones; Apple's profiling counters say 4.6 and
+  2.9 ms). One work-item per line is what bounds it, 256 work-items
+  for 25.6 million items; a work-group per line is the next step if
+  retrieval shows the need.
 - **Windows, measured.** A convolution's 3 by 3 windows as Conv
   builds them (two rotations, four drops, a reshape) are six gathers
   on the device. For a batch of 64 pictures of 28 by 28 on the Apple

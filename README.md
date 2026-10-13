@@ -107,7 +107,8 @@ scores and a layer's weight gradient as Accel exports) and the
 convolution's windows (rotations along an axis, drops, a reshape, as
 X_eTaL-ML's Conv builds them; a small convolution as one product)
 and the lookup (`s_elect`: a batch of token ids picking rows of an
-embedding table, the ids all a prompt uploads). On 2026-10-12 the same code was run on
+embedding table, the ids all a prompt uploads), and the choices,
+argmax from the operations it had and a top-k mask as one operation. On 2026-10-12 the same code was run on
 the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its own lane:
 every check passes there too, with its own schedules
 (`schedules/nvidia-rtx5060-ti*.toml`) and reports. See

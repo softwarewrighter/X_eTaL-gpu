@@ -370,6 +370,13 @@ pub enum Op {
     /// a batch of rows of an embedding table. Along a later axis the
     /// index is a vector or a single value, as X_eTaL has it.
     Lookup { axis: usize, idx: ValueId, arg: ValueId },
+    /// `k ac:t_opk a` along axis k2 (the last of a matrix, X_eTaL-ML's
+    /// `sm:t_op`): a Bool mask, 1 where an item is among its line's k
+    /// largest, the largest taken out k times with its ties (so the
+    /// mask holds every item at or above the line's k-th largest
+    /// distinct value; all of a line with fewer distinct values).
+    /// One operation for what the composition does in 4k passes.
+    TopK { k: usize, axis: usize, arg: ValueId },
     /// `o_\ a` (`perm` None: the axes reversed) or `p t_ranspose a`
     /// (`perm` Some: axis i of a becomes axis p[i], 1 the first, each
     /// axis listed once; APL's dyadic transpose, so `o_\_23` is
@@ -392,7 +399,8 @@ impl Op {
             | Op::Ravel { arg }
             | Op::Transpose { arg, .. }
             | Op::Rotate { arg, .. }
-            | Op::Reshape { arg, .. } => vec![*arg],
+            | Op::Reshape { arg, .. }
+            | Op::TopK { arg, .. } => vec![*arg],
         }
     }
 }
