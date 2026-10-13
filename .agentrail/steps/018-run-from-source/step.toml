@@ -1,8 +1,9 @@
 number = 18
 slug = "run-from-source"
-status = "in-progress"
+status = "completed"
 description = "xetal-gpu run FILE.xtl --device opencl:N (plan 0o): the program's statements ..."
 role = "production"
 context_files = []
 created_at = "2026-10-13T08:12:03"
-commits = []
+completed_at = "2026-10-13T15:41:24"
+commits = ["3a6321e4f63214b737a45a6b86d78f865f4b5ad0"]

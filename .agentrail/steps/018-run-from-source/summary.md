@@ -1,0 +1,1 @@
+a refused top-level statement is run by the pinned xetal on the program's prefix: a binding becomes an input bound with the program, a printed statement prints in its place; xetal-gpu run FILE.xtl binds and prints in order; explain shows the X_eTaL line per kernel; the host-data demo; thirteen demos agree on the interpreter and the M1 Max
