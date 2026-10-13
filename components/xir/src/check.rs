@@ -151,25 +151,52 @@ pub fn check(program: Program) -> Result<Checked> {
                     shape: Shape(dims),
                 }
             }
-            Op::Take { n, arg } | Op::Drop { n, arg } => {
+            Op::Take { n, axis, arg } | Op::Drop { n, axis, arg } => {
                 let t = ty_of(*arg);
                 let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
                 if t.shape.is_scalar() {
                     return err(format!("%{name}: {what} needs an array of rank 1 or more, got a single value"));
                 }
-                let d0 = t.shape.0[0];
+                if *axis > t.shape.rank() {
+                    return err(format!("%{name}: {what} axis={axis}: the array has rank {}", t.shape.rank()));
+                }
+                let d = t.shape.0[axis - 1];
                 let k = n.unsigned_abs() as usize;
-                if k > d0 {
-                    return err(format!(
-                        "%{name}: {what} {n} of {} items along the first axis (no padding here)",
-                        d0
-                    ));
+                if k > d {
+                    return err(format!("%{name}: {what} {n} of {d} items along axis {axis} (no padding here)"));
                 }
                 let mut dims = t.shape.0.clone();
-                dims[0] = if what == "take" { k } else { d0 - k };
+                dims[axis - 1] = if what == "take" { k } else { d - k };
                 Ty {
                     scalar: t.scalar,
                     shape: Shape(dims),
+                }
+            }
+            Op::Rotate { axis, amounts, arg } => {
+                let t = ty_of(*arg);
+                if t.shape.is_scalar() {
+                    return err(format!("%{name}: rotate needs an array of rank 1 or more, got a single value"));
+                }
+                if *axis > t.shape.rank() {
+                    return err(format!("%{name}: rotate axis={axis}: the array has rank {}", t.shape.rank()));
+                }
+                let mut dims = t.shape.0.clone();
+                if amounts.len() > 1 {
+                    dims.insert(0, amounts.len());
+                }
+                Ty {
+                    scalar: t.scalar,
+                    shape: Shape(dims),
+                }
+            }
+            Op::Reshape { shape, arg } => {
+                let t = ty_of(*arg);
+                if t.shape.is_empty() && !shape.is_empty() {
+                    return err(format!("%{name}: reshape {shape} of an empty array: there is no item to repeat"));
+                }
+                Ty {
+                    scalar: t.scalar,
+                    shape: shape.clone(),
                 }
             }
             Op::Ravel { arg } => {
@@ -372,11 +399,49 @@ mod tests {
         );
         assert_eq!(
             error_of("%m = const f64 [4 3] 1.0\n%a = take 5 %m\noutput %a\n"),
-            "%a: take 5 of 4 items along the first axis (no padding here)"
+            "%a: take 5 of 4 items along axis 1 (no padding here)"
+        );
+        assert_eq!(
+            error_of("%m = const f64 [4 3] 1.0\n%a = drop -4 axis=2 %m\noutput %a\n"),
+            "%a: drop -4 of 3 items along axis 2 (no padding here)"
+        );
+        assert_eq!(
+            error_of("%m = const f64 [4 3] 1.0\n%a = take 1 axis=3 %m\noutput %a\n"),
+            "%a: take axis=3: the array has rank 2"
         );
         assert_eq!(
             error_of("%r = const f64 [2] 1.0\n%i = const i64 [2] 0\n%o = table add %r %i\noutput %o\n"),
             "%o: table add needs arguments of one scalar type, got f64 and i64"
+        );
+    }
+
+    #[test]
+    fn windows_operations() {
+        // -1 0 1 o_-_3 x on [1 3 4] is [3 1 3 4]; 1 o_- v keeps the shape; d_rop_k; r_eshape repeats.
+        let t = types_of("%x = const i64 [1 3 4] 0\n%r = rotate axis=3 -1 0 1 %x\n%rr = rotate axis=3 -1 0 1 %r\n%v = const f64 [5] 1.0\n%o = rotate 1 %v\n%d = drop -1 axis=4 %rr\n%e = drop 1 axis=4 %d\n%w = reshape [9 2] %e\n%k = const i64 [] 7\n%f = reshape [2 2] %k\n%t = take 2 axis=3 %x\noutput %w\n");
+        assert_eq!(
+            t,
+            [
+                "i64 [1 3 4]",
+                "i64 [3 1 3 4]",
+                "i64 [3 3 1 3 4]",
+                "f64 [5]",
+                "f64 [5]",
+                "i64 [3 3 1 2 4]",
+                "i64 [3 3 1 1 4]",
+                "i64 [9 2]",
+                "i64 []",
+                "i64 [2 2]",
+                "i64 [1 3 2]"
+            ]
+        );
+        assert_eq!(
+            error_of("%x = const i64 [2 3] 0\n%r = rotate axis=3 1 %x\noutput %r\n"),
+            "%r: rotate axis=3: the array has rank 2"
+        );
+        assert_eq!(
+            error_of("%x = const i64 [0]\n%r = reshape [2 2] %x\noutput %r\n"),
+            "%r: reshape [2 2] of an empty array: there is no item to repeat"
         );
     }
 

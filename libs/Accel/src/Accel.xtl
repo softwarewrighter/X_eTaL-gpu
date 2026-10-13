@@ -1,4 +1,4 @@
-## Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, transposes, a layer
+## Accel: the acceleratable subset of X_eTaL: elementwise arithmetic, masks, reductions, products, transposes, windows, a layer
 ##
 ## Import it with an alias of your choice: "ac:" u_se< "Accel".
 ## Put libs/Accel/src on XETAL_PATH ("just path"); the reference is libs/Accel/docs.
@@ -127,6 +127,45 @@ l:s_cores := { q k -> q '+ '* i_nner o_\ k }
 ## 118 134 150
 ## 140 160 180
 l:w_eightGrad := { x dy -> (o_\ x) '+ '* i_nner dy }
+
+### Windows
+
+## ac:w_indows x: every 3 by 3 window of every picture of the batch x
+## (n pictures of h by w) as 9 rows, a column per picture and place:
+## the picture's nine shifted copies (a rotation along each of the
+## last two axes, one copy per shift), their wrapped edges dropped,
+## reshaped; the expression is X_eTaL-ML's Conv (cv:w_indows). On a
+## GPU each rotation and each drop is a gather of its own and the
+## reshape is nothing.
+## >> "ac:" u_se< "Accel"
+## >> ac:w_indows 1 3 4 r_eshape r_ange 12
+##  1  2
+##  2  3
+##  3  4
+##  5  6
+##  6  7
+##  7  8
+##  9 10
+## 10 11
+## 11 12
+l:w_indows := { x ->
+  places := ((2 s_elect s_hape x) - 2) * (3 s_elect s_hape x) - 2
+  (9 c_at places * t_ally x) r_eshape 1 d_rop_5 -1 d_rop_5 1 d_rop_4 -1 d_rop_4 -1 0 1 o_-_3 -1 0 1 o_-_3 x
+}
+
+## k ac:c_onv x: the f filters k (f rows of 9, a 3 by 3 filter row by
+## row) over every window of every picture of x, as one matrix
+## product: the maps, n by f by (h - 2) by (w - 2) (a valid
+## convolution without the bias; X_eTaL-ML's Conv adds its biases).
+## >> "ac:" u_se< "Accel"
+## >> (1 9 r_eshape 0 0 0 0 1 0 0 0 0) ac:c_onv 1 3 4 r_eshape r_ange 12
+## 6 7
+l:c_onv := { k x ->
+  n := t_ally x
+  h := (2 s_elect s_hape x) - 2
+  w := (3 s_elect s_hape x) - 2
+  (n c_at (t_ally k) c_at h c_at w) r_eshape 2 1 3 t_ranspose ((t_ally k) c_at n c_at h * w) r_eshape k '+ '* i_nner l:w_indows x
+}
 
 ### A layer of a network
 

@@ -37,6 +37,9 @@ becomes an adapter and the twins go.
 %v = ravel %t                        # r_avel: every item as one vector
 %s = table right %o %v               # a 'f t_able b: every pairing; f a two-argument map, left or right
 %tt = transpose %a                   # o_\: the axes reversed; transpose 3 1 2 %t is 3 1 2 t_ranspose t
+%ro = rotate axis=3 -1 0 1 %t        # -1 0 1 o_-_3 t: one copy per amount along a new first axis
+%dk = drop -1 axis=4 %ro             # -1 d_rop_4: along any axis (take likewise)
+%rs = reshape [9 4] %dk              # r_eshape: the items in row order, repeated as needed
 output %c                            # what the program prints, in order
 output %f
 ```
@@ -47,7 +50,8 @@ output %f
 | shape | `[]` one value, `[8]` a vector, `[2 3]` a matrix (rows first) |
 | map operations | `add sub mul min max neg abs` (any number); `div exp log` (Floats only: X_eTaL's `/` gives a Float, so an Int is cast first); `idiv mod` (Ints, floored as `d_iv` and `m_od`); `eq ne` (any one type, give bool); `lt le gt ge` (numbers, give bool); `and or not` (bool) |
 | reduce operations | `add mul min max`, folded from the right as `r_/` is; the whole array (`r_/_12`, or `r_/` of a vector) without `axis=`, one axis with it (`axis=2` is `r_/_2`, `axis=1` is `r_/` of a matrix) |
-| structure | `take n`, `drop n` (rows along the first axis, a negative n from the end; no padding), `ravel`, `table f` (APL's outer product; `left` and `right` spread a vector along a new axis, as `'l_eft t_able` and `'r_ight t_able` do in X_eTaL-ML's NN) |
+| structure | `take n`, `drop n` (along the first axis, or `axis=k`; a negative n from the end; no padding), `ravel`, `reshape [s]` (the items in row order, repeated as needed; an empty argument has nothing to repeat), `table f` (APL's outer product; `left` and `right` spread a vector along a new axis, as `'l_eft t_able` and `'r_ight t_able` do in X_eTaL-ML's NN) |
+| rotate | `rotate n` (`n o_- a`, a positive n toward the front) or `rotate axis=k n1 n2 ...` (`n o_-_k a`; several amounts give one copy per amount along a new first axis, as X_eTaL does) |
 | transpose | `transpose` (`o_\`: the axes reversed) and `transpose p` (`p t_ranspose`: axis i of the argument becomes axis p[i], 1 the first, each listed once; `o_\_23` is `transpose 1 3 2`); a vector or a single value is unchanged |
 | cast | Int to Float exactly, Float to Int toward negative infinity (`f_loor`), Bool to 0 or 1, a number to bool when not 0 |
 
@@ -75,6 +79,8 @@ The interpreter is the reference the GPU is compared with:
   print `0.6000000000000001`).
 - Printing follows `xetal`: a Bool as 1 or 0; a vector's items
   separated by one space; a matrix with right-aligned columns; a
+  higher rank plane by plane with one blank line between planes,
+  two between rank-3 blocks, and so on (probed to rank 5); a
   Float in full decimal with the shortest digits that read back, and
   always a point (`3.0`, `0.00000015`, `1000000000000000000000.0`,
   `-0.0`, `inf`).

@@ -225,16 +225,69 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         "take" | "drop" => {
-            if rest.len() != 2 {
-                return err(format!(
-                    "{kind} takes a count and a value: {kind} 2 %m (a negative count from the end)"
-                ));
-            }
-            let n: i64 = rest[0]
+            // `take 2 %m`, or `take -1 axis=3 %t` (the `=` arrives spaced).
+            let (n, axis, v) = match rest {
+                [n, v] => (*n, 1, *v),
+                [n, "axis", "=", k, v] => (*n, axis_number(k)?, *v),
+                _ => {
+                    return err(format!(
+                        "{kind} takes a count, an optional axis and a value: {kind} 2 %m, {kind} -1 axis=3 %t (a negative count from the end)"
+                    ))
+                }
+            };
+            let n: i64 = n
                 .parse()
-                .map_err(|_| crate::Error(format!("{kind}: a count is a whole number, got `{}`", rest[0])))?;
-            let arg = reference(program, rest[1])?;
-            Ok((None, if kind == "take" { Op::Take { n, arg } } else { Op::Drop { n, arg } }))
+                .map_err(|_| crate::Error(format!("{kind}: a count is a whole number, got `{n}`")))?;
+            let arg = reference(program, v)?;
+            Ok((
+                None,
+                if kind == "take" {
+                    Op::Take { n, axis, arg }
+                } else {
+                    Op::Drop { n, axis, arg }
+                },
+            ))
+        }
+        "rotate" => {
+            // `rotate 1 %v`, or `rotate axis=3 -1 0 1 %x`: one copy per amount.
+            let (axis, rest) = match rest {
+                ["axis", "=", k, rest @ ..] => (axis_number(k)?, rest),
+                _ => (1, rest),
+            };
+            let Some((last, amounts)) = rest.split_last() else {
+                return err("rotate takes an optional axis, one or more amounts and a value: rotate 1 %v, rotate axis=3 -1 0 1 %x");
+            };
+            if amounts.is_empty() {
+                return err("rotate needs at least one amount: rotate 1 %v, rotate axis=3 -1 0 1 %x");
+            }
+            let amounts: Vec<i64> = amounts
+                .iter()
+                .map(|t| {
+                    t.parse()
+                        .map_err(|_| crate::Error(format!("rotate: an amount is a whole number, got `{t}`")))
+                })
+                .collect::<Result<_>>()?;
+            Ok((
+                None,
+                Op::Rotate {
+                    axis,
+                    amounts,
+                    arg: reference(program, last)?,
+                },
+            ))
+        }
+        "reshape" => {
+            let (shape, rest) = shape(rest)?;
+            if rest.len() != 1 {
+                return err("reshape takes a shape and a value: reshape [2 3] %v");
+            }
+            Ok((
+                None,
+                Op::Reshape {
+                    shape,
+                    arg: reference(program, rest[0])?,
+                },
+            ))
         }
         "ravel" => {
             if rest.len() != 1 {
@@ -300,9 +353,17 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         other => err(format!(
-            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose)"
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape)"
         )),
     }
+}
+
+/// An axis as written after `axis=`: a whole number from 1.
+fn axis_number(t: &str) -> Result<usize> {
+    t.parse()
+        .ok()
+        .filter(|a| *a >= 1)
+        .ok_or_else(|| crate::Error(format!("an axis is a whole number from 1, got `{t}`")))
 }
 
 /// `scalar shape ...`: the type and the tokens after it.
@@ -362,8 +423,23 @@ pub fn print(program: &Program) -> String {
             },
             Op::Cast { op, arg } => out.push_str(&format!("cast {} {}", op.to, name(*arg))),
             Op::Matmul { a, b } => out.push_str(&format!("matmul {} {}", name(*a), name(*b))),
-            Op::Take { n, arg } => out.push_str(&format!("take {n} {}", name(*arg))),
-            Op::Drop { n, arg } => out.push_str(&format!("drop {n} {}", name(*arg))),
+            Op::Take { n, axis, arg } | Op::Drop { n, axis, arg } => {
+                let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
+                if *axis == 1 {
+                    out.push_str(&format!("{what} {n} {}", name(*arg)));
+                } else {
+                    out.push_str(&format!("{what} {n} axis={axis} {}", name(*arg)));
+                }
+            }
+            Op::Rotate { axis, amounts, arg } => {
+                let amounts = amounts.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" ");
+                if *axis == 1 {
+                    out.push_str(&format!("rotate {amounts} {}", name(*arg)));
+                } else {
+                    out.push_str(&format!("rotate axis={axis} {amounts} {}", name(*arg)));
+                }
+            }
+            Op::Reshape { shape, arg } => out.push_str(&format!("reshape {shape} {}", name(*arg))),
             Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
             Op::Table { op, a, b } => out.push_str(&format!("table {op} {} {}", name(*a), name(*b))),
             Op::Transpose { perm: None, arg } => out.push_str(&format!("transpose {}", name(*arg))),
@@ -405,6 +481,10 @@ mod tests {
 %tb = table left %v %rv
 %tr = transpose %mm
 %tp = transpose 2 1 %mm
+%tx = take -1 axis=2 %mm
+%ro = rotate 1 %v
+%ra = rotate axis=2 -1 0 1 %mm
+%rh = reshape [3 2] %mm
 output %c
 output %f
 ";
@@ -458,7 +538,19 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape)"
+        );
+        assert_eq!(
+            e("%a = const i64 [2 2] 1\n%b = rotate axis=0 1 %a\n"),
+            "line 2: an axis is a whole number from 1, got `0`"
+        );
+        assert_eq!(
+            e("%a = const i64 [2 2] 1\n%b = rotate %a\n"),
+            "line 2: rotate needs at least one amount: rotate 1 %v, rotate axis=3 -1 0 1 %x"
+        );
+        assert_eq!(
+            e("%a = const i64 [2 2] 1\n%b = reshape [3] %a %a\n"),
+            "line 2: reshape takes a shape and a value: reshape [2 3] %v"
         );
         assert_eq!(
             e("%a = const i64 [2 2] 1\n%b = transpose 2 0 %a\n"),

@@ -4,11 +4,15 @@ inline long xetal_imod_long(long a, long b) { return a - xetal_idiv_long(a, b) *
 inline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 inline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }
 
-// copy_float: count items from offset, one work-item each (a take or a
-// drop along the first axis keeps contiguous rows).
-__kernel void copy_float(__global const float* in, __global float* out, const long offset, const long count) {
+// slice_float: a take or a drop along an axis: of every line (outer lines
+// of len items, inner apart), the keep items from start; one
+// work-item per item kept.
+__kernel void slice_float(__global const float* in, __global float* out, const long outer, const long len, const long inner, const long start, const long keep) {
     long k = get_global_id(0);
-    if (k < count) out[k] = in[offset + k];
+    if (k >= outer * keep * inner) return;
+    long o = k / (keep * inner), r = k % (keep * inner);
+    long j = r / inner, i = r % inner;
+    out[k] = in[(o * len + start + j) * inner + i];
 }
 
 // table2: %b1 := a 'right t_able b, 4 by 5 items, one work-item each.

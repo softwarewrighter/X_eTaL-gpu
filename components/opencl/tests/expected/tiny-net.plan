@@ -23,7 +23,7 @@ buffers:
   b_p: float 8 items, %p f64 [4 2]; written on the device
   b_ps: float 4 items, %ps f64 [4]; written on the device
 kernels:
-  copy_float: a contiguous copy (a take or a drop along the first axis), one work-item per item; computes %w1w %w1b %w2w %w2b
+  slice_float: a take or a drop along an axis: the items kept of every line, one work-item per item; computes %w1w %w1b %w2w %w2b
   table2: 20 elements, one work-item each; computes %b1; writes %b1
   matmul_float: sums of products, one work-item per result item, folded from the right; computes %xw1 %hw2
   k1: 20 elements, one work-item each; computes %z1 %h; writes %h
@@ -36,13 +36,13 @@ kernels:
   table14: 8 elements, one work-item each; computes %ss; writes %ss
   k7: 8 elements, one work-item each; computes %p; writes %p
 launches:
-  1: copy_float(b_w1, b_w1w, 0, 15) global 16 local 16: %w1w: 15 items from item 0
-  2: copy_float(b_w1, b_w1b, 15, 5) global 8 local 8: %w1b: 5 items from item 15
+  1: slice_float(b_w1, b_w1w, 1, 4, 5, 0, 3) global 16 local 16: %w1w: 15 items from item 0
+  2: slice_float(b_w1, b_w1b, 1, 4, 5, 3, 1) global 8 local 8: %w1b: 5 items from item 15
   3: table2(b_o4, b_w1b, b_b1) global 32 local 32: %b1: right table, 4 by 5 items
   4: matmul_float(b_x, b_w1w, b_xw1, 4, 3, 5) global 32 local 32: %xw1: 4 by 3 times 3 by 5, 20 sums of 3 products, one work-item each
   5: k1(b_xw1, b_b1, b_h) global 32 local 32: 20 elements (1 group of 32)
-  6: copy_float(b_w2, b_w2w, 0, 10) global 16 local 16: %w2w: 10 items from item 0
-  7: copy_float(b_w2, b_w2b, 10, 2) global 2 local 2: %w2b: 2 items from item 10
+  6: slice_float(b_w2, b_w2w, 1, 6, 2, 0, 5) global 16 local 16: %w2w: 10 items from item 0
+  7: slice_float(b_w2, b_w2b, 1, 6, 2, 5, 1) global 2 local 2: %w2b: 2 items from item 10
   8: table7(b_o4, b_w2b, b_b2) global 8 local 8: %b2: right table, 4 by 2 items
   9: matmul_float(b_h, b_w2w, b_hw2, 4, 5, 2) global 8 local 8: %hw2: 4 by 5 times 5 by 2, 8 sums of 5 products, one work-item each
   10: k3(b_hw2, b_b2, b_z2) global 8 local 8: 8 elements (1 group of 8)

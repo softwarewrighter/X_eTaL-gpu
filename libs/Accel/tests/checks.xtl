@@ -42,3 +42,7 @@ wb := w c_at 1 2 r_eshape b
 (o_\ m ac:s_cores i) u:c_heck i ac:s_cores m
 m u:c_heck o_\ o_\ m
 (ac:r_owSums m) u:c_heck ac:c_olSums o_\ m
+p := 2 4 5 r_eshape r_ange 40
+(2 1 2 3 r_eshape 7 8 9 12 13 14 27 28 29 32 33 34) u:c_heck (1 9 r_eshape 0 0 0 0 1 0 0 0 0) ac:c_onv p
+('+ r_/ ac:w_indows p) u:c_heck r_avel (1 9 r_eshape 1) ac:c_onv p
+(9 12) u:c_heck s_hape ac:w_indows p

@@ -39,3 +39,9 @@ q ac:s_cores k
 (2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25) ac:s_cores 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0
 (4 2 r_eshape r_ange 8) ac:w_eightGrad 4 3 r_eshape r_ange 12
 (4 2 r_eshape 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0) ac:w_eightGrad 4 3 r_eshape 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2
+1 o_- 1 2 3 4 5
+-1 0 1 o_- 1 2 3 4 5
+ac:w_indows 1 3 4 r_eshape r_ange 12
+ac:w_indows 2 3 3 r_eshape f_loat r_ange 18
+(1 9 r_eshape 0 0 0 0 1 0 0 0 0) ac:c_onv 2 3 4 r_eshape r_ange 24
+(2 9 r_eshape 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0) ac:c_onv 1 3 4 r_eshape f_loat r_ange 12

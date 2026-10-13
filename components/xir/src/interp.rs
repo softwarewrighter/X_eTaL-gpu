@@ -150,14 +150,17 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
             Op::Matmul { a, b } => matmul(&values[a.0], &values[b.0], ty)?,
             Op::Take { arg, .. } | Op::Drop { arg, .. } => {
                 let a = &values[arg.0];
-                let (offset, _) = slice_of(&v.op, &a.shape);
-                let count = ty.shape.len();
-                let data = match &a.data {
-                    Data::Int(x) => Data::Int(x[offset..offset + count].to_vec()),
-                    Data::Float(x) => Data::Float(x[offset..offset + count].to_vec()),
-                    Data::Bool(x) => Data::Bool(x[offset..offset + count].to_vec()),
-                };
-                Array::new(ty.scalar, ty.shape.clone(), data)?
+                gather(a, &slice_of(&v.op, &a.shape).indices(), ty)?
+            }
+            Op::Rotate { axis, amounts, arg } => {
+                let a = &values[arg.0];
+                gather(a, &rotate_indices(&a.shape, *axis, amounts), ty)?
+            }
+            Op::Reshape { arg, .. } => {
+                let a = &values[arg.0];
+                let n = a.shape.len();
+                let idx: Vec<usize> = (0..ty.shape.len()).map(|k| k % n.max(1)).collect();
+                gather(a, &idx, ty)?
             }
             Op::Ravel { arg } => {
                 let a = &values[arg.0];
@@ -420,19 +423,93 @@ fn reduce(op: ReduceOp, a: &Array, axis: Option<usize>, ty: &Ty) -> Result<Array
     Array::new(ty.scalar, Shape::scalar(), data)
 }
 
-/// Where a take or a drop starts in the ravel of its argument, and how
-/// many items it keeps (rows along the first axis are contiguous).
-pub fn slice_of(op: &Op, shape: &Shape) -> (usize, usize) {
-    let d0 = shape.0[0];
-    let row = shape.len() / d0.max(1);
-    let (start, rows) = match *op {
-        Op::Take { n, .. } if n >= 0 => (0, n as usize),
-        Op::Take { n, .. } => (d0 - n.unsigned_abs() as usize, n.unsigned_abs() as usize),
-        Op::Drop { n, .. } if n >= 0 => (n as usize, d0 - n as usize),
-        Op::Drop { n, .. } => (0, d0 - n.unsigned_abs() as usize),
+/// The items of an array gathered by position into a new one.
+fn gather(a: &Array, idx: &[usize], ty: &Ty) -> Result<Array> {
+    let data = match &a.data {
+        Data::Int(x) => Data::Int(idx.iter().map(|&i| x[i]).collect()),
+        Data::Float(x) => Data::Float(idx.iter().map(|&i| x[i]).collect()),
+        Data::Bool(x) => Data::Bool(idx.iter().map(|&i| x[i]).collect()),
+    };
+    Array::new(ty.scalar, ty.shape.clone(), data)
+}
+
+/// What a take or a drop keeps: along its axis (`outer` lines before
+/// it, `len` items along it, `inner` after it, as [`axis_split`]), the
+/// `keep` items from `start`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Slice {
+    pub outer: usize,
+    pub len: usize,
+    pub inner: usize,
+    pub start: usize,
+    pub keep: usize,
+}
+
+impl Slice {
+    /// For each item kept, in row order, its position in the argument's ravel.
+    pub fn indices(&self) -> Vec<usize> {
+        let mut idx = Vec::with_capacity(self.outer * self.keep * self.inner);
+        for o in 0..self.outer {
+            for j in self.start..self.start + self.keep {
+                for i in 0..self.inner {
+                    idx.push((o * self.len + j) * self.inner + i);
+                }
+            }
+        }
+        idx
+    }
+
+    /// Whether the items kept are one contiguous run of the ravel.
+    pub fn is_contiguous(&self) -> bool {
+        self.outer == 1
+    }
+}
+
+/// Where a take or a drop starts along its axis and how much it keeps.
+pub fn slice_of(op: &Op, shape: &Shape) -> Slice {
+    let (axis, start, keep) = match *op {
+        Op::Take { n, axis, .. } | Op::Drop { n, axis, .. } => {
+            let d = shape.0[axis - 1];
+            let k = n.unsigned_abs() as usize;
+            let (start, keep) = match op {
+                Op::Take { .. } if n >= 0 => (0, k),
+                Op::Take { .. } => (d - k, k),
+                Op::Drop { .. } if n >= 0 => (k, d - k),
+                _ => (0, d - k),
+            };
+            (axis, start, keep)
+        }
         _ => unreachable!("a take or a drop"),
     };
-    (start * row, rows * row)
+    let (outer, len, inner) = axis_split(shape, axis);
+    Slice {
+        outer,
+        len,
+        inner,
+        start,
+        keep,
+    }
+}
+
+/// `n o_-_k a`, one copy per amount: for each item of the result, in
+/// row order, its position in the argument's ravel; along the axis,
+/// item j of a copy rotated by n is the argument's item (j + n) mod
+/// len (a positive n moves items toward the front, as `1 o_- 1 2 3`
+/// is `2 3 1`).
+pub fn rotate_indices(shape: &Shape, axis: usize, amounts: &[i64]) -> Vec<usize> {
+    let (outer, len, inner) = axis_split(shape, axis);
+    let mut idx = Vec::with_capacity(amounts.len() * shape.len());
+    for &n in amounts {
+        for o in 0..outer {
+            for j in 0..len {
+                let src = imod(j as i64 + n, len as i64) as usize;
+                for i in 0..inner {
+                    idx.push((o * len + src) * inner + i);
+                }
+            }
+        }
+    }
+    idx
 }
 
 /// `a 'f t_able b`: item (i, j) is f(a[i], b[j]), a's items in row
@@ -634,6 +711,25 @@ mod tests {
                 "10 20\n20 40\n30 60",
                 "5 6 7\n5 6 7",
                 "10 10 10\n20 20 20"
+            ]
+        );
+    }
+
+    #[test]
+    fn rotate_drop_reshape_as_xetal_does() {
+        // 1 o_- 1 2 3 4 5; -1 0 1 o_- 1 2 3 4 5; x := 1 3 4 r_eshape r_ange 12: -1 0 1 o_-_3 x,
+        // 1 d_rop_2 x, -1 d_rop_3 x; 2 3 r_eshape 1 2 3 4; and Conv's windows of x (9 by 2), as xetal prints them.
+        let out = eval("%v = const i64 [5] 1 2 3 4 5\n%r1 = rotate 1 %v\n%r3 = rotate -1 0 1 %v\n%x = const i64 [1 3 4] 1 2 3 4 5 6 7 8 9 10 11 12\n%xr = rotate axis=3 -1 0 1 %x\n%d2 = drop 1 axis=2 %x\n%d3 = drop -1 axis=3 %x\n%q = const i64 [4] 1 2 3 4\n%rs = reshape [2 3] %q\n%a = rotate axis=3 -1 0 1 %xr\n%b = drop -1 axis=4 %a\n%c = drop 1 axis=4 %b\n%d = drop -1 axis=5 %c\n%e = drop 1 axis=5 %d\n%w = reshape [9 2] %e\noutput %r1\noutput %r3\noutput %xr\noutput %d2\noutput %d3\noutput %rs\noutput %w\n");
+        assert_eq!(
+            out,
+            [
+                "2 3 4 5 1",
+                "5 1 2 3 4\n1 2 3 4 5\n2 3 4 5 1",
+                " 4  1  2  3\n 8  5  6  7\n12  9 10 11\n\n\n 1  2  3  4\n 5  6  7  8\n 9 10 11 12\n\n\n 2  3  4  1\n 6  7  8  5\n10 11 12  9",
+                "5  6  7  8\n9 10 11 12",
+                "1  2  3\n5  6  7\n9 10 11",
+                "1 2 3\n4 1 2",
+                " 1  2\n 2  3\n 3  4\n 5  6\n 6  7\n 7  8\n 9 10\n10 11\n11 12"
             ]
         );
     }

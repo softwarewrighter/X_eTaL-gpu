@@ -4,6 +4,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use xetal_gpu_xir::interp::Slice;
 use xetal_gpu_xir::ir::{is_identity, permutation, transpose_layout};
 use xetal_gpu_xir::{Checked, Const, MapOp, Op, ReduceOp, Scalar, Shape, TableOp, Ty, ValueId};
 
@@ -87,8 +88,22 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
             }
             Op::Take { arg, .. } | Op::Drop { arg, .. } => {
                 b.flush(&outputs);
-                let (offset, count) = xetal_gpu_xir::interp::slice_of(&v.op, &checked.ty(*arg).shape);
-                b.copy(id, *arg, offset, count);
+                let slice = xetal_gpu_xir::interp::slice_of(&v.op, &checked.ty(*arg).shape);
+                b.slice(id, *arg, slice);
+            }
+            Op::Rotate { axis, amounts, arg } => {
+                b.flush(&outputs);
+                b.rotate(id, *arg, *axis, amounts);
+            }
+            Op::Reshape { shape, arg } => {
+                b.flush(&outputs);
+                if shape.len() == checked.ty(*arg).shape.len() {
+                    // The same items in the same order: the same buffer (or literal), no launch.
+                    let place = b.places[arg].clone();
+                    b.places.insert(id, place);
+                } else {
+                    b.cycle(id, *arg);
+                }
             }
             Op::Ravel { arg } => {
                 // Row order is the ravel: the same buffer, read as a vector.
@@ -140,7 +155,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 let c = loop {
                     match &program.value(v).op {
                         Op::Const(c) => break c.clone(),
-                        Op::Ravel { arg } | Op::Transpose { arg, .. } => v = *arg,
+                        Op::Ravel { arg } | Op::Transpose { arg, .. } | Op::Reshape { arg, .. } => v = *arg,
                         _ => unreachable!("a literal is a single constant"),
                     }
                 };
@@ -329,22 +344,28 @@ impl<'a> Builder<'a> {
         }
     }
 
-    /// A take or a drop: the rows it keeps are contiguous, so a copy of
-    /// `count` items from `offset`, one work-item each.
-    fn copy(&mut self, id: ValueId, arg: ValueId, offset: usize, count: usize) {
+    /// A take or a drop: the `keep` items from `start` along its axis
+    /// of every line (`outer` lines, `len` items along the axis,
+    /// `inner` after it), one work-item each; along the first axis the
+    /// kept items are one contiguous run.
+    fn slice(&mut self, id: ValueId, arg: ValueId, s: Slice) {
         let elem = self.elem_of(arg);
         let Place::Buffer(src) = self.places[&arg].clone() else {
-            unreachable!("a copy reads a buffer")
+            unreachable!("a slice reads a buffer")
         };
-        let kname = format!("copy_{elem}");
+        let kname = format!("slice_{elem}");
         if !self.source.contains(&format!("__kernel void {kname}(")) {
             self.source.push_str(&format!(
                 "
-// {kname}: count items from offset, one work-item each (a take or a
-// drop along the first axis keeps contiguous rows).
-__kernel void {kname}(__global const {elem}* in, __global {elem}* out, const long offset, const long count) {{
+// {kname}: a take or a drop along an axis: of every line (outer lines
+// of len items, inner apart), the keep items from start; one
+// work-item per item kept.
+__kernel void {kname}(__global const {elem}* in, __global {elem}* out, const long outer, const long len, const long inner, const long start, const long keep) {{
     long k = get_global_id(0);
-    if (k < count) out[k] = in[offset + k];
+    if (k >= outer * keep * inner) return;
+    long o = k / (keep * inner), r = k % (keep * inner);
+    long j = r / inner, i = r % inner;
+    out[k] = in[(o * len + start + j) * inner + i];
 }}
 "
             ));
@@ -356,6 +377,7 @@ __kernel void {kname}(__global const {elem}* in, __global {elem}* out, const lon
                 about: about(&kname),
             });
         }
+        let count = s.outer * s.keep * s.inner;
         let result = self.buffer(Some(id), elem, count, Init::Device);
         let local = self.schedule.work_group.min(count.max(1).next_power_of_two());
         let global = count.max(1).div_ceil(local) * local;
@@ -365,16 +387,165 @@ __kernel void {kname}(__global const {elem}* in, __global {elem}* out, const lon
             args: vec![
                 Arg::Buffer(src),
                 Arg::Buffer(result),
-                Arg::Long(offset as i64),
-                Arg::Long(count as i64),
+                Arg::Long(s.outer as i64),
+                Arg::Long(s.len as i64),
+                Arg::Long(s.inner as i64),
+                Arg::Long(s.start as i64),
+                Arg::Long(s.keep as i64),
             ],
             global,
             local,
-            note: format!("%{name}: {count} items from item {offset}"),
+            note: if s.is_contiguous() {
+                format!("%{name}: {count} items from item {}", s.start * s.inner)
+            } else {
+                format!(
+                    "%{name}: {} of {} along the axis, {} line{} of {} each: {count} items",
+                    s.keep,
+                    s.len,
+                    s.outer,
+                    if s.outer == 1 { "" } else { "s" },
+                    s.inner
+                )
+            },
         });
         if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
             k.computes.push(id);
             k.writes.push(id);
+        }
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A rotate: a gather, one work-item per result item; the amounts
+    /// (one copy each along a new first axis when there are several)
+    /// are a constant table in the source.
+    fn rotate(&mut self, id: ValueId, arg: ValueId, axis: usize, amounts: &[i64]) {
+        let elem = self.elem_of(arg);
+        let Place::Buffer(src) = self.places[&arg].clone() else {
+            unreachable!("a rotate reads a buffer (rank 1 or more)")
+        };
+        let (outer, len, inner) = xetal_gpu_xir::interp::axis_split(&self.ty(arg).shape, axis);
+        let copies = amounts.len();
+        let per = outer * len * inner;
+        let n = copies * per;
+        let kname = format!("rotate{}", self.launches.len());
+        let result = self.buffer(Some(id), elem, n, Init::Device);
+        let name = self.checked.program.value(id).name.clone();
+        let src_name = self.buffers[src.0].name.clone();
+        let out_name = self.buffers[result.0].name.clone();
+        let amounts_text = amounts.iter().map(|a| format!("{a}L")).collect::<Vec<_>>().join(", ");
+        let how = format!("{} o_-_{axis}", amounts.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "));
+        self.source.push_str(&format!(
+            "
+// {kname}: %{name} := {how} ({copies} cop{}, {outer} line{} of {len} along the axis, {inner} apart); a gather, one work-item per result item.
+__constant long {kname}_amounts[{copies}] = {{ {amounts_text} }};
+__kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_name}) {{
+    long k = get_global_id(0);
+    if (k >= {n}) return;
+    long c = k / {per}, r = k % {per};
+    long o = r / ({len} * {inner}), q = r % ({len} * {inner});
+    long j = q / {inner}, i = q % {inner};
+    long s = xetal_imod_long(j + {kname}_amounts[c], {len});
+    {out_name}[k] = {src_name}[(o * {len} + s) * {inner} + i];
+}}
+",
+            if copies == 1 { "y" } else { "ies" },
+            if outer == 1 { "" } else { "s" },
+        ));
+        let total = n.max(1);
+        let local = self.schedule.work_group.min(total.next_power_of_two());
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args: vec![Arg::Buffer(src), Arg::Buffer(result)],
+            global: total.div_ceil(local) * local,
+            local,
+            note: format!(
+                "%{name}: {how}, {copies} cop{} of {per} items gathered",
+                if copies == 1 { "y" } else { "ies" }
+            ),
+        });
+        self.kernels.push(KernelInfo {
+            name: kname,
+            computes: vec![id],
+            writes: vec![id],
+            elements: n,
+            about: String::new(),
+        });
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A reshape to a different count: the argument's items cycled
+    /// (`cycle_float`), or a single value written everywhere.
+    fn cycle(&mut self, id: ValueId, arg: ValueId) {
+        let elem = self.elem_of(arg);
+        let n = self.ty(id).shape.len();
+        let name = self.checked.program.value(id).name.clone();
+        let result = self.buffer(Some(id), elem, n, Init::Device);
+        let out_name = self.buffers[result.0].name.clone();
+        let total = n.max(1);
+        let local = self.schedule.work_group.min(total.next_power_of_two());
+        let global = total.div_ceil(local) * local;
+        match self.places[&arg].clone() {
+            Place::Literal(lit) => {
+                let kname = format!("fill{}", self.launches.len());
+                self.source.push_str(&format!(
+                    "
+// {kname}: %{name} := a single value reshaped: written to every item.
+__kernel void {kname}(__global {elem}* {out_name}) {{
+    long k = get_global_id(0);
+    if (k < {n}) {out_name}[k] = {lit};
+}}
+"
+                ));
+                self.launches.push(Launch {
+                    kernel: kname.clone(),
+                    args: vec![Arg::Buffer(result)],
+                    global,
+                    local,
+                    note: format!("%{name}: {n} items, one value written to each"),
+                });
+                self.kernels.push(KernelInfo {
+                    name: kname,
+                    computes: vec![id],
+                    writes: vec![id],
+                    elements: n,
+                    about: String::new(),
+                });
+            }
+            Place::Buffer(src) => {
+                let m = self.ty(arg).shape.len();
+                let kname = format!("cycle_{elem}");
+                if !self.source.contains(&format!("__kernel void {kname}(")) {
+                    self.source.push_str(&format!(
+                        "
+// {kname}: a reshape to another count: the m items repeated as needed
+// over n (r_eshape cycles its items), one work-item per result item.
+__kernel void {kname}(__global const {elem}* in, __global {elem}* out, const long m, const long n) {{
+    long k = get_global_id(0);
+    if (k < n) out[k] = in[k % m];
+}}
+"
+                    ));
+                    self.kernels.push(KernelInfo {
+                        name: kname.clone(),
+                        computes: vec![],
+                        writes: vec![],
+                        elements: 0,
+                        about: about(&kname),
+                    });
+                }
+                self.launches.push(Launch {
+                    kernel: kname.clone(),
+                    args: vec![Arg::Buffer(src), Arg::Buffer(result), Arg::Long(m as i64), Arg::Long(n as i64)],
+                    global,
+                    local,
+                    note: format!("%{name}: {m} items cycled over {n}"),
+                });
+                if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+                    k.computes.push(id);
+                    k.writes.push(id);
+                }
+            }
+            Place::Register(_) => unreachable!("flushed before a reshape"),
         }
         self.places.insert(id, Place::Buffer(result));
     }
@@ -784,8 +955,10 @@ fn about(kname: &str) -> String {
         "sums of products in tiles staged in local memory, folded from the right".into()
     } else if kname.starts_with("matmul_") {
         "sums of products, one work-item per result item, folded from the right".into()
-    } else if kname.starts_with("copy_") {
-        "a contiguous copy (a take or a drop along the first axis), one work-item per item".into()
+    } else if kname.starts_with("slice_") {
+        "a take or a drop along an axis: the items kept of every line, one work-item per item".into()
+    } else if kname.starts_with("cycle_") {
+        "a reshape to another count: the items repeated as needed, one work-item per item".into()
     } else {
         String::new()
     }
@@ -1121,8 +1294,16 @@ mod tests {
             "%wb = const f64 [4 2] 1.0\n%w = drop -1 %wb\n%b = take -1 %wb\n%br = ravel %b\n%o = const i64 [3] 0 1 2\n%bias = table right %o %br\n%sc = const f64 [] 2.0\n%t = table mul %br %sc\noutput %w\noutput %bias\noutput %t\n",
             &Schedule::default(),
         );
-        assert_eq!(p.launches[0].args[2..], [Arg::Long(0), Arg::Long(6)]);
-        assert_eq!(p.launches[1].args[2..], [Arg::Long(6), Arg::Long(2)]);
+        // drop -1 of [4 2]: one line of 4 along the axis, 2 apart, 3 kept from 0; take -1: 1 kept from 3.
+        assert_eq!(
+            p.launches[0].args[2..],
+            [Arg::Long(1), Arg::Long(4), Arg::Long(2), Arg::Long(0), Arg::Long(3)]
+        );
+        assert_eq!(
+            p.launches[1].args[2..],
+            [Arg::Long(1), Arg::Long(4), Arg::Long(2), Arg::Long(3), Arg::Long(1)]
+        );
+        assert_eq!(p.launches[0].note, "%w: 6 items from item 0");
         assert!(p.source.contains("b_bias[k] = b_b[k % nb];"));
         assert!(p.source.contains("b_t[k] = (b_b[k / nb] * 2.0f);"));
         // ravel is the same buffer: no launch of its own.
@@ -1178,6 +1359,30 @@ mod tests {
         assert!(p.launches[0]
             .note
             .starts_with("%mt: the last two axes swapped in 4 by 4 tiles, [5 7] to [7 5]: 4 work-groups of 16"));
+    }
+
+    #[test]
+    fn rotate_slice_along_an_axis_and_reshape() {
+        let p = plan_of(
+            "%x = const i64 [1 3 4] 1\n%r = rotate axis=3 -1 0 1 %x\n%d = drop -1 axis=4 %r\n%s = reshape [3 4] %x\n%c = reshape [2 12] %x\n%k = const f64 [] 2.0\n%f = reshape [5] %k\noutput %d\noutput %s\noutput %c\noutput %f\n",
+            &Schedule::default(),
+        );
+        assert!(p.source.contains("__constant long rotate0_amounts[3] = { -1L, 0L, 1L };"));
+        assert!(p.source.contains("long s = xetal_imod_long(j + rotate0_amounts[c], 4);"));
+        assert_eq!(p.launches[0].note, "%r: -1 0 1 o_-_3, 3 copies of 12 items gathered");
+        // drop -1 along axis 4 of [3 1 3 4]: 9 lines of 4, 1 apart, 3 kept from 0.
+        assert_eq!(
+            p.launches[1].args[2..],
+            [Arg::Long(9), Arg::Long(4), Arg::Long(1), Arg::Long(0), Arg::Long(3)]
+        );
+        assert_eq!(p.launches[1].note, "%d: 3 of 4 along the axis, 9 lines of 1 each: 27 items");
+        // The same count: no launch; another count: the cycle kernel; a single value: a fill.
+        assert_eq!(p.launches.len(), 4);
+        assert_eq!(p.launches[2].kernel, "cycle_long");
+        assert_eq!(p.launches[2].args[2..], [Arg::Long(12), Arg::Long(24)]);
+        assert!(p.source.contains("if (k < 5) b_f[k] = 2.0f;"));
+        let holder = |v: usize| p.buffer(p.outputs.iter().find(|(o, _)| o.0 == v).unwrap().1).name.clone();
+        assert_eq!(holder(3), "b_x");
     }
 
     #[test]

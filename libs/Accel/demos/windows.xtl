@@ -1,0 +1,16 @@
+#!/usr/bin/env xetal
+# Windows: a rotation (o_-) of a vector by one amount and by three (one
+# copy each); a convolution's 3 by 3 windows built as array operations
+# (two rotations, four drops, a reshape), as X_eTaL-ML's Conv builds
+# them; then a small convolution, two filters over a batch of two
+# pictures as one matrix product. On a GPU each rotation and drop is
+# a gather of its own; the reshape and the product follow. Run with
+# "just demo-lib Accel windows".
+"ac:" u_se< "Accel"
+v := 1 2 3 4 5
+1 o_- v
+-1 0 1 o_- v
+x := 2 3 4 r_eshape f_loat r_ange 24
+ac:w_indows x
+k := 2 9 r_eshape 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0
+k ac:c_onv x

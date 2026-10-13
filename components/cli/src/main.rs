@@ -285,8 +285,14 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Reduce { op, arg, axis: Some(a) } => format!("reduce {op} axis={a} {}", name(*arg)),
         Op::Cast { op, arg } => format!("cast {} {}", op.to, name(*arg)),
         Op::Matmul { a, b } => format!("matmul {} {}", name(*a), name(*b)),
-        Op::Take { n, arg } => format!("take {n} {}", name(*arg)),
-        Op::Drop { n, arg } => format!("drop {n} {}", name(*arg)),
+        Op::Take { n, axis, arg } => format!("take {n} axis={axis} {}", name(*arg)),
+        Op::Drop { n, axis, arg } => format!("drop {n} axis={axis} {}", name(*arg)),
+        Op::Rotate { axis, amounts, arg } => format!(
+            "rotate axis={axis} {} {}",
+            amounts.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "),
+            name(*arg)
+        ),
+        Op::Reshape { shape, arg } => format!("reshape {shape} {}", name(*arg)),
         Op::Ravel { arg } => format!("ravel {}", name(*arg)),
         Op::Table { op, a, b } => format!("table {op} {} {}", name(*a), name(*b)),
         Op::Transpose { perm: None, arg } => format!("transpose {}", name(*arg)),

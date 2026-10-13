@@ -81,11 +81,25 @@ xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml 
   work-group computes a T by T block, staging blocks of a and b in
   local memory; the blocks go from the last to the first and each
   block's products likewise, so the fold order is the same.
-- **Structure.** A `take` or `drop` keeps contiguous rows, so it is
-  one copy kernel (`copy_float`) from an offset; a `ravel` is the same
-  buffer read as a vector, with no launch; a `table` is a kernel of
+- **Structure.** A `take` or `drop` is one slice kernel per element
+  type (`slice_float`): of every line along its axis, the items kept,
+  one work-item each (along the first axis that is one contiguous
+  run); a `ravel`, and a `reshape` to the same count, is the same
+  buffer, no launch; a `reshape` to another count cycles the items
+  (`cycle_float`) or fills a single value; a `rotate` is a gather
+  kernel of its own with its amounts as a constant table in the
+  source, one work-item per result item; a `table` is a kernel of
   its own, one work-item per result item reading `a[k / nb]` and
   `b[k % nb]` (a literal for a single value).
+- **Windows, measured.** A convolution's 3 by 3 windows as Conv
+  builds them (two rotations, four drops, a reshape) are six gathers
+  on the device. For a batch of 64 pictures of 28 by 28 on the Apple
+  M1 Max, the six kernels plus an 8-filter product take 0.055 ms of
+  device time against 0.014 ms for one transpose plus the same
+  product; the launches cost 6 ms either way. One windows operation
+  (im2col) would save about 0.04 ms per batch here, so it is not
+  added; it is worth revisiting when a CNN's time shows it, or on a
+  card where the ninefold traffic costs more.
 - **Transposes.** A `transpose` that moves axes is a gather kernel
   of its own (`transpose3`), one work-item per result item: its
   position is taken apart with the result's dimensions and put
