@@ -25,7 +25,11 @@ xetal-gpu version
 `scripts/check-equiv.sh` (in the gate) runs every demo in
 `libs/*/demos/` through it, lowered from its source (`.xtl` files
 are lowered by `components/lower` first; `lower FILE.xtl` prints the
-XIR), and compares with the evaluator's baseline.
+XIR), and compares with the evaluator's baseline. A statement the
+device cannot take is evaluated by the pinned `xetal` and bound as
+an input (`lower` says so on standard error), or printed in its
+place; `explain FILE.xtl` ends with the X_eTaL line each kernel came
+from.
 
 ```
 $ xetal-gpu check libs/Accel/demos/reduce-sum.xir

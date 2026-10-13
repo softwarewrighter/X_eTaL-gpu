@@ -1,0 +1,16 @@
+#!/usr/bin/env xetal
+# Data prepared outside the subset: a sort, a grade and a where make
+# the arrays, which the device cannot (their shapes or orders depend
+# on the data), so the lowering has the evaluator compute them and
+# binds them as inputs; the products, sums and the mask run on the
+# device; the last line, a where, is printed by the evaluator. Run
+# with "just demo-lib Accel host-data".
+"ac:" u_se< "Accel"
+v := s_ort 5 3 9 1 7
+m := 3 3 r_eshape g_rade 9 1 8 2 7 3 6 4 5
+ac:r_owSums m
+v ac:d_ot v
+m ac:m_atmul o_\ m
+f := (f_loat v) / 2.0
+0.5 ac:t_hreshold f * 1 0 1 0 1
+w_here v > 4

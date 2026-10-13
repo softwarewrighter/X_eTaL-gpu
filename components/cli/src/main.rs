@@ -14,9 +14,10 @@
 use std::collections::HashMap;
 use std::process::ExitCode;
 
+use xetal_gpu_lower::Printed;
 use xetal_gpu_opencl::{explain, plan, Schedule, Width};
 use xetal_gpu_runtime::{devices, Prepared};
-use xetal_gpu_xir::{binary, check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
+use xetal_gpu_xir::{binary, check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape, ValueId};
 
 const USAGE: &str = "\
 usage: xetal-gpu COMMAND FILE [OPTIONS]
@@ -60,7 +61,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "check" => {
-            let checked = load(args.get(1))?;
+            let checked = load(args.get(1))?.checked;
             for (i, v) in checked.program.values.iter().enumerate() {
                 println!("%{} : {} = {}", v.name, checked.types[i], describe(&checked.program, &v.op));
             }
@@ -70,8 +71,11 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "print" | "lower" => {
-            let checked = load(args.get(1))?;
-            print!("{}", text::print(&checked.program));
+            let loaded = load(args.get(1))?;
+            print!("{}", text::print(&loaded.checked.program));
+            for (name, a) in &loaded.inputs {
+                eprintln!("input %{name} {}: evaluated by xetal (a statement outside the subset)", a.ty());
+            }
             Ok(())
         }
         "devices" => {
@@ -96,18 +100,35 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "kernel" | "explain" => {
-            let checked = load(args.get(1))?;
+            let loaded = load(args.get(1))?;
+            let checked = &loaded.checked;
             let schedule = schedule(&args[2.min(args.len())..])?;
-            let p = plan(&checked, &schedule);
+            let p = plan(checked, &schedule);
             if cmd == "kernel" {
                 print!("{}", p.source);
             } else {
-                print!("{}", explain(&checked, &p));
+                print!("{}", explain(checked, &p));
+                if !loaded.lines.is_empty() {
+                    // The X_eTaL line each kernel came from.
+                    println!("from:");
+                    for k in &p.kernels {
+                        let mut seen: Vec<&String> = Vec::new();
+                        for v in &k.computes {
+                            if let Some(line) = loaded.lines.get(v) {
+                                if !seen.contains(&line) {
+                                    seen.push(line);
+                                }
+                            }
+                        }
+                        println!("  {}: {}", k.name, seen.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(" | "));
+                    }
+                }
             }
             Ok(())
         }
         "run" => {
-            let checked = load(args.get(1))?;
+            let loaded = load(args.get(1))?;
+            let checked = loaded.checked.clone();
             let mut device = "cpu".to_string();
             let mut binds: Vec<String> = Vec::new();
             let mut rest: Vec<String> = Vec::new();
@@ -155,7 +176,9 @@ fn dispatch(args: &[String]) -> Result<()> {
                 }
             }
             let schedule = schedule(&rest)?;
-            let inputs = bindings(&checked, &binds)?;
+            // The inputs the evaluator made, then the host's --bind over them.
+            let mut inputs = loaded.inputs.clone();
+            inputs.extend(bindings(&checked, &binds)?);
             for name in &refresh {
                 if !inputs.contains_key(name) {
                     return Err(Error(format!("--refresh {name}: no bound input")));
@@ -204,8 +227,17 @@ fn dispatch(args: &[String]) -> Result<()> {
                     "unknown device `{device}` (cpu, or opencl:N from `xetal-gpu devices`)"
                 )));
             };
-            for out in outputs {
-                println!("{}", format::show(&out));
+            // Printed in the program's order: the device's values and what the evaluator printed.
+            let mut device = outputs.into_iter();
+            for item in &loaded.printed {
+                match item {
+                    Printed::Device(_) => {
+                        if let Some(out) = device.next() {
+                            println!("{}", format::show(&out));
+                        }
+                    }
+                    Printed::Host(text) => print!("{text}"),
+                }
             }
             Ok(())
         }
@@ -265,17 +297,41 @@ fn schedule(args: &[String]) -> Result<Schedule> {
     Ok(s)
 }
 
+/// A program as loaded: checked, with the inputs the lowering had the
+/// evaluator compute (an `.xtl` only), what it prints in order, and
+/// the X_eTaL line each value came from.
+struct Loaded {
+    checked: Checked,
+    inputs: HashMap<String, Array>,
+    printed: Vec<Printed>,
+    lines: HashMap<ValueId, String>,
+}
+
 /// The program in FILE: an `.xir` parsed, an `.xtl` lowered from
-/// X_eTaL source (its libraries beside it and on XETAL_PATH).
-fn load(path: Option<&String>) -> Result<Checked> {
+/// X_eTaL source (its libraries beside it and on XETAL_PATH; a
+/// statement outside the subset evaluated by the pinned xetal).
+fn load(path: Option<&String>) -> Result<Loaded> {
     let Some(path) = path else { return Err(Error(USAGE.into())) };
-    let program = if path.ends_with(".xtl") {
-        xetal_gpu_lower::lower_file(std::path::Path::new(path)).map_err(|e| Error(format!("{path}: {e}")))?
-    } else {
-        let src = std::fs::read_to_string(path).map_err(|e| Error(format!("{path}: {e}")))?;
-        text::parse(&src).map_err(|e| Error(format!("{path}:{e}")))?
-    };
-    check(program).map_err(|e| Error(format!("{path}: {e}")))
+    if path.ends_with(".xtl") {
+        let lowered = xetal_gpu_lower::lower_file_full(std::path::Path::new(path)).map_err(|e| Error(format!("{path}: {e}")))?;
+        let checked = check(lowered.program).map_err(|e| Error(format!("{path}: {e}")))?;
+        return Ok(Loaded {
+            checked,
+            inputs: lowered.inputs,
+            printed: lowered.printed,
+            lines: lowered.lines,
+        });
+    }
+    let src = std::fs::read_to_string(path).map_err(|e| Error(format!("{path}: {e}")))?;
+    let program = text::parse(&src).map_err(|e| Error(format!("{path}:{e}")))?;
+    let checked = check(program).map_err(|e| Error(format!("{path}: {e}")))?;
+    let printed = checked.program.outputs.iter().map(|o| Printed::Device(*o)).collect();
+    Ok(Loaded {
+        checked,
+        inputs: HashMap::new(),
+        printed,
+        lines: HashMap::new(),
+    })
 }
 
 fn describe(program: &Program, op: &Op) -> String {

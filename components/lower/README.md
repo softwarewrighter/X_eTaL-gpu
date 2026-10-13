@@ -64,6 +64,34 @@ variable that changes, `w_here` (a shape the data decides), `s_\`,
 `^`, `c_at` of device arrays (X_eTaL-ML's ask GA7 asks for the last
 three), `i_nner` with other functions than `+` and `*`.
 
+## What the device cannot take, the evaluator computes
+
+A top-level statement that is refused does not fail the program
+(`lower_file_full`, what `xetal-gpu run` uses): the pinned `xetal`
+runs the program up to that statement, in the program's directory
+with its libraries, and
+
+- for a binding (`v := s_ort ...`), prints the value's shape and
+  items, which come back as an **input** of the XIR program under the
+  binding's name, bound with the program; the device computes
+  everything that follows from it;
+- for a printed statement (`w_here v > 4`), prints it, and that text
+  is printed in its place among the device's outputs
+  (`Lowered::printed` is the order).
+
+So data preparation stays X_eTaL, however it is written, and the
+accelerated part is whatever the subset covers. The attempt's partial
+values are rolled back first, so nothing dead reaches a kernel. Each
+evaluator run goes through a temporary file beside the program
+(`.xetal-gpu-host-PID.xtl`, removed after); `xetal` is `bin/xetal`
+of the repository containing the program or the working directory,
+or `XETAL_BIN`. The cost is one evaluator run per such statement
+(two for a printed one), fine for a demo, to be replaced by the
+session's binary binding when a model's batch is large.
+
+`xetal-gpu explain FILE.xtl` ends with a `from:` section naming,
+for each kernel, the X_eTaL lines whose values it computes.
+
 ## Checked
 
 `components/lower/tests/demos.rs` lowers every demo in
@@ -82,5 +110,6 @@ the twin shared, or spells top-k as its composition.
 
 The models of X_eTaL-ML need `c_at` of arrays, `'= t_able` and `^`
 (GA7); `s_\`; tuples as several inputs and outputs; `m_ap` over rows.
-Bound inputs (a program whose batch arrives from the host) are the
-next step, run-from-source.
+A statement inside a function that is outside the subset still fails
+the whole function (only top-level statements fall back to the
+evaluator).

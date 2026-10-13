@@ -124,6 +124,10 @@ The example programs, each the reference for a GPU run:
   amount and by three (one copy each), a convolution's windows built
   as array operations, and a small convolution of two filters over a
   batch of two pictures as one product.
+- [`demos/host-data.xtl`](../demos/host-data.xtl): data prepared
+  outside the subset (a sort, a grade, a where): the evaluator makes
+  the arrays and the lowering binds them as inputs; the device
+  computes the rest, and the where prints from the evaluator.
 - [`demos/transpose.xtl`](../demos/transpose.xtl): `o_\` of a matrix
   and of a rank-3 array, `t_ranspose` with a permutation, `o_\_23`, a
   vector (unchanged); attention scores and a weight gradient, the

@@ -32,16 +32,43 @@ fn err<T>(message: impl Into<String>) -> Result<T> {
 use xetal_ir::{Expr, Item, Kind, Param};
 use xetal_lex::Number;
 
+/// What a program prints, in order: a value the device computes, or
+/// text the evaluator printed for a statement outside the subset.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Printed {
+    Device(ValueId),
+    Host(String),
+}
+
+/// A lowered program: the XIR, the inputs the host evaluated (a
+/// top-level binding outside the subset, run by the pinned `xetal`
+/// up to that statement and bound by name), what it prints in order,
+/// and the X_eTaL line each value came from (for `explain`).
+#[derive(Debug, Clone)]
+pub struct Lowered {
+    pub program: Program,
+    pub inputs: HashMap<String, Array>,
+    pub printed: Vec<Printed>,
+    pub lines: HashMap<ValueId, String>,
+}
+
 /// Lower the program in `path` (its libraries found beside it and on
-/// `XETAL_PATH`; `[]N_GET` reads relative to its directory).
+/// `XETAL_PATH`; `[]N_GET` reads relative to its directory); the
+/// program only, for programs the device can take whole.
 pub fn lower_file(path: &Path) -> Result<Program> {
+    lower_file_full(path).map(|l| l.program)
+}
+
+/// Lower the program in `path`, with whatever the device cannot take
+/// evaluated by the pinned `xetal` and bound (see [`Lowered`]).
+pub fn lower_file_full(path: &Path) -> Result<Lowered> {
     let src = std::fs::read_to_string(path).map_err(|e| Error(format!("cannot read {}: {e}", path.display())))?;
     let dir = path.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."));
     lower_source(&path.to_string_lossy(), &src, &dir)
 }
 
 /// Lower `src`, reported as `name`; files are read relative to `dir`.
-pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Program> {
+pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
     let loaded = xetal_program::load(name, src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
     let mut t = Translator {
         program: Program::default(),
@@ -49,7 +76,12 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Program> {
         globals: HashMap::new(),
         dir: dir.to_path_buf(),
         names: HashMap::new(),
+        inputs: HashMap::new(),
+        printed: Vec::new(),
+        lines: HashMap::new(),
+        line: String::new(),
     };
+    let host = Host::new(dir, src);
     let mut env = Env::default();
     for item in &loaded.program.items {
         match item {
@@ -57,7 +89,23 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Program> {
                 t.globals.insert(name.clone(), value.clone());
             }
             Item::Let { name, value, .. } => {
-                let v = t.eval(value, &env)?;
+                let place = loaded.sources.locate(value.span.start);
+                t.line = source_line(loaded.sources.written_text(place.index), place.offset, place.line);
+                let mark = t.mark();
+                let v = match t.eval(value, &env) {
+                    Ok(v) => v,
+                    Err(reason) => {
+                        // Outside the subset: the evaluator makes the value, the
+                        // device takes it as an input. Whatever the attempt pushed goes.
+                        t.rollback(mark);
+                        let end = loaded.sources.locate(value.span.end);
+                        let a = host.value(name, end.offset, &reason.0)?;
+                        let ty = a.ty();
+                        let id = t.push(name, Some(ty), Op::Input)?;
+                        t.inputs.insert(t.program.value(id).name.clone(), a);
+                        V::Node(id)
+                    }
+                };
                 // Data bound at the top level (weights, a batch) is written in
                 // once, under its own name; shapes and counts stay static.
                 let v = match v {
@@ -68,14 +116,31 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Program> {
             }
             Item::Set { name, .. } => return err(format!("{name}!: a variable that changes is outside the subset")),
             Item::Eval(e) => {
-                let v = t.eval(e, &env)?;
+                let place = loaded.sources.locate(e.span.start);
+                t.line = source_line(loaded.sources.written_text(place.index), place.offset, place.line);
+                let mark = t.mark();
+                let v = match t.eval(e, &env) {
+                    Ok(v) => v,
+                    Err(reason) => {
+                        t.rollback(mark);
+                        let (start, end) = (loaded.sources.locate(e.span.start), loaded.sources.locate(e.span.end));
+                        let text = host.printed(start.offset, end.offset, &reason.0)?;
+                        t.printed.push(Printed::Host(text));
+                        continue;
+                    }
+                };
                 match v {
-                    V::Node(id) => t.program.outputs.push(id),
+                    V::Node(id) => {
+                        t.program.outputs.push(id);
+                        t.printed.push(Printed::Device(id));
+                    }
                     V::Static(a, _) => {
                         let id = t.constant(a, None);
                         t.program.outputs.push(id);
+                        t.printed.push(Printed::Device(id));
                     }
-                    V::Unit | V::Str(_) => {}
+                    V::Unit => {}
+                    V::Str(text) => t.printed.push(Printed::Host(text)),
                     other => return err(format!("a {} cannot be printed by the device", other.what())),
                 }
             }
@@ -84,7 +149,125 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Program> {
     if t.program.outputs.is_empty() {
         return err("the program prints nothing the device could compute");
     }
-    Ok(t.program)
+    Ok(Lowered {
+        program: t.program,
+        inputs: t.inputs,
+        printed: t.printed,
+        lines: t.lines,
+    })
+}
+
+/// The source line at `offset` of `text`, prefixed with its number.
+fn source_line(text: &str, offset: usize, line: usize) -> String {
+    let offset = offset.min(text.len());
+    let start = text[..offset].rfind('\n').map_or(0, |n| n + 1);
+    let end = text[offset..].find('\n').map_or(text.len(), |n| offset + n);
+    format!("{line}: {}", text[start..end].trim())
+}
+
+/// The pinned `xetal`, run on a prefix of the program for what the
+/// device cannot compute.
+struct Host {
+    xetal: Option<PathBuf>,
+    dir: PathBuf,
+    src: String,
+}
+
+impl Host {
+    fn new(dir: &Path, src: &str) -> Host {
+        let xetal = std::env::var_os("XETAL_BIN").map(PathBuf::from).or_else(|| {
+            let mut roots: Vec<PathBuf> = Vec::new();
+            if let Ok(cwd) = std::env::current_dir() {
+                roots.push(cwd);
+            }
+            roots.push(std::fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf()));
+            for root in roots {
+                let mut d: Option<&Path> = Some(&root);
+                while let Some(p) = d {
+                    let candidate = p.join("bin/xetal");
+                    if candidate.exists() {
+                        return Some(candidate);
+                    }
+                    d = p.parent();
+                }
+            }
+            None
+        });
+        Host {
+            xetal,
+            dir: dir.to_path_buf(),
+            src: src.to_string(),
+        }
+    }
+
+    /// The program up to `end`, run; its printed lines.
+    fn run(&self, text: &str, reason: &str) -> Result<Vec<String>> {
+        let Some(xetal) = &self.xetal else {
+            return err(format!(
+                "{reason}; the evaluator would compute it, but no xetal was found (just xetal, or XETAL_BIN)"
+            ));
+        };
+        // xetal run takes a file: a temporary one beside the program, so
+        // its libraries and file reads resolve as the program's do.
+        let temp = self.dir.join(format!(".xetal-gpu-host-{}.xtl", std::process::id()));
+        std::fs::write(&temp, text).map_err(|e| Error(format!("cannot write {}: {e}", temp.display())))?;
+        let out = std::process::Command::new(xetal)
+            .args(["run", "--seed", "1", "--ascii"])
+            .arg(temp.file_name().expect("a file name"))
+            .current_dir(&self.dir)
+            .output();
+        let _ = std::fs::remove_file(&temp);
+        let out = out.map_err(|e| Error(format!("cannot run {}: {e}", xetal.display())))?;
+        if !out.status.success() {
+            return err(format!(
+                "{reason}; the evaluator was asked for it and failed: {}",
+                String::from_utf8_lossy(&out.stderr).trim()
+            ));
+        }
+        Ok(String::from_utf8_lossy(&out.stdout).lines().map(str::to_string).collect())
+    }
+
+    /// The value of `name` after the statements up to `end`: its shape
+    /// and its items, printed by the evaluator and read back.
+    fn value(&self, name: &str, end: usize, reason: &str) -> Result<Array> {
+        let prefix = &self.src[..end.min(self.src.len())];
+        let lines = self.run(&format!("{prefix}\ns_hape {name}\nr_avel {name}\n"), reason)?;
+        let n = lines.len();
+        if n < 2 {
+            return err(format!("{reason}; the evaluator printed nothing for {name}"));
+        }
+        let dims: Vec<usize> = lines[n - 2]
+            .split_whitespace()
+            .map(|d| d.parse().map_err(|_| Error(format!("{name}: a shape of `{}`?", lines[n - 2]))))
+            .collect::<Result<_>>()?;
+        let items: Vec<&str> = lines[n - 1].split_whitespace().collect();
+        let shape = Shape(dims);
+        if items.iter().all(|t| t.parse::<i64>().is_ok()) {
+            Ok(Array::ints(shape, items.iter().map(|t| t.parse().unwrap()).collect()))
+        } else {
+            let floats: Vec<f64> = items
+                .iter()
+                .map(|t| match *t {
+                    "inf" => Ok(f64::INFINITY),
+                    "-inf" => Ok(f64::NEG_INFINITY),
+                    t => t
+                        .parse()
+                        .map_err(|_| Error(format!("{name}: the evaluator printed `{t}`, not a number"))),
+                })
+                .collect::<Result<_>>()?;
+            Ok(Array::floats(shape, floats))
+        }
+    }
+
+    /// What the statement from `start` to `end` prints: the program
+    /// run with and without it, the difference.
+    fn printed(&self, start: usize, end: usize, reason: &str) -> Result<String> {
+        let before = &self.src[..start.min(self.src.len())];
+        let with = &self.src[..end.min(self.src.len())];
+        let n = self.run(before, reason)?.len();
+        let lines = self.run(with, reason)?;
+        Ok(lines[n.min(lines.len())..].iter().map(|l| l.clone() + "\n").collect())
+    }
 }
 
 /// A value during translation.
@@ -177,6 +360,12 @@ struct Translator {
     dir: PathBuf,
     /// How many values carry each base name, for unique XIR names.
     names: HashMap<String, usize>,
+    inputs: HashMap<String, Array>,
+    printed: Vec<Printed>,
+    /// The X_eTaL line each value came from.
+    lines: HashMap<ValueId, String>,
+    /// The line of the statement being translated.
+    line: String,
 }
 
 impl Translator {
@@ -216,6 +405,7 @@ impl Translator {
         match check(probe) {
             Ok(c) => {
                 self.types = c.types;
+                self.lines.insert(id, self.line.clone());
                 Ok(id)
             }
             Err(e) => {
@@ -227,6 +417,19 @@ impl Translator {
 
     fn ty(&self, id: ValueId) -> &Ty {
         &self.types[id.0]
+    }
+
+    /// Where the program stands, to roll an attempt back to.
+    fn mark(&self) -> (usize, HashMap<String, usize>) {
+        (self.program.values.len(), self.names.clone())
+    }
+
+    fn rollback(&mut self, mark: (usize, HashMap<String, usize>)) {
+        let (n, names) = mark;
+        self.program.values.truncate(n);
+        self.types.truncate(n);
+        self.lines.retain(|id, _| id.0 < n);
+        self.names = names;
     }
 
     /// A static array written into the program as a constant.

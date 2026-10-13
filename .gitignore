@@ -33,3 +33,6 @@ bin/xetal-x
 # the built site: published as the gh-pages branch (just publish), never
 # tracked on main
 /pages/
+
+# The lowering's temporary program for a host-evaluated statement (components/lower)
+.xetal-gpu-host-*.xtl

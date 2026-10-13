@@ -3,10 +3,10 @@
 //! demo's reg-rs baseline): the hand twins' oracle, now the
 //! translator's.
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use xetal_gpu_lower::Printed;
 use xetal_gpu_xir::{check, format, interp};
 
 #[test]
@@ -35,10 +35,18 @@ fn every_demo_lowers_to_the_evaluators_output() {
             let want_path = lib.path().join("tests").join(format!("demo-{stem}.out"));
             let want = fs::read_to_string(&want_path).unwrap_or_default();
             let got = (|| -> Result<String, String> {
-                let program = xetal_gpu_lower::lower_file(&xtl).map_err(|e| e.0)?;
-                let checked = check(program).map_err(|e| e.0)?;
-                let outputs = interp::run(&checked, &HashMap::new()).map_err(|e| e.0)?;
-                Ok(outputs.iter().map(format::show).map(|s| s + "\n").collect())
+                let lowered = xetal_gpu_lower::lower_file_full(&xtl).map_err(|e| e.0)?;
+                let checked = check(lowered.program).map_err(|e| e.0)?;
+                let outputs = interp::run(&checked, &lowered.inputs).map_err(|e| e.0)?;
+                let mut device = outputs.iter();
+                let mut text = String::new();
+                for item in &lowered.printed {
+                    match item {
+                        Printed::Device(_) => text += &(format::show(device.next().unwrap()) + "\n"),
+                        Printed::Host(t) => text += t,
+                    }
+                }
+                Ok(text)
             })();
             match got {
                 Ok(got) if got == want => {}
