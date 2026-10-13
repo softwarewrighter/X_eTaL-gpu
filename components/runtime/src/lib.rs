@@ -578,7 +578,8 @@ mod tests {
     #[test]
     fn positions_outside_the_axis_are_refused_on_the_host() {
         // No device needed: the check runs before anything is uploaded.
-        let checked = check(text::parse("%t = input f64 [5 4]\n%ids = input i64 [2 3]\n%e = lookup %ids %t\noutput %e\n").unwrap()).unwrap();
+        let checked =
+            check(text::parse("%t = input f64 [5 4]\n%ids = input i64 [2 3]\n%e = lookup %ids %t\noutput %e\n").unwrap()).unwrap();
         let p = plan(&checked, &Schedule::default());
         let ids = p
             .buffers
