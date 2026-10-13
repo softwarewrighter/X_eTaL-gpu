@@ -137,12 +137,10 @@ l:w_eightGrad := { x dy -> (o_\ x) '+ '* i_nner dy }
 ## all that a prompt uploads.
 ## >> "ac:" u_se< "Accel"
 ## >> t := 4 3 r_eshape 0.0 0.1 0.2 1.0 1.1 1.2 2.0 2.1 2.2 3.0 3.1 3.2
-## >> t ac:e_mbed 2 2 r_eshape 4 1 2 4
+## >> t ac:e_mbed 4 1 2
 ## 3.0 3.1 3.2
 ## 0.0 0.1 0.2
-##
 ## 1.0 1.1 1.2
-## 3.0 3.1 3.2
 l:e_mbed := { t ids -> ids s_elect t }
 
 ### Windows
