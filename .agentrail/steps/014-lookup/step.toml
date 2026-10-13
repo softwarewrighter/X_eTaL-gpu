@@ -1,6 +1,6 @@
 number = 14
 slug = "lookup"
-status = "pending"
+status = "in-progress"
 description = "lookup in the IR: X_eTaL's indexing (i s_elect v; rows of a matrix by an Int ..."
 role = "production"
 context_files = []
