@@ -80,7 +80,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 </header>
 
 <h2>What runs today</h2>
-<p class="cap">Not X_eTaL code itself, yet: each example program has a hand-written translation beside it (its <code>.xir</code> twin), and that is what runs on the device. The checks prove every translation gives the evaluator's output, exactly on the interpreter and within f32's tolerance on the GPU. Translating X_eTaL automatically is the lowering that belongs to X_eTaL (<a href="{repo}/blob/main/docs/xetal-asks.md">asks G1 to G4</a>); the twins go when it lands.</p>
+<p class="cap">X_eTaL source, lowered. Every example program is lowered from its own <code>.xtl</code> by this repository's translator, which takes the program's Core (libraries included) from X_eTaL's own crates and builds the program the device runs; the checks prove each one gives the evaluator's output, exactly on the interpreter and within f32's tolerance on the GPU. The hand-written twins that stood in until 2026-10-13 were the translator's oracle and are gone. X_eTaL-ML's models still run from a script that writes their programs; their own source is next. The lowering belongs to X_eTaL in the end (<a href="{repo}/blob/main/docs/xetal-asks.md">asks G1 and G2</a>).</p>
 
 <h2>One program, three executions</h2>
 <pre class="flow">                X_eTaL program (.xtl)

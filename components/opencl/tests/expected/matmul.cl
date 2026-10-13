@@ -16,21 +16,20 @@ __kernel void matmul_long(__global const long* a, __global const long* b, __glob
     c[ij] = acc;
 }
 
-// k0: 12 elements, one work-item each; computes %af %f
-__kernel void k0(__global const long* b_a, __global float* b_f) {
+// k0: 12 elements, one work-item each; computes %div
+__kernel void k0(__global const float* b_l, __global float* b_div) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    float t_af = (float)b_a[i];
-    float t_f = (t_af / 4.0f);
-    b_f[i] = t_f;
+    float t_div = (b_l[i] / 4.0f);
+    b_div[i] = t_div;
 }
 
-// k1: 12 elements, one work-item each; computes %g
-__kernel void k1(__global const float* b_g0, __global float* b_g) {
+// k1: 12 elements, one work-item each; computes %div_2
+__kernel void k1(__global const float* b_l_2, __global float* b_div_2) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    float t_g = (b_g0[i] / 8.0f);
-    b_g[i] = t_g;
+    float t_div_2 = (b_l_2[i] / 8.0f);
+    b_div_2[i] = t_div_2;
 }
 
 // matmul_float: a by b, a's last axis (n) with b's first; one work-item per

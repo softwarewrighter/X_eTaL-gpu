@@ -4,23 +4,23 @@ inline long xetal_imod_long(long a, long b) { return a - xetal_idiv_long(a, b) *
 inline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 inline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }
 
-// k0: 8 elements, one work-item each; computes %q %x %m %mf %th %relu %n %relun %mask %kept
-__kernel void k0(__global const float* b_r, __global const long* b_n0, __global float* b_x, __global float* b_th, __global float* b_relu, __global long* b_relun, __global long* b_kept) {
+// k0: 8 elements, one work-item each; computes %div %sub %gt %f %mul %max %sub_2 %max_2 %mod %mul_2
+__kernel void k0(__global const float* b_l, __global const long* b_l_2, __global float* b_sub, __global float* b_mul, __global float* b_max, __global long* b_max_2, __global long* b_mul_2) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    float t_q = (b_r[i] / 4.0f);
-    float t_x = (t_q - 1.0f);
-    int t_m = (t_x > 0.5f);
-    float t_mf = (float)t_m;
-    float t_th = (t_x * t_mf);
-    float t_relu = fmax(t_x, 0.0f);
-    long t_n = (b_n0[i] - 4L);
-    long t_relun = max(t_n, 0L);
-    long t_mask = xetal_imod_long(t_n, 2L);
-    long t_kept = (t_n * t_mask);
-    b_x[i] = t_x;
-    b_th[i] = t_th;
-    b_relu[i] = t_relu;
-    b_relun[i] = t_relun;
-    b_kept[i] = t_kept;
+    float t_div = (b_l[i] / 4.0f);
+    float t_sub = (t_div - 1.0f);
+    int t_gt = (t_sub > 0.5f);
+    float t_f = (float)t_gt;
+    float t_mul = (t_sub * t_f);
+    float t_max = fmax(t_sub, 0.0f);
+    long t_sub_2 = (b_l_2[i] - 4L);
+    long t_max_2 = max(t_sub_2, 0L);
+    long t_mod = xetal_imod_long(t_sub_2, 2L);
+    long t_mul_2 = (t_sub_2 * t_mod);
+    b_sub[i] = t_sub;
+    b_mul[i] = t_mul;
+    b_max[i] = t_max;
+    b_max_2[i] = t_max_2;
+    b_mul_2[i] = t_mul_2;
 }

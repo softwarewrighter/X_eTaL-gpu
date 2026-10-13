@@ -150,6 +150,20 @@ pub fn check_positions(plan: &Plan, buffer: BufferId, name: &str, a: &Array) -> 
     Ok(())
 }
 
+/// A Float beyond float's range (1e300, as X_eTaL-ML's top-k idiom
+/// writes) would become infinity on an f32 device and poison every
+/// value it touches with NaN; the host refuses it, naming the fix.
+pub fn check_f32_range(buffer: &str, a: &Array) -> Result<()> {
+    if let Data::Float(v) = &a.data {
+        if let Some(x) = v.iter().find(|x| x.is_finite() && x.abs() > f32::MAX as f64) {
+            return Err(Error(format!(
+                "{buffer} holds {x}, beyond float's range: the schedule's float = f32 cannot carry it (--float f64, or a value within 3.4e38)"
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Execute a plan on device `index`, with the inputs bound by name;
 /// the outputs in order, as arrays of the program's types.
 pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, index: usize) -> Result<Vec<Array>> {
@@ -275,6 +289,7 @@ impl Prepared {
                     Elem::F32 => {
                         let mut d = Buffer::<f32>::create(&context, CL_MEM_READ_WRITE, len, ptr::null_mut()).map_err(cl)?;
                         if let Some(a) = &host.filter(|a| !a.data.is_empty()) {
+                            check_f32_range(&b.name, a)?;
                             let v: Vec<f32> = to_f64(a).into_iter().map(|x| x as f32).collect();
                             queue.enqueue_write_buffer(&mut d, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
                         }
@@ -336,6 +351,7 @@ impl Prepared {
                             .map_err(cl)?;
                     }
                     DevBuf::F32(b) => {
+                        check_f32_range(&format!("input %{name}"), array)?;
                         let v: Vec<f32> = to_f64(array).into_iter().map(|x| x as f32).collect();
                         self.queue.enqueue_write_buffer(b, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
                     }

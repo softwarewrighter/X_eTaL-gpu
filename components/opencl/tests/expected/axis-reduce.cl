@@ -4,14 +4,6 @@ inline long xetal_imod_long(long a, long b) { return a - xetal_idiv_long(a, b) *
 inline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 inline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }
 
-// k0: 12 elements, one work-item each; computes %m1
-__kernel void k0(__global const long* b_m, __global long* b_m1) {
-    size_t i = get_global_id(0);
-    if (i >= 12) return;
-    long t_m1 = (b_m[i] * 1L);
-    b_m1[i] = t_m1;
-}
-
 // reduce_axis_add_long: along one axis, one work-item per result item; its line of
 // len items (stride inner) folded from the right, as X_eTaL's r_/ does.
 __kernel void reduce_axis_add_long(__global const long* in, __global long* out, const long outer, const long len, const long inner) {
@@ -36,13 +28,12 @@ __kernel void reduce_axis_max_long(__global const long* in, __global long* out, 
     out[k] = acc;
 }
 
-// k1: 12 elements, one work-item each; computes %mf %f
-__kernel void k1(__global const long* b_m, __global float* b_f) {
+// k0: 12 elements, one work-item each; computes %div
+__kernel void k0(__global const float* b_l, __global float* b_div) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    float t_mf = (float)b_m[i];
-    float t_f = (t_mf / 8.0f);
-    b_f[i] = t_f;
+    float t_div = (b_l[i] / 8.0f);
+    b_div[i] = t_div;
 }
 
 // reduce_axis_add_float: along one axis, one work-item per result item; its line of

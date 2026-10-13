@@ -22,9 +22,10 @@ xetal-gpu version
 ```
 
 `just build` builds it in release mode (`target/release/xetal-gpu`);
-`scripts/check-equiv.sh` (in the gate) runs every twin in
-`libs/*/demos/` through it and compares with the evaluator's
-baseline.
+`scripts/check-equiv.sh` (in the gate) runs every demo in
+`libs/*/demos/` through it, lowered from its source (`.xtl` files
+are lowered by `components/lower` first; `lower FILE.xtl` prints the
+XIR), and compares with the evaluator's baseline.
 
 ```
 $ xetal-gpu check libs/Accel/demos/reduce-sum.xir

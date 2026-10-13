@@ -1,41 +1,41 @@
 schedule: Float as float, Int as long, work-group 256, products and transposes untiled
 buffers:
   b_v: long 5 items, %v i64 [5]; constant, uploaded by the host
-  b_a: long 1 item, %a i64 []; written on the device
-  b_i3: long 3 items, %i3 i64 [3]; constant, uploaded by the host
-  b_b: long 3 items, %b i64 [3]; written on the device
-  b_i22: long 4 items, %i22 i64 [2 2]; constant, uploaded by the host
-  b_c: long 4 items, %c i64 [2 2]; written on the device
+  b_sel: long 1 item, %sel i64 []; written on the device
+  b_ids_2: long 3 items, %ids_2 i64 [3]; constant, uploaded by the host
+  b_sel_2: long 3 items, %sel_2 i64 [3]; written on the device
+  b_ids_3: long 4 items, %ids_3 i64 [2 2]; constant, uploaded by the host
+  b_sel_3: long 4 items, %sel_3 i64 [2 2]; written on the device
   b_m: long 6 items, %m i64 [3 2]; constant, uploaded by the host
-  b_r: long 2 items, %r i64 [2]; constant, uploaded by the host
-  b_d: long 4 items, %d i64 [2 2]; written on the device
-  b_cs: long 2 items, %cs i64 [2]; constant, uploaded by the host
-  b_f: long 6 items, %f i64 [3 2]; written on the device
+  b_ids_4: long 2 items, %ids_4 i64 [2]; constant, uploaded by the host
+  b_sel_4: long 4 items, %sel_4 i64 [2 2]; written on the device
+  b_ids_5: long 2 items, %ids_5 i64 [2]; constant, uploaded by the host
+  b_sel_5: long 6 items, %sel_5 i64 [3 2]; written on the device
   b_t: float 20 items, %t f64 [5 4]; constant, uploaded by the host
-  b_ids: long 6 items, %ids i64 [2 3]; constant, uploaded by the host
-  b_e: float 24 items, %e f64 [2 3 4]; written on the device
-  b_s: float 8 items, %s f64 [2 4]; written on the device
+  b_ids_6: long 6 items, %ids_6 i64 [2 3]; constant, uploaded by the host
+  b_sel_6: float 24 items, %sel_6 f64 [2 3 4]; written on the device
+  b_addr: float 8 items, %addr f64 [2 4]; written on the device
 kernels:
-  lookup0: 1 element, one work-item each; computes %a; writes %a
-  lookup1: 3 elements, one work-item each; computes %b; writes %b
-  lookup2: 4 elements, one work-item each; computes %c; writes %c
-  lookup3: 4 elements, one work-item each; computes %d; writes %d
-  lookup4: 6 elements, one work-item each; computes %f; writes %f
-  lookup5: 24 elements, one work-item each; computes %e; writes %e
-  reduce_axis_add_float: along one axis, one work-item per result item folding its line from the right; computes %s
+  lookup0: 1 element, one work-item each; computes %sel; writes %sel
+  lookup1: 3 elements, one work-item each; computes %sel_2; writes %sel_2
+  lookup2: 4 elements, one work-item each; computes %sel_3; writes %sel_3
+  lookup3: 4 elements, one work-item each; computes %sel_4; writes %sel_4
+  lookup4: 6 elements, one work-item each; computes %sel_5; writes %sel_5
+  lookup5: 24 elements, one work-item each; computes %sel_6; writes %sel_6
+  reduce_axis_add_float: along one axis, one work-item per result item folding its line from the right; computes %addr
 launches:
-  1: lookup0(b_v, b_a) global 1 local 1: %a: 1 position along axis 1 of [5], 1 item gathered
-  2: lookup1(b_i3, b_v, b_b) global 4 local 4: %b: 3 positions along axis 1 of [5], 3 items gathered
-  3: lookup2(b_i22, b_v, b_c) global 4 local 4: %c: 4 positions along axis 1 of [5], 4 items gathered
-  4: lookup3(b_r, b_m, b_d) global 4 local 4: %d: 2 positions along axis 1 of [3 2], 4 items gathered
-  5: lookup4(b_cs, b_m, b_f) global 8 local 8: %f: 2 positions along axis 2 of [3 2], 6 items gathered
-  6: lookup5(b_ids, b_t, b_e) global 32 local 32: %e: 6 positions along axis 1 of [5 4], 24 items gathered
-  7: reduce_axis_add_float(b_e, b_s, 2, 3, 4) global 8 local 8: %s: add along axis 2: 8 lines of 3, one work-item each
+  1: lookup0(b_v, b_sel) global 1 local 1: %sel: 1 position along axis 1 of [5], 1 item gathered
+  2: lookup1(b_ids_2, b_v, b_sel_2) global 4 local 4: %sel_2: 3 positions along axis 1 of [5], 3 items gathered
+  3: lookup2(b_ids_3, b_v, b_sel_3) global 4 local 4: %sel_3: 4 positions along axis 1 of [5], 4 items gathered
+  4: lookup3(b_ids_4, b_m, b_sel_4) global 4 local 4: %sel_4: 2 positions along axis 1 of [3 2], 4 items gathered
+  5: lookup4(b_ids_5, b_m, b_sel_5) global 8 local 8: %sel_5: 2 positions along axis 2 of [3 2], 6 items gathered
+  6: lookup5(b_ids_6, b_t, b_sel_6) global 32 local 32: %sel_6: 6 positions along axis 1 of [5 4], 24 items gathered
+  7: reduce_axis_add_float(b_sel_6, b_addr, 2, 3, 4) global 8 local 8: %addr: add along axis 2: 8 lines of 3, one work-item each
 outputs:
-  %a from b_a, read back by the host
-  %b from b_b, read back by the host
-  %c from b_c, read back by the host
-  %d from b_d, read back by the host
-  %f from b_f, read back by the host
-  %e from b_e, read back by the host
-  %s from b_s, read back by the host
+  %sel from b_sel, read back by the host
+  %sel_2 from b_sel_2, read back by the host
+  %sel_3 from b_sel_3, read back by the host
+  %sel_4 from b_sel_4, read back by the host
+  %sel_5 from b_sel_5, read back by the host
+  %sel_6 from b_sel_6, read back by the host
+  %addr from b_addr, read back by the host

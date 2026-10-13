@@ -1,39 +1,53 @@
 schedule: Float as float, Int as long, work-group 256, products and transposes untiled
 buffers:
   b_v: long 5 items, %v i64 [5]; constant, uploaded by the host
-  b_r1: long 5 items, %r1 i64 [5]; written on the device
-  b_r3: long 15 items, %r3 i64 [3 5]; written on the device
+  b_rot: long 5 items, %rot i64 [5]; written on the device
+  b_rot_2: long 15 items, %rot_2 i64 [3 5]; written on the device
   b_x: float 24 items, %x f64 [2 3 4]; constant, uploaded by the host
-  b_a: float 72 items, %a f64 [3 2 3 4]; written on the device
-  b_b: float 216 items, %b f64 [3 3 2 3 4]; written on the device
-  b_c: float 144 items, %c f64 [3 3 2 2 4]; written on the device
-  b_d: float 72 items, %d f64 [3 3 2 1 4]; written on the device
-  b_e: float 54 items, %e f64 [3 3 2 1 3]; written on the device
-  b_f: float 36 items, %f f64 [3 3 2 1 2]; written on the device
+  b_rot_3: float 72 items, %rot_3 f64 [3 2 3 4]; written on the device
+  b_rot_4: float 216 items, %rot_4 f64 [3 3 2 3 4]; written on the device
+  b_drop: float 144 items, %drop f64 [3 3 2 2 4]; written on the device
+  b_drop_2: float 72 items, %drop_2 f64 [3 3 2 1 4]; written on the device
+  b_drop_3: float 54 items, %drop_3 f64 [3 3 2 1 3]; written on the device
+  b_drop_4: float 36 items, %drop_4 f64 [3 3 2 1 2]; written on the device
   b_k: float 18 items, %k f64 [2 9]; constant, uploaded by the host
-  b_kw: float 8 items, %kw f64 [2 4]; written on the device
-  b_t: float 8 items, %t f64 [2 2 2]; written on the device
+  b_rot_5: float 72 items, %rot_5 f64 [3 2 3 4]; written on the device
+  b_rot_6: float 216 items, %rot_6 f64 [3 3 2 3 4]; written on the device
+  b_drop_5: float 144 items, %drop_5 f64 [3 3 2 2 4]; written on the device
+  b_drop_6: float 72 items, %drop_6 f64 [3 3 2 1 4]; written on the device
+  b_drop_7: float 54 items, %drop_7 f64 [3 3 2 1 3]; written on the device
+  b_drop_8: float 36 items, %drop_8 f64 [3 3 2 1 2]; written on the device
+  b_mm: float 8 items, %mm f64 [2 4]; written on the device
+  b_tr: float 8 items, %tr f64 [2 2 2]; written on the device
 kernels:
-  rotate0: 5 elements, one work-item each; computes %r1; writes %r1
-  rotate1: 15 elements, one work-item each; computes %r3; writes %r3
-  rotate2: 72 elements, one work-item each; computes %a; writes %a
-  rotate3: 216 elements, one work-item each; computes %b; writes %b
-  slice_float: a take or a drop along an axis: the items kept of every line, one work-item per item; computes %c %d %e %f
-  matmul_float: sums of products, one work-item per result item, folded from the right; computes %kw
-  transpose9: 8 elements, one work-item each; computes %t; writes %t
+  rotate0: 5 elements, one work-item each; computes %rot; writes %rot
+  rotate1: 15 elements, one work-item each; computes %rot_2; writes %rot_2
+  rotate2: 72 elements, one work-item each; computes %rot_3; writes %rot_3
+  rotate3: 216 elements, one work-item each; computes %rot_4; writes %rot_4
+  slice_float: a take or a drop along an axis: the items kept of every line, one work-item per item; computes %drop %drop_2 %drop_3 %drop_4 %drop_5 %drop_6 %drop_7 %drop_8
+  rotate8: 72 elements, one work-item each; computes %rot_5; writes %rot_5
+  rotate9: 216 elements, one work-item each; computes %rot_6; writes %rot_6
+  matmul_float: sums of products, one work-item per result item, folded from the right; computes %mm
+  transpose15: 8 elements, one work-item each; computes %tr; writes %tr
 launches:
-  1: rotate0(b_v, b_r1) global 8 local 8: %r1: 1 o_-_1, 1 copy of 5 items gathered
-  2: rotate1(b_v, b_r3) global 16 local 16: %r3: -1 0 1 o_-_1, 3 copies of 5 items gathered
-  3: rotate2(b_x, b_a) global 128 local 128: %a: -1 0 1 o_-_3, 3 copies of 24 items gathered
-  4: rotate3(b_a, b_b) global 256 local 256: %b: -1 0 1 o_-_3, 3 copies of 72 items gathered
-  5: slice_float(b_b, b_c, 18, 3, 4, 0, 2) global 256 local 256: %c: 2 of 3 along the axis, 18 lines of 4 each: 144 items
-  6: slice_float(b_c, b_d, 18, 2, 4, 1, 1) global 128 local 128: %d: 1 of 2 along the axis, 18 lines of 4 each: 72 items
-  7: slice_float(b_d, b_e, 18, 4, 1, 0, 3) global 64 local 64: %e: 3 of 4 along the axis, 18 lines of 1 each: 54 items
-  8: slice_float(b_e, b_f, 18, 3, 1, 1, 2) global 64 local 64: %f: 2 of 3 along the axis, 18 lines of 1 each: 36 items
-  9: matmul_float(b_k, b_f, b_kw, 2, 9, 4) global 8 local 8: %kw: 2 by 9 times 9 by 4, 8 sums of 9 products, one work-item each
-  10: transpose9(b_kw, b_t) global 8 local 8: %t: 2 1 3 t_ranspose, [2 2 2] to [2 2 2], 8 items gathered
+  1: rotate0(b_v, b_rot) global 8 local 8: %rot: 1 o_-_1, 1 copy of 5 items gathered
+  2: rotate1(b_v, b_rot_2) global 16 local 16: %rot_2: -1 0 1 o_-_1, 3 copies of 5 items gathered
+  3: rotate2(b_x, b_rot_3) global 128 local 128: %rot_3: -1 0 1 o_-_3, 3 copies of 24 items gathered
+  4: rotate3(b_rot_3, b_rot_4) global 256 local 256: %rot_4: -1 0 1 o_-_3, 3 copies of 72 items gathered
+  5: slice_float(b_rot_4, b_drop, 18, 3, 4, 0, 2) global 256 local 256: %drop: 2 of 3 along the axis, 18 lines of 4 each: 144 items
+  6: slice_float(b_drop, b_drop_2, 18, 2, 4, 1, 1) global 128 local 128: %drop_2: 1 of 2 along the axis, 18 lines of 4 each: 72 items
+  7: slice_float(b_drop_2, b_drop_3, 18, 4, 1, 0, 3) global 64 local 64: %drop_3: 3 of 4 along the axis, 18 lines of 1 each: 54 items
+  8: slice_float(b_drop_3, b_drop_4, 18, 3, 1, 1, 2) global 64 local 64: %drop_4: 2 of 3 along the axis, 18 lines of 1 each: 36 items
+  9: rotate8(b_x, b_rot_5) global 128 local 128: %rot_5: -1 0 1 o_-_3, 3 copies of 24 items gathered
+  10: rotate9(b_rot_5, b_rot_6) global 256 local 256: %rot_6: -1 0 1 o_-_3, 3 copies of 72 items gathered
+  11: slice_float(b_rot_6, b_drop_5, 18, 3, 4, 0, 2) global 256 local 256: %drop_5: 2 of 3 along the axis, 18 lines of 4 each: 144 items
+  12: slice_float(b_drop_5, b_drop_6, 18, 2, 4, 1, 1) global 128 local 128: %drop_6: 1 of 2 along the axis, 18 lines of 4 each: 72 items
+  13: slice_float(b_drop_6, b_drop_7, 18, 4, 1, 0, 3) global 64 local 64: %drop_7: 3 of 4 along the axis, 18 lines of 1 each: 54 items
+  14: slice_float(b_drop_7, b_drop_8, 18, 3, 1, 1, 2) global 64 local 64: %drop_8: 2 of 3 along the axis, 18 lines of 1 each: 36 items
+  15: matmul_float(b_k, b_drop_8, b_mm, 2, 9, 4) global 8 local 8: %mm: 2 by 9 times 9 by 4, 8 sums of 9 products, one work-item each
+  16: transpose15(b_mm, b_tr) global 8 local 8: %tr: 2 1 3 t_ranspose, [2 2 2] to [2 2 2], 8 items gathered
 outputs:
-  %r1 from b_r1, read back by the host
-  %r3 from b_r3, read back by the host
-  %w from b_f, read back by the host
-  %y from b_t, read back by the host
+  %rot from b_rot, read back by the host
+  %rot_2 from b_rot_2, read back by the host
+  %rs from b_drop_4, read back by the host
+  %rs_4 from b_tr, read back by the host

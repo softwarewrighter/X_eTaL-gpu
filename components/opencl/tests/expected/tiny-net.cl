@@ -15,12 +15,12 @@ __kernel void slice_float(__global const float* in, __global float* out, const l
     out[k] = in[(o * len + start + j) * inner + i];
 }
 
-// table2: %b1 := a 'right t_able b, 4 by 5 items, one work-item each.
-__kernel void table2(__global const long* b_o4, __global const float* b_w1b, __global float* b_b1) {
+// table1: %tb := a 'right t_able b, 4 by 5 items, one work-item each.
+__kernel void table1(__global const long* b_a, __global const float* b_take, __global float* b_tb) {
     long k = get_global_id(0);
     const long nb = 5;
     if (k >= 20) return;
-    b_b1[k] = b_w1b[k % nb];
+    b_tb[k] = b_take[k % nb];
 }
 
 // matmul_float: a by b, a's last axis (n) with b's first; one work-item per
@@ -35,29 +35,29 @@ __kernel void matmul_float(__global const float* a, __global const float* b, __g
     c[ij] = acc;
 }
 
-// k1: 20 elements, one work-item each; computes %z1 %h
-__kernel void k1(__global const float* b_xw1, __global const float* b_b1, __global float* b_h) {
+// k1: 20 elements, one work-item each; computes %add %max
+__kernel void k1(__global const float* b_mm, __global const float* b_tb, __global float* b_max) {
     size_t i = get_global_id(0);
     if (i >= 20) return;
-    float t_z1 = (b_xw1[i] + b_b1[i]);
-    float t_h = fmax(t_z1, 0.0f);
-    b_h[i] = t_h;
+    float t_add = (b_mm[i] + b_tb[i]);
+    float t_max = fmax(t_add, 0.0f);
+    b_max[i] = t_max;
 }
 
-// table7: %b2 := a 'right t_able b, 4 by 2 items, one work-item each.
-__kernel void table7(__global const long* b_o4, __global const float* b_w2b, __global float* b_b2) {
+// table6: %tb_2 := a 'right t_able b, 4 by 2 items, one work-item each.
+__kernel void table6(__global const long* b_a_2, __global const float* b_take_2, __global float* b_tb_2) {
     long k = get_global_id(0);
     const long nb = 2;
     if (k >= 8) return;
-    b_b2[k] = b_w2b[k % nb];
+    b_tb_2[k] = b_take_2[k % nb];
 }
 
-// k3: 8 elements, one work-item each; computes %z2
-__kernel void k3(__global const float* b_hw2, __global const float* b_b2, __global float* b_z2) {
+// k3: 8 elements, one work-item each; computes %add_2
+__kernel void k3(__global const float* b_mm_2, __global const float* b_tb_2, __global float* b_add_2) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    float t_z2 = (b_hw2[i] + b_b2[i]);
-    b_z2[i] = t_z2;
+    float t_add_2 = (b_mm_2[i] + b_tb_2[i]);
+    b_add_2[i] = t_add_2;
 }
 
 // reduce_axis_max_float: along one axis, one work-item per result item; its line of
@@ -72,21 +72,21 @@ __kernel void reduce_axis_max_float(__global const float* in, __global float* ou
     out[k] = acc;
 }
 
-// table11: %mxs := a 'left t_able b, 4 by 2 items, one work-item each.
-__kernel void table11(__global const float* b_mx, __global const long* b_c, __global float* b_mxs) {
+// table11: %tb_3 := a 'left t_able b, 4 by 2 items, one work-item each.
+__kernel void table11(__global const float* b_maxr, __global const long* b_b, __global float* b_tb_3) {
     long k = get_global_id(0);
     const long nb = 2;
     if (k >= 8) return;
-    b_mxs[k] = b_mx[k / nb];
+    b_tb_3[k] = b_maxr[k / nb];
 }
 
-// k5: 8 elements, one work-item each; computes %d %e
-__kernel void k5(__global const float* b_z2, __global const float* b_mxs, __global float* b_e) {
+// k5: 8 elements, one work-item each; computes %sub %exp
+__kernel void k5(__global const float* b_add_2, __global const float* b_tb_3, __global float* b_exp) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    float t_d = (b_z2[i] - b_mxs[i]);
-    float t_e = exp(t_d);
-    b_e[i] = t_e;
+    float t_sub = (b_add_2[i] - b_tb_3[i]);
+    float t_exp = exp(t_sub);
+    b_exp[i] = t_exp;
 }
 
 // reduce_axis_add_float: along one axis, one work-item per result item; its line of
@@ -101,18 +101,18 @@ __kernel void reduce_axis_add_float(__global const float* in, __global float* ou
     out[k] = acc;
 }
 
-// table14: %ss := a 'left t_able b, 4 by 2 items, one work-item each.
-__kernel void table14(__global const float* b_s, __global const long* b_c, __global float* b_ss) {
+// table14: %tb_4 := a 'left t_able b, 4 by 2 items, one work-item each.
+__kernel void table14(__global const float* b_addr, __global const long* b_b_2, __global float* b_tb_4) {
     long k = get_global_id(0);
     const long nb = 2;
     if (k >= 8) return;
-    b_ss[k] = b_s[k / nb];
+    b_tb_4[k] = b_addr[k / nb];
 }
 
-// k7: 8 elements, one work-item each; computes %p
-__kernel void k7(__global const float* b_e, __global const float* b_ss, __global float* b_p) {
+// k7: 8 elements, one work-item each; computes %div
+__kernel void k7(__global const float* b_exp, __global const float* b_tb_4, __global float* b_div) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    float t_p = (b_e[i] / b_ss[i]);
-    b_p[i] = t_p;
+    float t_div = (b_exp[i] / b_tb_4[i]);
+    b_div[i] = t_div;
 }

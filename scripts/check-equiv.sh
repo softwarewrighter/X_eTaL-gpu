@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# The equivalence checks: every hand-lowered twin (libs/*/demos/*.xir)
-# run by xetal-gpu must give what the pinned X_eTaL evaluator printed
-# for its .xtl (the demo's reg-rs baseline, libs/<Name>/tests/demo-<stem>.out):
+# The equivalence checks: every demo program (libs/*/demos/*.xtl),
+# lowered from its X_eTaL source by xetal-gpu (components/lower, through
+# the pinned X_eTaL's own crates) and run, must give what the pinned
+# X_eTaL evaluator printed for it (the demo's reg-rs baseline,
+# libs/<Name>/tests/demo-<stem>.out):
 #   - on the reference interpreter (--device cpu): exactly;
 #   - on each OpenCL device found (when the runtime exists and a
 #     device is present): Floats within 1e-5, Ints exactly.
-# A demo program without a twin fails, unless it says "# no twin".
 #   scripts/check-equiv.sh [SCHEDULE_FILE [FLOAT_TOLERANCE]]
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -21,17 +22,14 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 devices=()
 while IFS= read -r d; do [ -n "$d" ] && devices+=("$d"); done < <("$gpu" devices | grep -o '^opencl:[0-9]*' || true)
 [ ${#devices[@]} -gt 0 ] || echo "check-equiv: no OpenCL device here; the GPU side is skipped"
+XETAL_PATH="$(scripts/libs.py path)"; export XETAL_PATH
 for xtl in libs/*/demos/*.xtl; do
   name="$(basename "$xtl" .xtl)"; lib="$(basename "$(dirname "$(dirname "$xtl")")")"
-  xir="${xtl%.xtl}.xir"; want="libs/$lib/tests/demo-$name.out"
-  if [ ! -f "$xir" ]; then
-    grep -q '# no twin' "$xtl" && continue
-    echo "FAIL: $xtl has no twin $xir (or say '# no twin')"; fail=1; continue
-  fi
-  [ -f "$want" ] || { echo "FAIL: $xir: no baseline $want (just bless-lib $lib)"; fail=1; continue; }
+  xir="$xtl"; want="libs/$lib/tests/demo-$name.out"
+  [ -f "$want" ] || { echo "FAIL: $xtl: no baseline $want (just bless-lib $lib)"; fail=1; continue; }
   n=$((n + 1))
   if ! "$gpu" run "$xir" --device cpu > "$tmp/cpu.out" 2> "$tmp/cpu.err"; then
-    echo "FAIL: $xir on cpu:"; cat "$tmp/cpu.err"; fail=1; continue
+    echo "FAIL: $xtl lowered, on cpu:"; cat "$tmp/cpu.err"; fail=1; continue
   fi
   if out="$(scripts/compare-out.py "$want" "$tmp/cpu.out" 0)"; then echo "ok: $lib/$name on cpu, $out"
   else echo "FAIL: $lib/$name on cpu: $out"; fail=1; fi
@@ -45,5 +43,5 @@ for xtl in libs/*/demos/*.xtl; do
     else echo "FAIL: $lib/$name on $label: $out"; fail=1; fi
   done; done
 done
-echo "check-equiv: $n twin$([ $n = 1 ] || echo s) on cpu and ${#devices[@]} OpenCL device$([ ${#devices[@]} = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
+echo "check-equiv: $n demo$([ $n = 1 ] || echo s) lowered from source, on cpu and ${#devices[@]} OpenCL device$([ ${#devices[@]} = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
 exit $fail

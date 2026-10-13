@@ -292,10 +292,12 @@ array program, the same answer from the evaluator, from this repo's
 IR interpreter and from a GPU. Its process and scripts follow
 `../X_eTaL-demos` and `../X_eTaL-ML`.
 
-The accelerator IR and the lowering from Core belong to X_eTaL and are
-another agent's work there (not yet planned); the FPGA backend is a
-different agent's in `hardwarewrighter/X_eTaL-fpga`. This repo
-changes only itself.
+The accelerator IR and the lowering from Core belong to X_eTaL in the
+end, and are not planned there yet, so this repo carries both
+provisionally: `components/xir` (the IR) and `components/lower` (the
+lowering, through the pinned X_eTaL's own crates, a path dependency on
+`work/xetal`; plan A4b). The FPGA backend is a different agent's in
+`hardwarewrighter/X_eTaL-fpga`. This repo changes only itself.
 
 Read before working:
 
@@ -333,9 +335,13 @@ Read before working:
    (`src/<Name>.xtl`, `tests/` with reg-rs baselines and `types.rgt`
    pinning the exports' types, `demos/*.xtl`, `docs/README.md`, a
    short `README.md`), as in X_eTaL-libraries and X_eTaL-ML. The
-   example programs the GPU runs are the Accel library's demos; each
-   has a hand-lowered `.xir` twin beside it until X_eTaL's lowering
-   exists (ask G2). Commit `.rgt`/`.out`/`.err`, never `.tdb*`;
+   example programs the GPU runs are the Accel library's demos, each
+   lowered from its source by `components/lower` (`xetal-gpu run
+   demo.xtl`); there are no hand-written twins any more (plan A4b;
+   the lowering belongs to X_eTaL in the end, G2). A demo that uses a
+   construct outside the subset fails the gate with the translator's
+   reason: widen the subset or change the demo, and say which. Commit
+   `.rgt`/`.out`/`.err`, never `.tdb*`;
    rebless (`just bless-lib`) only after reviewing the diff, and say
    so in the commit.
 4. A schedule is data: `schedules/<device>.toml`, read with
@@ -358,7 +364,8 @@ Read before working:
    --check`, `clippy -D warnings` and the tests. GPU tests run when a
    device is present and say so when skipped. The IR
    (`components/xir`) knows nothing of OpenCL; the emitter and runtime
-   know nothing of X_eTaL syntax.
+   know nothing of X_eTaL syntax; only `components/lower` knows
+   X_eTaL, and only its Core, through X_eTaL's crates.
 7. Schedule is separate from semantics (plan A6): nothing about
    devices, work-groups, element widths or fusion goes into an
    `.xtl` or into the IR; it is data the emitter and runtime read.

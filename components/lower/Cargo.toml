@@ -1,0 +1,19 @@
+[package]
+name = "xetal-gpu-lower"
+description = "The lowering of X_eTaL-gpu: X_eTaL source, through the pinned X_eTaL's own crates, to an XIR program"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+xetal-gpu-xir = { path = "../xir" }
+xetal-program = { path = "../../work/xetal/components/macro/crates/xetal-program" }
+xetal-core = { path = "../../work/xetal/components/core/crates/xetal-core" }
+xetal-ir = { path = "../../work/xetal/components/core/crates/xetal-ir" }
+xetal-base = { path = "../../work/xetal/components/base/crates/xetal-base" }
+xetal-lex = { path = "../../work/xetal/components/syntax/crates/xetal-lex" }

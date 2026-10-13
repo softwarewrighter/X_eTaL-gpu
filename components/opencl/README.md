@@ -3,7 +3,8 @@
 The schedule and the OpenCL C 1.2 emitter: from a checked XIR program
 to kernel source and a launch plan. Nothing here touches a device;
 the runtime component executes a plan, and this crate's tests pin
-the source and the plan of every twin in `libs/*/demos/`
+the source and the plan of every demo in `libs/*/demos/`, lowered
+from its X_eTaL source by `components/lower`
 (`tests/expected/<name>.cl` and `.plan`; `XETAL_BLESS=1 cargo test`
 rewrites them after a reviewed change).
 

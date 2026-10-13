@@ -107,8 +107,11 @@ the Float sums agree with the evaluator's f64 right fold within
 
 ## Checked
 
-`scripts/check-equiv.sh` runs every twin on every device found and
-compares with the evaluator's baseline: Ints exactly, Floats within
-a relative 1e-5 (the device computes in `float` and reduces as a tree,
-the evaluator in f64 from the right). On this Mac all five twins
-agree, and `-0.0` comes back as `-0.0`, as the evaluator prints it.
+`scripts/check-equiv.sh` runs every demo, lowered from its X_eTaL
+source, on every device found and compares with the evaluator's
+baseline: Ints exactly, Floats within a relative 1e-5 (the device
+computes in `float` and reduces as a tree, the evaluator in f64 from
+the right). On this Mac all twelve agree, and `-0.0` comes back as
+`-0.0`, as the evaluator prints it. A Float beyond `float`'s range
+(X_eTaL-ML's `1e300`) is refused at upload with the fix named, since
+it would be infinity on the device and poison a row with NaN.

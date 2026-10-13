@@ -1,12 +1,14 @@
 schedule: Float as float, Int as long, work-group 256, products and transposes untiled
 buffers:
   b_a: long 8 items, %a i64 [8]; constant, uploaded by the host
-  b_c: long 8 items, %c i64 [8]; written on the device
-  b_z: float 8 items, %z f64 [8]; written on the device
+  b_r: long 8 items, %r i64 [8]; constant, uploaded by the host
+  b_l_2: float 8 items, %l_2 f64 [8]; constant, uploaded by the host
+  b_add: long 8 items, %add i64 [8]; written on the device
+  b_add_2: float 8 items, %add_2 f64 [8]; written on the device
 kernels:
-  k0: 8 elements, one work-item each; computes %b %c %af %x %y %z; writes %c %z
+  k0: 8 elements, one work-item each; computes %mul %add %div %mul_2 %add_2; writes %add %add_2
 launches:
-  1: k0(b_a, b_c, b_z) global 8 local 8: 8 elements (1 group of 8)
+  1: k0(b_r, b_a, b_l_2, b_add, b_add_2) global 8 local 8: 8 elements (1 group of 8)
 outputs:
-  %c from b_c, read back by the host
-  %z from b_z, read back by the host
+  %add from b_add, read back by the host
+  %add_2 from b_add_2, read back by the host

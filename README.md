@@ -36,6 +36,7 @@ generations of parallel hardware with the same answer, not speed.
 | ---- | ------------- |
 | `libs/Accel/` | the acceleratable subset of X_eTaL as an ordinary, typed, tested library (`"ac:" u_se< "Accel"`), and the example programs, its demos |
 | `components/xir/` | the provisional accelerator IR (typed arrays, elementwise maps, reductions), its text form and a reference interpreter |
+| `components/lower/` | the lowering: X_eTaL source to the IR, through the pinned X_eTaL's own crates (libraries inlined, shapes folded, every array operation an IR operation) |
 | `components/opencl/` | the schedule and the OpenCL C 1.2 kernel emitter |
 | `components/runtime/` | the OpenCL host runtime (devices, buffers, kernels) |
 | `extensions/gpu/` | the GPU as a native extension X_eTaL programs call through X_eTaL-extensions' `xetal-x` |
@@ -58,17 +59,19 @@ evaluator is the reference, and the GPU must reproduce its answer:
                   the same arrays
 ```
 
-**What runs on the GPU today, plainly:** not X_eTaL code itself. Each
-example's `.xtl` has a hand-written translation beside it, a `.xir`
-twin (or, for X_eTaL-ML's benchmarks, one written by a script from
-the benchmark's definition), and that translation is what runs on the
-device. The checks prove each translation gives the evaluator's
-output, exactly on the interpreter and within f32's tolerance on the
-device, so the twins are trusted only as far as those checks reach.
-Translating X_eTaL automatically is the lowering that belongs to
-X_eTaL and is not there yet (see
-[`docs/xetal-asks.md`](docs/xetal-asks.md), asks G1 to G4); the twins
-go when it lands.
+**What runs on the GPU today, plainly:** X_eTaL source, lowered.
+Since 2026-10-13 every example program is lowered from its `.xtl` by
+this repository's translator ([`components/lower`](components/lower/README.md)),
+which gets the program's Core, libraries included, from the pinned
+X_eTaL's own crates and builds the XIR program the device runs. The
+checks prove each lowered program gives the evaluator's output,
+exactly on the interpreter and within f32's tolerance on the device.
+The hand-written `.xir` twins that stood in until then were the
+translator's oracle and are gone. X_eTaL-ML's benchmarks and world
+model still run through a script that writes their XIR from the
+definitions; they move to their own source next (the step
+models-from-source). The lowering belongs to X_eTaL in the end (asks
+G1 and G2), and what is built here moves there when it does.
 
 ## Status
 
@@ -183,7 +186,9 @@ and [`docs/rtx5060-session-results.md`](docs/rtx5060-session-results.md)
 
 Prerequisites:
 
-- [Rust](https://rustup.rs) (1.95 or newer for the pinned X_eTaL) and
+- [Rust](https://rustup.rs) (1.95 or newer for the pinned X_eTaL; `just
+  xetal` must have run before `cargo build`, since `components/lower`
+  depends on the pinned X_eTaL's crates in `work/xetal`) and
   [`just`](https://github.com/casey/just)
   (`brew install just` or `cargo install just`)
 - an OpenCL runtime for the GPU parts: on macOS it is built in
@@ -199,9 +204,10 @@ just eval "'+ r_/_2 2 3 r_eshape r_ange 6"   # try it: row sums, 6 15
 just test                            # every library's baselines, the components, the equivalence checks
 just gate                            # the pre-commit gate
 just build                           # the xetal-gpu tool (target/release/xetal-gpu)
-target/release/xetal-gpu run libs/Accel/demos/reduce-sum.xir   # the IR twin of an example, interpreted
-target/release/xetal-gpu kernel libs/Accel/demos/pipeline.xir  # the OpenCL C it becomes
-target/release/xetal-gpu explain libs/Accel/demos/pipeline.xir # which values became which kernels
+target/release/xetal-gpu lower libs/Accel/demos/reduce-sum.xtl  # the XIR an example lowers to
+target/release/xetal-gpu run libs/Accel/demos/reduce-sum.xtl    # lowered and interpreted (--device opencl:0 for the GPU)
+target/release/xetal-gpu kernel libs/Accel/demos/pipeline.xtl   # the OpenCL C it becomes
+target/release/xetal-gpu explain libs/Accel/demos/pipeline.xtl  # which X_eTaL became which kernels
 target/release/xetal-gpu devices                               # the OpenCL devices here
 target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   # the same program on the GPU
 just sizes                           # a million-item reduction: evaluator, interpreter, GPU, timed

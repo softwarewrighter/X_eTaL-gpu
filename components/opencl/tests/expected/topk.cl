@@ -16,40 +16,41 @@ __kernel void reduce_axis_max_float(__global const float* in, __global float* ou
     out[k] = acc;
 }
 
-// table1: %asp := a 'left t_able b, 3 by 4 items, one work-item each.
-__kernel void table1(__global const float* b_amx, __global const long* b_o4, __global float* b_asp) {
+// table1: %tb := a 'left t_able b, 3 by 4 items, one work-item each.
+__kernel void table1(__global const float* b_maxr, __global const long* b_b, __global float* b_tb) {
     long k = get_global_id(0);
     const long nb = 4;
     if (k >= 12) return;
-    b_asp[k] = b_amx[k / nb];
+    b_tb[k] = b_maxr[k / nb];
 }
 
-// k1: 12 elements, one work-item each; computes %aeq %ahit
-__kernel void k1(__global const float* b_m, __global const float* b_asp, __global float* b_ahit) {
+// k1: 12 elements, one work-item each; computes %eq %f %sub %mul
+__kernel void k1(__global const float* b_m, __global const float* b_tb, __global float* b_f, __global float* b_mul) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    int t_aeq = (b_m[i] == b_asp[i]);
-    float t_ahit = (float)t_aeq;
-    b_ahit[i] = t_ahit;
+    int t_eq = (b_m[i] == b_tb[i]);
+    float t_f = (float)t_eq;
+    float t_sub = (1.0f - t_f);
+    float t_mul = (t_sub * 5.0f);
+    b_f[i] = t_f;
+    b_mul[i] = t_mul;
 }
 
-// table3: %apos := a 'right t_able b, 3 by 4 items, one work-item each.
-__kernel void table3(__global const long* b_o3, __global const float* b_r4, __global float* b_apos) {
+// table3: %tb_2 := a 'right t_able b, 3 by 4 items, one work-item each.
+__kernel void table3(__global const long* b_a, __global const float* b_b_2, __global float* b_tb_2) {
     long k = get_global_id(0);
     const long nb = 4;
     if (k >= 12) return;
-    b_apos[k] = b_r4[k % nb];
+    b_tb_2[k] = b_b_2[k % nb];
 }
 
-// k3: 12 elements, one work-item each; computes %aa %anh %ab %as
-__kernel void k3(__global const float* b_ahit, __global const float* b_apos, __global float* b_as) {
+// k3: 12 elements, one work-item each; computes %mul_2 %add
+__kernel void k3(__global const float* b_f, __global const float* b_tb_2, __global const float* b_mul, __global float* b_add) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    float t_aa = (b_ahit[i] * b_apos[i]);
-    float t_anh = (1.0f - b_ahit[i]);
-    float t_ab = (t_anh * 5.0f);
-    float t_as = (t_aa + t_ab);
-    b_as[i] = t_as;
+    float t_mul_2 = (b_f[i] * b_tb_2[i]);
+    float t_add = (t_mul_2 + b_mul[i]);
+    b_add[i] = t_add;
 }
 
 // reduce_axis_min_float: along one axis, one work-item per result item; its line of
@@ -64,167 +65,307 @@ __kernel void reduce_axis_min_float(__global const float* in, __global float* ou
     out[k] = acc;
 }
 
-// k4: 3 elements, one work-item each; computes %argm
-__kernel void k4(__global const float* b_amn, __global long* b_argm) {
+// k4: 3 elements, one work-item each; computes %fl
+__kernel void k4(__global const float* b_minr, __global long* b_fl) {
     size_t i = get_global_id(0);
     if (i >= 3) return;
-    long t_argm = (long)floor(b_amn[i]);
-    b_argm[i] = t_argm;
+    long t_fl = (long)floor(b_minr[i]);
+    b_fl[i] = t_fl;
 }
 
-// topk2_float: a mask of each line's 2 largest items, the largest taken
-// out 2 times with its ties (X_eTaL-ML's sm:t_op): one work-item per
-// line keeps the 2 largest distinct values it has seen, in order, then
-// marks the items at or above the last of them (all of a line with
-// fewer distinct values).
-__kernel void topk2_float(__global const float* in, __global int* out, const long outer, const long len, const long inner) {
-    long line = get_global_id(0);
-    if (line >= outer * inner) return;
-    long o = line / inner, i = line % inner;
-    long base = o * len * inner + i;
-    float best[2];
-    int found = 0;
-    for (long j = 0; j < len; j++) {
-        float x = in[base + j * inner];
-        int pos = 0, dup = 0;
-        for (int b = 0; b < found; b++) {
-            if (best[b] == x) { dup = 1; break; }
-            if (best[b] > x) pos = b + 1;
-        }
-        if (dup || pos >= 2) continue;
-        int last = found < 2 ? found : 2 - 1;
-        for (int b = last; b > pos; b--) best[b] = best[b - 1];
-        best[pos] = x;
-        if (found < 2) found++;
-    }
-    float threshold = best[found - 1];
-    for (long j = 0; j < len; j++) out[base + j * inner] = in[base + j * inner] >= threshold;
+// k5: 3 elements, one work-item each; computes %sub_2 %add_2
+__kernel void k5(__global const float* b_maxr_2, __global const float* b_minr_2, __global float* b_add_2) {
+    size_t i = get_global_id(0);
+    if (i >= 3) return;
+    float t_sub_2 = (b_maxr_2[i] - b_minr_2[i]);
+    float t_add_2 = (1.0f + t_sub_2);
+    b_add_2[i] = t_add_2;
 }
 
-// k5: 12 elements, one work-item each; computes %top2
-__kernel void k5(__global const int* b_k2, __global float* b_top2) {
+// table10: %tb_3 := a 'left t_able b, 3 by 4 items, one work-item each.
+__kernel void table10(__global const float* b_add_2, __global const long* b_b_3, __global float* b_tb_3) {
+    long k = get_global_id(0);
+    const long nb = 4;
+    if (k >= 12) return;
+    b_tb_3[k] = b_add_2[k / nb];
+}
+
+// table12: %tb_4 := a 'left t_able b, 3 by 4 items, one work-item each.
+__kernel void table12(__global const float* b_maxr_3, __global const long* b_b_4, __global float* b_tb_4) {
+    long k = get_global_id(0);
+    const long nb = 4;
+    if (k >= 12) return;
+    b_tb_4[k] = b_maxr_3[k / nb];
+}
+
+// k8: 12 elements, one work-item each; computes %eq_2 %f_2 %mul_3 %sub_3
+__kernel void k8(__global const float* b_m, __global const float* b_tb_4, __global const float* b_tb_3, __global float* b_sub_3) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    float t_top2 = (float)b_k2[i];
-    b_top2[i] = t_top2;
+    int t_eq_2 = (b_m[i] == b_tb_4[i]);
+    float t_f_2 = (float)t_eq_2;
+    float t_mul_3 = (b_tb_3[i] * t_f_2);
+    float t_sub_3 = (b_m[i] - t_mul_3);
+    b_sub_3[i] = t_sub_3;
 }
 
-// topk1_float: a mask of each line's 1 largest items, the largest taken
-// out 1 times with its ties (X_eTaL-ML's sm:t_op): one work-item per
-// line keeps the 1 largest distinct values it has seen, in order, then
-// marks the items at or above the last of them (all of a line with
-// fewer distinct values).
-__kernel void topk1_float(__global const float* in, __global int* out, const long outer, const long len, const long inner) {
-    long line = get_global_id(0);
-    if (line >= outer * inner) return;
-    long o = line / inner, i = line % inner;
-    long base = o * len * inner + i;
-    float best[1];
-    int found = 0;
-    for (long j = 0; j < len; j++) {
-        float x = in[base + j * inner];
-        int pos = 0, dup = 0;
-        for (int b = 0; b < found; b++) {
-            if (best[b] == x) { dup = 1; break; }
-            if (best[b] > x) pos = b + 1;
-        }
-        if (dup || pos >= 1) continue;
-        int last = found < 1 ? found : 1 - 1;
-        for (int b = last; b > pos; b--) best[b] = best[b - 1];
-        best[pos] = x;
-        if (found < 1) found++;
-    }
-    float threshold = best[found - 1];
-    for (long j = 0; j < len; j++) out[base + j * inner] = in[base + j * inner] >= threshold;
+// table15: %tb_5 := a 'left t_able b, 3 by 4 items, one work-item each.
+__kernel void table15(__global const float* b_maxr_4, __global const long* b_b_5, __global float* b_tb_5) {
+    long k = get_global_id(0);
+    const long nb = 4;
+    if (k >= 12) return;
+    b_tb_5[k] = b_maxr_4[k / nb];
 }
 
-// k6: 12 elements, one work-item each; computes %top1
-__kernel void k6(__global const int* b_k1, __global float* b_top1) {
+// k10: 12 elements, one work-item each; computes %eq_3 %f_3 %mul_4 %sub_4 %sub_5 %gt %f_4
+__kernel void k10(__global const float* b_sub_3, __global const float* b_tb_5, __global const float* b_tb_3, __global const float* b_m, __global float* b_f_4) {
     size_t i = get_global_id(0);
     if (i >= 12) return;
-    float t_top1 = (float)b_k1[i];
-    b_top1[i] = t_top1;
+    int t_eq_3 = (b_sub_3[i] == b_tb_5[i]);
+    float t_f_3 = (float)t_eq_3;
+    float t_mul_4 = (b_tb_3[i] * t_f_3);
+    float t_sub_4 = (b_sub_3[i] - t_mul_4);
+    float t_sub_5 = (b_m[i] - t_sub_4);
+    int t_gt = (t_sub_5 > 0.0f);
+    float t_f_4 = (float)t_gt;
+    b_f_4[i] = t_f_4;
 }
 
-// table12: %bsp := a 'left t_able b, 4 by 5 items, one work-item each.
-__kernel void table12(__global const float* b_bmx, __global const long* b_o5, __global float* b_bsp) {
+// k11: 3 elements, one work-item each; computes %sub_6 %add_3
+__kernel void k11(__global const float* b_maxr_5, __global const float* b_minr_3, __global float* b_add_3) {
+    size_t i = get_global_id(0);
+    if (i >= 3) return;
+    float t_sub_6 = (b_maxr_5[i] - b_minr_3[i]);
+    float t_add_3 = (1.0f + t_sub_6);
+    b_add_3[i] = t_add_3;
+}
+
+// table20: %tb_6 := a 'left t_able b, 3 by 4 items, one work-item each.
+__kernel void table20(__global const float* b_add_3, __global const long* b_b_6, __global float* b_tb_6) {
+    long k = get_global_id(0);
+    const long nb = 4;
+    if (k >= 12) return;
+    b_tb_6[k] = b_add_3[k / nb];
+}
+
+// table22: %tb_7 := a 'left t_able b, 3 by 4 items, one work-item each.
+__kernel void table22(__global const float* b_maxr_6, __global const long* b_b_7, __global float* b_tb_7) {
+    long k = get_global_id(0);
+    const long nb = 4;
+    if (k >= 12) return;
+    b_tb_7[k] = b_maxr_6[k / nb];
+}
+
+// k14: 12 elements, one work-item each; computes %eq_4 %f_5 %mul_5 %sub_7 %sub_8 %gt_2 %f_6
+__kernel void k14(__global const float* b_m, __global const float* b_tb_7, __global const float* b_tb_6, __global float* b_f_6) {
+    size_t i = get_global_id(0);
+    if (i >= 12) return;
+    int t_eq_4 = (b_m[i] == b_tb_7[i]);
+    float t_f_5 = (float)t_eq_4;
+    float t_mul_5 = (b_tb_6[i] * t_f_5);
+    float t_sub_7 = (b_m[i] - t_mul_5);
+    float t_sub_8 = (b_m[i] - t_sub_7);
+    int t_gt_2 = (t_sub_8 > 0.0f);
+    float t_f_6 = (float)t_gt_2;
+    b_f_6[i] = t_f_6;
+}
+
+// table25: %tb_8 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table25(__global const float* b_maxr_7, __global const long* b_b_8, __global float* b_tb_8) {
     long k = get_global_id(0);
     const long nb = 5;
     if (k >= 20) return;
-    b_bsp[k] = b_bmx[k / nb];
+    b_tb_8[k] = b_maxr_7[k / nb];
 }
 
-// k8: 20 elements, one work-item each; computes %beq %bhit
-__kernel void k8(__global const float* b_s, __global const float* b_bsp, __global float* b_bhit) {
+// k16: 20 elements, one work-item each; computes %eq_5 %f_7 %sub_9 %mul_6
+__kernel void k16(__global const float* b_s, __global const float* b_tb_8, __global float* b_f_7, __global float* b_mul_6) {
     size_t i = get_global_id(0);
     if (i >= 20) return;
-    int t_beq = (b_s[i] == b_bsp[i]);
-    float t_bhit = (float)t_beq;
-    b_bhit[i] = t_bhit;
+    int t_eq_5 = (b_s[i] == b_tb_8[i]);
+    float t_f_7 = (float)t_eq_5;
+    float t_sub_9 = (1.0f - t_f_7);
+    float t_mul_6 = (t_sub_9 * 6.0f);
+    b_f_7[i] = t_f_7;
+    b_mul_6[i] = t_mul_6;
 }
 
-// table14: %bpos := a 'right t_able b, 4 by 5 items, one work-item each.
-__kernel void table14(__global const long* b_o4, __global const float* b_r5, __global float* b_bpos) {
+// table27: %tb_9 := a 'right t_able b, 4 by 5 items, one work-item each.
+__kernel void table27(__global const long* b_a_2, __global const float* b_b_9, __global float* b_tb_9) {
     long k = get_global_id(0);
     const long nb = 5;
     if (k >= 20) return;
-    b_bpos[k] = b_r5[k % nb];
+    b_tb_9[k] = b_b_9[k % nb];
 }
 
-// k10: 20 elements, one work-item each; computes %ba %bnh %bb %bs
-__kernel void k10(__global const float* b_bhit, __global const float* b_bpos, __global float* b_bs) {
+// k18: 20 elements, one work-item each; computes %mul_7 %add_4
+__kernel void k18(__global const float* b_f_7, __global const float* b_tb_9, __global const float* b_mul_6, __global float* b_add_4) {
     size_t i = get_global_id(0);
     if (i >= 20) return;
-    float t_ba = (b_bhit[i] * b_bpos[i]);
-    float t_bnh = (1.0f - b_bhit[i]);
-    float t_bb = (t_bnh * 6.0f);
-    float t_bs = (t_ba + t_bb);
-    b_bs[i] = t_bs;
+    float t_mul_7 = (b_f_7[i] * b_tb_9[i]);
+    float t_add_4 = (t_mul_7 + b_mul_6[i]);
+    b_add_4[i] = t_add_4;
 }
 
-// k11: 4 elements, one work-item each; computes %args
-__kernel void k11(__global const float* b_bmn, __global long* b_args) {
+// k19: 4 elements, one work-item each; computes %fl_2
+__kernel void k19(__global const float* b_minr_4, __global long* b_fl_2) {
     size_t i = get_global_id(0);
     if (i >= 4) return;
-    long t_args = (long)floor(b_bmn[i]);
-    b_args[i] = t_args;
+    long t_fl_2 = (long)floor(b_minr_4[i]);
+    b_fl_2[i] = t_fl_2;
 }
 
-// topk3_float: a mask of each line's 3 largest items, the largest taken
-// out 3 times with its ties (X_eTaL-ML's sm:t_op): one work-item per
-// line keeps the 3 largest distinct values it has seen, in order, then
-// marks the items at or above the last of them (all of a line with
-// fewer distinct values).
-__kernel void topk3_float(__global const float* in, __global int* out, const long outer, const long len, const long inner) {
-    long line = get_global_id(0);
-    if (line >= outer * inner) return;
-    long o = line / inner, i = line % inner;
-    long base = o * len * inner + i;
-    float best[3];
-    int found = 0;
-    for (long j = 0; j < len; j++) {
-        float x = in[base + j * inner];
-        int pos = 0, dup = 0;
-        for (int b = 0; b < found; b++) {
-            if (best[b] == x) { dup = 1; break; }
-            if (best[b] > x) pos = b + 1;
-        }
-        if (dup || pos >= 3) continue;
-        int last = found < 3 ? found : 3 - 1;
-        for (int b = last; b > pos; b--) best[b] = best[b - 1];
-        best[pos] = x;
-        if (found < 3) found++;
-    }
-    float threshold = best[found - 1];
-    for (long j = 0; j < len; j++) out[base + j * inner] = in[base + j * inner] >= threshold;
+// k20: 4 elements, one work-item each; computes %sub_10 %add_5
+__kernel void k20(__global const float* b_maxr_8, __global const float* b_minr_5, __global float* b_add_5) {
+    size_t i = get_global_id(0);
+    if (i >= 4) return;
+    float t_sub_10 = (b_maxr_8[i] - b_minr_5[i]);
+    float t_add_5 = (1.0f + t_sub_10);
+    b_add_5[i] = t_add_5;
 }
 
-// k12: 20 elements, one work-item each; computes %top3 %kept
-__kernel void k12(__global const int* b_k3, __global const float* b_s, __global float* b_top3, __global float* b_kept) {
+// table34: %tb_10 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table34(__global const float* b_add_5, __global const long* b_b_10, __global float* b_tb_10) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_10[k] = b_add_5[k / nb];
+}
+
+// table36: %tb_11 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table36(__global const float* b_maxr_9, __global const long* b_b_11, __global float* b_tb_11) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_11[k] = b_maxr_9[k / nb];
+}
+
+// k23: 20 elements, one work-item each; computes %eq_6 %f_8 %mul_8 %sub_11
+__kernel void k23(__global const float* b_s, __global const float* b_tb_11, __global const float* b_tb_10, __global float* b_sub_11) {
     size_t i = get_global_id(0);
     if (i >= 20) return;
-    float t_top3 = (float)b_k3[i];
-    float t_kept = (b_s[i] * t_top3);
-    b_top3[i] = t_top3;
-    b_kept[i] = t_kept;
+    int t_eq_6 = (b_s[i] == b_tb_11[i]);
+    float t_f_8 = (float)t_eq_6;
+    float t_mul_8 = (b_tb_10[i] * t_f_8);
+    float t_sub_11 = (b_s[i] - t_mul_8);
+    b_sub_11[i] = t_sub_11;
+}
+
+// table39: %tb_12 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table39(__global const float* b_maxr_10, __global const long* b_b_12, __global float* b_tb_12) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_12[k] = b_maxr_10[k / nb];
+}
+
+// k25: 20 elements, one work-item each; computes %eq_7 %f_9 %mul_9 %sub_12
+__kernel void k25(__global const float* b_sub_11, __global const float* b_tb_12, __global const float* b_tb_10, __global float* b_sub_12) {
+    size_t i = get_global_id(0);
+    if (i >= 20) return;
+    int t_eq_7 = (b_sub_11[i] == b_tb_12[i]);
+    float t_f_9 = (float)t_eq_7;
+    float t_mul_9 = (b_tb_10[i] * t_f_9);
+    float t_sub_12 = (b_sub_11[i] - t_mul_9);
+    b_sub_12[i] = t_sub_12;
+}
+
+// table42: %tb_13 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table42(__global const float* b_maxr_11, __global const long* b_b_13, __global float* b_tb_13) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_13[k] = b_maxr_11[k / nb];
+}
+
+// k27: 20 elements, one work-item each; computes %eq_8 %f_10 %mul_10 %sub_13 %sub_14 %gt_3 %f_11
+__kernel void k27(__global const float* b_sub_12, __global const float* b_tb_13, __global const float* b_tb_10, __global const float* b_s, __global float* b_f_11) {
+    size_t i = get_global_id(0);
+    if (i >= 20) return;
+    int t_eq_8 = (b_sub_12[i] == b_tb_13[i]);
+    float t_f_10 = (float)t_eq_8;
+    float t_mul_10 = (b_tb_10[i] * t_f_10);
+    float t_sub_13 = (b_sub_12[i] - t_mul_10);
+    float t_sub_14 = (b_s[i] - t_sub_13);
+    int t_gt_3 = (t_sub_14 > 0.0f);
+    float t_f_11 = (float)t_gt_3;
+    b_f_11[i] = t_f_11;
+}
+
+// k28: 4 elements, one work-item each; computes %sub_15 %add_6
+__kernel void k28(__global const float* b_maxr_12, __global const float* b_minr_6, __global float* b_add_6) {
+    size_t i = get_global_id(0);
+    if (i >= 4) return;
+    float t_sub_15 = (b_maxr_12[i] - b_minr_6[i]);
+    float t_add_6 = (1.0f + t_sub_15);
+    b_add_6[i] = t_add_6;
+}
+
+// table47: %tb_14 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table47(__global const float* b_add_6, __global const long* b_b_14, __global float* b_tb_14) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_14[k] = b_add_6[k / nb];
+}
+
+// table49: %tb_15 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table49(__global const float* b_maxr_13, __global const long* b_b_15, __global float* b_tb_15) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_15[k] = b_maxr_13[k / nb];
+}
+
+// k31: 20 elements, one work-item each; computes %eq_9 %f_12 %mul_11 %sub_16
+__kernel void k31(__global const float* b_s, __global const float* b_tb_15, __global const float* b_tb_14, __global float* b_sub_16) {
+    size_t i = get_global_id(0);
+    if (i >= 20) return;
+    int t_eq_9 = (b_s[i] == b_tb_15[i]);
+    float t_f_12 = (float)t_eq_9;
+    float t_mul_11 = (b_tb_14[i] * t_f_12);
+    float t_sub_16 = (b_s[i] - t_mul_11);
+    b_sub_16[i] = t_sub_16;
+}
+
+// table52: %tb_16 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table52(__global const float* b_maxr_14, __global const long* b_b_16, __global float* b_tb_16) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_16[k] = b_maxr_14[k / nb];
+}
+
+// k33: 20 elements, one work-item each; computes %eq_10 %f_13 %mul_12 %sub_17
+__kernel void k33(__global const float* b_sub_16, __global const float* b_tb_16, __global const float* b_tb_14, __global float* b_sub_17) {
+    size_t i = get_global_id(0);
+    if (i >= 20) return;
+    int t_eq_10 = (b_sub_16[i] == b_tb_16[i]);
+    float t_f_13 = (float)t_eq_10;
+    float t_mul_12 = (b_tb_14[i] * t_f_13);
+    float t_sub_17 = (b_sub_16[i] - t_mul_12);
+    b_sub_17[i] = t_sub_17;
+}
+
+// table55: %tb_17 := a 'left t_able b, 4 by 5 items, one work-item each.
+__kernel void table55(__global const float* b_maxr_15, __global const long* b_b_17, __global float* b_tb_17) {
+    long k = get_global_id(0);
+    const long nb = 5;
+    if (k >= 20) return;
+    b_tb_17[k] = b_maxr_15[k / nb];
+}
+
+// k35: 20 elements, one work-item each; computes %eq_11 %f_14 %mul_13 %sub_18 %sub_19 %gt_4 %f_15 %mul_14
+__kernel void k35(__global const float* b_sub_17, __global const float* b_tb_17, __global const float* b_tb_14, __global const float* b_s, __global float* b_mul_14) {
+    size_t i = get_global_id(0);
+    if (i >= 20) return;
+    int t_eq_11 = (b_sub_17[i] == b_tb_17[i]);
+    float t_f_14 = (float)t_eq_11;
+    float t_mul_13 = (b_tb_14[i] * t_f_14);
+    float t_sub_18 = (b_sub_17[i] - t_mul_13);
+    float t_sub_19 = (b_s[i] - t_sub_18);
+    int t_gt_4 = (t_sub_19 > 0.0f);
+    float t_f_15 = (float)t_gt_4;
+    float t_mul_14 = (b_s[i] * t_f_15);
+    b_mul_14[i] = t_mul_14;
 }

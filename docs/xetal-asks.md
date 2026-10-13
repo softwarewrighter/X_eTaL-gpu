@@ -64,8 +64,10 @@ that computation". What this repository needs from it, concretely,
 is in `components/xir/README.md`: the provisional IR is the
 request, written as code and tests. When X_eTaL's lands, the plan is:
 `components/xir` becomes a thin adapter (X_eTaL's IR to this repo's
-schedule), the hand-written `.xir` twins are deleted, and the
-equivalence script runs `xetal` for both sides.
+schedule), `components/lower` (which since 2026-10-13 lowers X_eTaL
+source to this IR through X_eTaL's own crates, the hand-written
+twins deleted) is retired, and the equivalence script runs `xetal`
+for both sides.
 
 A suggested first shape of the lowering, from research7 ("Don't
 compile all X_eTaL"): accept statically known scalar types and ranks,

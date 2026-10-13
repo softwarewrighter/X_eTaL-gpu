@@ -1,19 +1,19 @@
 schedule: Float as float, Int as long, work-group 256, products and transposes untiled
 buffers:
-  b_r: float 8 items, %r f64 [8]; constant, uploaded by the host
-  b_n0: long 8 items, %n0 i64 [8]; constant, uploaded by the host
-  b_x: float 8 items, %x f64 [8]; written on the device
-  b_th: float 8 items, %th f64 [8]; written on the device
-  b_relu: float 8 items, %relu f64 [8]; written on the device
-  b_relun: long 8 items, %relun i64 [8]; written on the device
-  b_kept: long 8 items, %kept i64 [8]; written on the device
+  b_l: float 8 items, %l f64 [8]; constant, uploaded by the host
+  b_l_2: long 8 items, %l_2 i64 [8]; constant, uploaded by the host
+  b_sub: float 8 items, %sub f64 [8]; written on the device
+  b_mul: float 8 items, %mul f64 [8]; written on the device
+  b_max: float 8 items, %max f64 [8]; written on the device
+  b_max_2: long 8 items, %max_2 i64 [8]; written on the device
+  b_mul_2: long 8 items, %mul_2 i64 [8]; written on the device
 kernels:
-  k0: 8 elements, one work-item each; computes %q %x %m %mf %th %relu %n %relun %mask %kept; writes %x %th %relu %relun %kept
+  k0: 8 elements, one work-item each; computes %div %sub %gt %f %mul %max %sub_2 %max_2 %mod %mul_2; writes %sub %mul %max %max_2 %mul_2
 launches:
-  1: k0(b_r, b_n0, b_x, b_th, b_relu, b_relun, b_kept) global 8 local 8: 8 elements (1 group of 8)
+  1: k0(b_l, b_l_2, b_sub, b_mul, b_max, b_max_2, b_mul_2) global 8 local 8: 8 elements (1 group of 8)
 outputs:
-  %x from b_x, read back by the host
-  %th from b_th, read back by the host
-  %relu from b_relu, read back by the host
-  %relun from b_relun, read back by the host
-  %kept from b_kept, read back by the host
+  %sub from b_sub, read back by the host
+  %mul from b_mul, read back by the host
+  %max from b_max, read back by the host
+  %max_2 from b_max_2, read back by the host
+  %mul_2 from b_mul_2, read back by the host

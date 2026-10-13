@@ -4,14 +4,14 @@ inline long xetal_imod_long(long a, long b) { return a - xetal_idiv_long(a, b) *
 inline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 inline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }
 
-// k0: 8 elements, one work-item each; computes %xw %s %pos
-__kernel void k0(__global const long* b_x, __global const long* b_w, __global long* b_pos) {
+// k0: 8 elements, one work-item each; computes %mul %add %max
+__kernel void k0(__global const long* b_x, __global const long* b_w, __global long* b_max) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    long t_xw = (b_x[i] * b_w[i]);
-    long t_s = (b_x[i] + t_xw);
-    long t_pos = max(t_s, 0L);
-    b_pos[i] = t_pos;
+    long t_mul = (b_x[i] * b_w[i]);
+    long t_add = (b_x[i] + t_mul);
+    long t_max = max(t_add, 0L);
+    b_max[i] = t_max;
 }
 
 // reduce_add_long: a tree reduction in local memory, one partial per work-group;
@@ -27,15 +27,15 @@ __kernel void reduce_add_long(__global const long* in, __global long* out, const
     if (lid == 0) out[get_group_id(0)] = s[0];
 }
 
-// k1: 8 elements, one work-item each; computes %f %fg %fs %fpos
-__kernel void k1(__global const float* b_r, __global const float* b_g, __global float* b_fpos) {
+// k1: 8 elements, one work-item each; computes %div %mul_2 %add_2 %max_2
+__kernel void k1(__global const float* b_l, __global const float* b_g, __global float* b_max_2) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    float t_f = (b_r[i] / 4.0f);
-    float t_fg = (t_f * b_g[i]);
-    float t_fs = (t_f + t_fg);
-    float t_fpos = fmax(t_fs, 0.0f);
-    b_fpos[i] = t_fpos;
+    float t_div = (b_l[i] / 4.0f);
+    float t_mul_2 = (t_div * b_g[i]);
+    float t_add_2 = (t_div + t_mul_2);
+    float t_max_2 = fmax(t_add_2, 0.0f);
+    b_max_2[i] = t_max_2;
 }
 
 // reduce_add_float: a tree reduction in local memory, one partial per work-group;

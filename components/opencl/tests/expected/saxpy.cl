@@ -4,13 +4,13 @@ inline long xetal_imod_long(long a, long b) { return a - xetal_idiv_long(a, b) *
 inline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 inline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }
 
-// k0: 8 elements, one work-item each; computes %x %y %ax %s
-__kernel void k0(__global const float* b_r, __global const float* b_y0, __global float* b_s) {
+// k0: 8 elements, one work-item each; computes %div %mul %mul_2 %add
+__kernel void k0(__global const float* b_l, __global const float* b_r_2, __global float* b_add) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    float t_x = (b_r[i] / 4.0f);
-    float t_y = (1.0f * b_y0[i]);
-    float t_ax = (2.0f * t_x);
-    float t_s = (t_ax + t_y);
-    b_s[i] = t_s;
+    float t_div = (b_l[i] / 4.0f);
+    float t_mul = (1.0f * b_r_2[i]);
+    float t_mul_2 = (2.0f * t_div);
+    float t_add = (t_mul_2 + t_mul);
+    b_add[i] = t_add;
 }

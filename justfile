@@ -79,7 +79,7 @@ session-bench *args:
     scripts/ml-bench.py --check
     work/session-python/bin/python scripts/bench-session.py "$@"
 
-# Check every Accel twin on the devices with a schedule file and Float tolerance
+# Check every demo, lowered from its source, on the devices with a schedule file and Float tolerance
 check-schedule file tolerance="1e-5":
     scripts/check-equiv.sh "$1" "$2"
 
@@ -164,6 +164,10 @@ publish:
 # Check the published site: the landing page names this commit, the doc pages show the doc comments
 check-live:
     scripts/check-live.sh
+
+# The XIR program an X_eTaL program lowers to: just lower libs/Accel/demos/tiny-net.xtl
+lower file:
+    @cd components && cargo build -q --release -p xetal-gpu-cli && cd .. && XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu lower "$1"
 
 # Build the GPU tool, xetal-gpu (components/cli), in release mode
 build:

@@ -204,14 +204,18 @@ l:a_rgmax := { m ->
 ## 0.0 elsewhere): the row's largest taken out k times, as X_eTaL-ML's
 ## Sample (sm:t_op) and its mixture-of-experts router choose; items
 ## tied with a taken one go with it, so a tie at the k-th keeps all
-## tied. The choice of a router, the candidates of a retrieval.
+## tied. The choice of a router, the candidates of a retrieval. A
+## taken item is pushed below its row by more than the row's range
+## (Sample subtracts 1e300, which is infinity in a GPU's f32 and
+## poisons the row with NaN).
 ## >> "ac:" u_se< "Accel"
 ## >> 2 ac:t_opk 2 4 r_eshape 0.1 0.5 0.15 0.25 7.0 8.0 6.0 8.0
 ## 0.0 1.0 0.0 1.0
 ## 1.0 1.0 0.0 1.0
 l:t_opk := { k m ->
   n := f_irst -1 t_ake s_hape m
-  left := k '{ q -> q - 1.0e300 * f_loat q = ('m_ax r_/_2 q) 'l_eft t_able o_ffsets n } p_ower m
+  shift := (1.0 + ('m_ax r_/_2 m) - 'm_in r_/_2 m) 'l_eft t_able o_ffsets n
+  left := k '{ q -> q - shift * f_loat q = ('m_ax r_/_2 q) 'l_eft t_able o_ffsets n } p_ower m
   f_loat (m - left) > 0.0
 }
 

@@ -19,7 +19,10 @@ use xetal_gpu_runtime::{devices, Prepared};
 use xetal_gpu_xir::{binary, check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape};
 
 const USAGE: &str = "\
-usage: xetal-gpu COMMAND FILE.xir [OPTIONS]
+usage: xetal-gpu COMMAND FILE [OPTIONS]
+  FILE is an .xir program, or an .xtl program lowered from X_eTaL source first
+  (its libraries beside it and on XETAL_PATH; the twins' oracle is the evaluator)
+  lower FILE.xtl                 the XIR program the X_eTaL source lowers to
   check FILE.xir                 parse and check: every value with its type
   devices                        the OpenCL devices found (opencl:N)
   run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
@@ -66,7 +69,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             }
             Ok(())
         }
-        "print" => {
+        "print" | "lower" => {
             let checked = load(args.get(1))?;
             print!("{}", text::print(&checked.program));
             Ok(())
@@ -262,10 +265,16 @@ fn schedule(args: &[String]) -> Result<Schedule> {
     Ok(s)
 }
 
+/// The program in FILE: an `.xir` parsed, an `.xtl` lowered from
+/// X_eTaL source (its libraries beside it and on XETAL_PATH).
 fn load(path: Option<&String>) -> Result<Checked> {
     let Some(path) = path else { return Err(Error(USAGE.into())) };
-    let src = std::fs::read_to_string(path).map_err(|e| Error(format!("{path}: {e}")))?;
-    let program = text::parse(&src).map_err(|e| Error(format!("{path}:{e}")))?;
+    let program = if path.ends_with(".xtl") {
+        xetal_gpu_lower::lower_file(std::path::Path::new(path)).map_err(|e| Error(format!("{path}: {e}")))?
+    } else {
+        let src = std::fs::read_to_string(path).map_err(|e| Error(format!("{path}: {e}")))?;
+        text::parse(&src).map_err(|e| Error(format!("{path}:{e}")))?
+    };
     check(program).map_err(|e| Error(format!("{path}: {e}")))
 }
 
