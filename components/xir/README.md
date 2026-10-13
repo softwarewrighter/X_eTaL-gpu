@@ -40,6 +40,7 @@ becomes an adapter and the twins go.
 %ro = rotate axis=3 -1 0 1 %t        # -1 0 1 o_-_3 t: one copy per amount along a new first axis
 %dk = drop -1 axis=4 %ro             # -1 d_rop_4: along any axis (take likewise)
 %rs = reshape [9 4] %dk              # r_eshape: the items in row order, repeated as needed
+%em = lookup %ids %table             # ids s_elect table: rows at positions (Ints from 1), in ids' shape
 output %c                            # what the program prints, in order
 output %f
 ```
@@ -52,6 +53,7 @@ output %f
 | reduce operations | `add mul min max`, folded from the right as `r_/` is; the whole array (`r_/_12`, or `r_/` of a vector) without `axis=`, one axis with it (`axis=2` is `r_/_2`, `axis=1` is `r_/` of a matrix) |
 | structure | `take n`, `drop n` (along the first axis, or `axis=k`; a negative n from the end; no padding), `ravel`, `reshape [s]` (the items in row order, repeated as needed; an empty argument has nothing to repeat), `table f` (APL's outer product; `left` and `right` spread a vector along a new axis, as `'l_eft t_able` and `'r_ight t_able` do in X_eTaL-ML's NN) |
 | rotate | `rotate n` (`n o_- a`, a positive n toward the front) or `rotate axis=k n1 n2 ...` (`n o_-_k a`; several amounts give one copy per amount along a new first axis, as X_eTaL does) |
+| lookup | `lookup %i %a` (`i s_elect a`: the items along the first axis at the Int positions i, from 1; the result is a's shape with that axis replaced by i's shape, so a batch of token ids picks a batch of rows) or `lookup axis=k %i %a` (`s_elect_k`; along a later axis i is a vector or a single value, as X_eTaL has it); a position outside the axis is refused: written ones by the checker, bound ones by the runtime before the upload, the interpreter as the evaluator does |
 | transpose | `transpose` (`o_\`: the axes reversed) and `transpose p` (`p t_ranspose`: axis i of the argument becomes axis p[i], 1 the first, each listed once; `o_\_23` is `transpose 1 3 2`); a vector or a single value is unchanged |
 | cast | Int to Float exactly, Float to Int toward negative infinity (`f_loor`), Bool to 0 or 1, a number to bool when not 0 |
 
@@ -103,7 +105,7 @@ against the evaluator's baseline, exactly.
 
 ## Not yet
 
-Lookup (the embedding gather) and top-k are the model saga's next
-operations; a map still extends only a single value, as
+Top-k (argmax and the k largest with their positions) is the model
+saga's next operation; a map still extends only a single value, as
 X_eTaL does (a vector across the rows of a matrix is a shape error
 there too).

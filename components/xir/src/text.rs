@@ -276,6 +276,24 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 },
             ))
         }
+        "lookup" => {
+            // `lookup %ids %table`, or `lookup axis=2 %i %m` (the `=` arrives spaced).
+            let (axis, rest) = match rest {
+                ["axis", "=", k, rest @ ..] => (axis_number(k)?, rest),
+                _ => (1, rest),
+            };
+            if rest.len() != 2 {
+                return err("lookup takes an optional axis, the positions and a value: lookup %ids %table, lookup axis=2 %i %m");
+            }
+            Ok((
+                None,
+                Op::Lookup {
+                    axis,
+                    idx: reference(program, rest[0])?,
+                    arg: reference(program, rest[1])?,
+                },
+            ))
+        }
         "reshape" => {
             let (shape, rest) = shape(rest)?;
             if rest.len() != 1 {
@@ -353,7 +371,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         other => err(format!(
-            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape)"
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup)"
         )),
     }
 }
@@ -440,6 +458,8 @@ pub fn print(program: &Program) -> String {
                 }
             }
             Op::Reshape { shape, arg } => out.push_str(&format!("reshape {shape} {}", name(*arg))),
+            Op::Lookup { axis: 1, idx, arg } => out.push_str(&format!("lookup {} {}", name(*idx), name(*arg))),
+            Op::Lookup { axis, idx, arg } => out.push_str(&format!("lookup axis={axis} {} {}", name(*idx), name(*arg))),
             Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
             Op::Table { op, a, b } => out.push_str(&format!("table {op} {} {}", name(*a), name(*b))),
             Op::Transpose { perm: None, arg } => out.push_str(&format!("transpose {}", name(*arg))),
@@ -485,6 +505,8 @@ mod tests {
 %ro = rotate 1 %v
 %ra = rotate axis=2 -1 0 1 %mm
 %rh = reshape [3 2] %mm
+%lk = lookup %v %mm
+%lc = lookup axis=2 %v %mm
 output %c
 output %f
 ";
@@ -538,7 +560,7 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup)"
         );
         assert_eq!(
             e("%a = const i64 [2 2] 1\n%b = rotate axis=0 1 %a\n"),

@@ -293,6 +293,7 @@ fn describe(program: &Program, op: &Op) -> String {
             name(*arg)
         ),
         Op::Reshape { shape, arg } => format!("reshape {shape} {}", name(*arg)),
+        Op::Lookup { axis, idx, arg } => format!("lookup axis={axis} {} {}", name(*idx), name(*arg)),
         Op::Ravel { arg } => format!("ravel {}", name(*arg)),
         Op::Table { op, a, b } => format!("table {op} {} {}", name(*a), name(*b)),
         Op::Transpose { perm: None, arg } => format!("transpose {}", name(*arg)),

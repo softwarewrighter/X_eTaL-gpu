@@ -189,6 +189,40 @@ pub fn check(program: Program) -> Result<Checked> {
                     shape: Shape(dims),
                 }
             }
+            Op::Lookup { axis, idx, arg } => {
+                let (ti, ta) = (ty_of(*idx), ty_of(*arg));
+                if !ti.scalar.is_int() {
+                    return err(format!("%{name}: lookup needs Int positions, got {}", ti.scalar));
+                }
+                if ta.shape.is_scalar() {
+                    return err(format!(
+                        "%{name}: lookup needs an array of rank 1 or more to pick from, got a single value"
+                    ));
+                }
+                if *axis > ta.shape.rank() {
+                    return err(format!("%{name}: lookup axis={axis}: the array has rank {}", ta.shape.rank()));
+                }
+                if *axis > 1 && ti.shape.rank() > 1 {
+                    return err(format!(
+                        "%{name}: lookup axis={axis}: along a later axis the positions are a vector or a single value (as s_elect_{axis}), got rank {}",
+                        ti.shape.rank()
+                    ));
+                }
+                let len = ta.shape.0[axis - 1];
+                // Positions written in the program are checked here; bound ones when the program runs.
+                if let Op::Const(Const::Int(items)) = &program.value(*idx).op {
+                    if let Some(bad) = items.iter().find(|i| **i < 1 || **i > len as i64) {
+                        return err(format!("%{name}: lookup: index {bad} is outside 1..{len}"));
+                    }
+                }
+                let mut dims = ta.shape.0[..axis - 1].to_vec();
+                dims.extend_from_slice(&ti.shape.0);
+                dims.extend_from_slice(&ta.shape.0[*axis..]);
+                Ty {
+                    scalar: ta.scalar,
+                    shape: Shape(dims),
+                }
+            }
             Op::Reshape { shape, arg } => {
                 let t = ty_of(*arg);
                 if t.shape.is_empty() && !shape.is_empty() {
@@ -442,6 +476,39 @@ mod tests {
         assert_eq!(
             error_of("%x = const i64 [0]\n%r = reshape [2 2] %x\noutput %r\n"),
             "%r: reshape [2 2] of an empty array: there is no item to repeat"
+        );
+    }
+
+    #[test]
+    fn lookups() {
+        // ids s_elect table: a batch of token ids picks rows; 2 s_elect v a single value; 2 1 s_elect_2 m columns.
+        let t = types_of("%t = const f64 [5 8] 1.0\n%ids = const i64 [2 3] 1 2 3 4 5 1\n%e = lookup %ids %t\n%v = const i64 [4] 1\n%k = const i64 [] 2\n%one = lookup %k %v\n%m = const i64 [3 2] 1\n%c = const i64 [2] 2 1\n%cols = lookup axis=2 %c %m\n%col = lookup axis=2 %k %m\noutput %e\n");
+        assert_eq!(
+            t,
+            [
+                "f64 [5 8]",
+                "i64 [2 3]",
+                "f64 [2 3 8]",
+                "i64 [4]",
+                "i64 []",
+                "i64 []",
+                "i64 [3 2]",
+                "i64 [2]",
+                "i64 [3 2]",
+                "i64 [3]"
+            ]
+        );
+        assert_eq!(
+            error_of("%t = const f64 [5 8] 1.0\n%ids = const i64 [2] 0 6\n%e = lookup %ids %t\noutput %e\n"),
+            "%e: lookup: index 0 is outside 1..5"
+        );
+        assert_eq!(
+            error_of("%t = const f64 [5 8] 1.0\n%ids = const f64 [2] 1.0\n%e = lookup %ids %t\noutput %e\n"),
+            "%e: lookup needs Int positions, got f64"
+        );
+        assert_eq!(
+            error_of("%m = const i64 [3 2] 1\n%i = const i64 [2 2] 1\n%e = lookup axis=2 %i %m\noutput %e\n"),
+            "%e: lookup axis=2: along a later axis the positions are a vector or a single value (as s_elect_2), got rank 2"
         );
     }
 

@@ -1,0 +1,20 @@
+#!/usr/bin/env xetal
+# Lookups: items of a vector at given positions (one, several, a
+# matrix of them), rows of a matrix, columns along the second axis;
+# then an embedding table and a batch of two prompts of three token
+# ids each, the embeddings summed per prompt. On a GPU a lookup is a
+# gather with the table resident and only the ids uploaded. Run with
+# "just demo-lib Accel lookup".
+"ac:" u_se< "Accel"
+v := 10 20 30 40 50
+2 s_elect v
+2 4 1 s_elect v
+(2 2 r_eshape 2 4 1 1) s_elect v
+m := 3 2 r_eshape r_ange 6
+3 1 s_elect m
+2 1 s_elect_2 m
+t := 5 4 r_eshape 0.0 0.1 0.2 0.3 1.0 1.1 1.2 1.3 2.0 2.1 2.2 2.3 3.0 3.1 3.2 3.3 4.0 4.1 4.2 4.3
+ids := 2 3 r_eshape 1 5 2 4 4 3
+e := t ac:e_mbed ids
+e
+'+ r_/_2 e

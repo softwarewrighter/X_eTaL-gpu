@@ -156,6 +156,25 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
                 let a = &values[arg.0];
                 gather(a, &rotate_indices(&a.shape, *axis, amounts), ty)?
             }
+            Op::Lookup { axis, idx, arg } => {
+                let (i, a) = (&values[idx.0], &values[arg.0]);
+                let Data::Int(positions) = &i.data else {
+                    unreachable!("checked: Int positions")
+                };
+                let (outer, len, inner) = axis_split(&a.shape, *axis);
+                if let Some(bad) = positions.iter().find(|p| **p < 1 || **p > len as i64) {
+                    return err(format!("%{}: lookup: index {bad} is outside 1..{len}", v.name));
+                }
+                let mut index = Vec::with_capacity(outer * positions.len() * inner);
+                for o in 0..outer {
+                    for p in positions {
+                        for k in 0..inner {
+                            index.push((o * len + (*p as usize - 1)) * inner + k);
+                        }
+                    }
+                }
+                gather(a, &index, ty)?
+            }
             Op::Reshape { arg, .. } => {
                 let a = &values[arg.0];
                 let n = a.shape.len();
@@ -713,6 +732,30 @@ mod tests {
                 "10 10 10\n20 20 20"
             ]
         );
+    }
+
+    #[test]
+    fn lookups_as_xetal_does() {
+        // v := 10 20 30 40 50: 2 s_elect v, 2 4 1 s_elect v, (2 2 r_eshape 2 4 1 1) s_elect v;
+        // m := 3 2 r_eshape r_ange 6: 3 1 s_elect m, (2 2 r_eshape 3 1 1 2) s_elect m, 2 1 s_elect_2 m, 2 s_elect_2 m.
+        let out = eval("%v = const i64 [5] 10 20 30 40 50\n%two = const i64 [] 2\n%a = lookup %two %v\n%i3 = const i64 [3] 2 4 1\n%b = lookup %i3 %v\n%i22 = const i64 [2 2] 2 4 1 1\n%c = lookup %i22 %v\n%m = const i64 [3 2] 1 2 3 4 5 6\n%r = const i64 [2] 3 1\n%d = lookup %r %m\n%q = const i64 [2 2] 3 1 1 2\n%e = lookup %q %m\n%cs = const i64 [2] 2 1\n%f = lookup axis=2 %cs %m\n%g = lookup axis=2 %two %m\noutput %a\noutput %b\noutput %c\noutput %d\noutput %e\noutput %f\noutput %g\n");
+        assert_eq!(
+            out,
+            [
+                "20",
+                "20 40 10",
+                "20 40\n10 10",
+                "5 6\n1 2",
+                "5 6\n1 2\n\n1 2\n3 4",
+                "2 1\n4 3\n6 5",
+                "2 4 6"
+            ]
+        );
+        let checked = check(parse("%v = input i64 [5]\n%i = input i64 [2]\n%a = lookup %i %v\noutput %a\n").unwrap()).unwrap();
+        let mut inputs = HashMap::new();
+        inputs.insert("v".to_string(), Array::ints(Shape(vec![5]), vec![10, 20, 30, 40, 50]));
+        inputs.insert("i".to_string(), Array::ints(Shape(vec![2]), vec![5, 6]));
+        assert_eq!(run(&checked, &inputs).unwrap_err().0, "%a: lookup: index 6 is outside 1..5");
     }
 
     #[test]

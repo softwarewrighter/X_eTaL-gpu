@@ -334,6 +334,18 @@ pub struct KernelInfo {
     pub about: String,
 }
 
+/// A buffer of positions a lookup reads: every item must be in
+/// 1..=len when the input is bound (positions written in the program
+/// are checked by the checker; the device itself cannot refuse one,
+/// its kernel clamps).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PositionCheck {
+    pub buffer: BufferId,
+    pub len: usize,
+    /// The lookup's name, for the message.
+    pub reader: String,
+}
+
 /// The whole plan: source, buffers, launches, outputs.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Plan {
@@ -344,6 +356,8 @@ pub struct Plan {
     pub launches: Vec<Launch>,
     /// Each output value and the buffer holding it.
     pub outputs: Vec<(ValueId, BufferId)>,
+    /// The input buffers that hold positions for a lookup.
+    pub position_checks: Vec<PositionCheck>,
 }
 
 impl Plan {

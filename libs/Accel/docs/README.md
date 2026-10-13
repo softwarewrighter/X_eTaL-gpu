@@ -1,7 +1,7 @@
 # Accel
 
 The acceleratable subset of X_eTaL: elementwise arithmetic, masks and
-a select, reductions, products, transposes, windows, a layer. Each function is one whole-array expression in
+a select, reductions, products, transposes, windows, lookups, a layer. Each function is one whole-array expression in
 the subset research7 (`docs/research7.txt`) says an accelerator
 should accept first: static scalar types, pure functions, arithmetic
 and comparisons item by item with scalar extension, a select by
@@ -49,6 +49,7 @@ recommended alias.
 | `x ac:m_atmul w` | `Num a => a -> a -> a` | the inner product of x's last axis with w's first: matrix by matrix, matrix by vector, vector by matrix |
 | `q ac:s_cores k` | `Num a => a -> a -> a` | attention scores, every query row against every key row: `q '+ '* i_nner o_\ k` |
 | `x ac:w_eightGrad dy` | `Num a => a -> a -> a` | a dense layer's weight gradient for a batch x and the output gradient dy: `(o_\ x) '+ '* i_nner dy` |
+| `t ac:e_mbed ids` | `a -> Int -> a` | the rows of a table at the positions ids (from 1), in the shape of ids: a batch of token ids picks a batch of embeddings (`ids s_elect t`) |
 | `ac:w_indows x` | `a -> a` | every 3 by 3 window of every picture of a batch (n by h by w) as 9 rows, a column per picture and place, as X_eTaL-ML's Conv builds them: rotations along the last two axes, the edges dropped, a reshape |
 | `k ac:c_onv x` | `Num a => a -> a -> a` | f filters (rows of 9) over every window of every picture, one matrix product: the maps n by f by (h - 2) by (w - 2), no bias |
 | `x ac:d_ense wb` | `Num a => a -> a -> a` | the layer x W + b for a batch x (a row per example), W with the bias b as its last row (X_eTaL-ML's NN convention) |
@@ -111,6 +112,9 @@ The example programs, each the reference for a GPU run:
   read from `data/w1.txt` and `data/w2.txt`.
 - [`demos/pipeline.xtl`](../demos/pipeline.xtl): the acceptance
   pipeline, multiply, add, select, reduce, as one expression.
+- [`demos/lookup.xtl`](../demos/lookup.xtl): items, rows and columns
+  at given positions; an embedding table and a batch of two prompts
+  of three token ids, the embeddings summed per prompt.
 - [`demos/windows.xtl`](../demos/windows.xtl): a rotation by one
   amount and by three (one copy each), a convolution's windows built
   as array operations, and a small convolution of two filters over a

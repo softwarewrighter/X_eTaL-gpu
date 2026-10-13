@@ -91,6 +91,15 @@ xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml 
   source, one work-item per result item; a `table` is a kernel of
   its own, one work-item per result item reading `a[k / nb]` and
   `b[k % nb]` (a literal for a single value).
+- **Lookups.** A `lookup` is a gather kernel of its own, one
+  work-item per result item, reading its position from the positions'
+  buffer (a literal for a single written one), with the table's lines
+  and strides baked in. The device cannot refuse a position outside
+  the axis, so the kernel clamps it, and the host refuses it first:
+  the plan lists the input buffers a lookup reads as positions
+  (`Plan::position_checks`) and the runtime checks them when an
+  input is bound or rebound, with the evaluator's message; positions
+  written in the program are checked by the checker.
 - **Windows, measured.** A convolution's 3 by 3 windows as Conv
   builds them (two rotations, four drops, a reshape) are six gathers
   on the device. For a batch of 64 pictures of 28 by 28 on the Apple

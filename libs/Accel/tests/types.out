@@ -12,6 +12,7 @@ l:r_owMax : Num a => a -> a
 l:m_atmul : Num a => a -> a -> a
 l:s_cores : Num a => a -> a -> a
 l:w_eightGrad : Num a => a -> a -> a
+l:e_mbed : a -> Int -> a
 l:w_indows : a -> a
 l:c_onv : Num a => a -> a -> a
 l:d_ense : Num a => a -> a -> a

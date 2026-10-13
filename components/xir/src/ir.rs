@@ -364,6 +364,12 @@ pub enum Op {
     /// `s r_eshape a`: a's items in row order, repeated as needed, in
     /// the shape s.
     Reshape { shape: Shape, arg: ValueId },
+    /// `i s_elect_k a`: the items of a at the positions i (Ints from 1)
+    /// along axis k (1 the first, the default); the result is a's shape
+    /// with axis k replaced by i's shape, so a batch of token ids picks
+    /// a batch of rows of an embedding table. Along a later axis the
+    /// index is a vector or a single value, as X_eTaL has it.
+    Lookup { axis: usize, idx: ValueId, arg: ValueId },
     /// `o_\ a` (`perm` None: the axes reversed) or `p t_ranspose a`
     /// (`perm` Some: axis i of a becomes axis p[i], 1 the first, each
     /// axis listed once; APL's dyadic transpose, so `o_\_23` is
@@ -380,6 +386,7 @@ impl Op {
             Op::Select { cond, a, b } => vec![*cond, *a, *b],
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],
             Op::Matmul { a, b } | Op::Table { a, b, .. } => vec![*a, *b],
+            Op::Lookup { idx, arg, .. } => vec![*idx, *arg],
             Op::Take { arg, .. }
             | Op::Drop { arg, .. }
             | Op::Ravel { arg }

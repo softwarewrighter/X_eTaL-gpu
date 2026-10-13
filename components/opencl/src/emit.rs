@@ -8,7 +8,7 @@ use xetal_gpu_xir::interp::Slice;
 use xetal_gpu_xir::ir::{is_identity, permutation, transpose_layout};
 use xetal_gpu_xir::{Checked, Const, MapOp, Op, ReduceOp, Scalar, Shape, TableOp, Ty, ValueId};
 
-use crate::{Arg, Buffer, BufferId, Elem, Init, KernelInfo, Launch, Plan, Schedule};
+use crate::{Arg, Buffer, BufferId, Elem, Init, KernelInfo, Launch, Plan, PositionCheck, Schedule};
 
 /// Where a value lives while the plan is built.
 #[derive(Debug, Clone)]
@@ -29,6 +29,7 @@ struct Builder<'a> {
     launches: Vec<Launch>,
     source: String,
     places: HashMap<ValueId, Place>,
+    position_checks: Vec<PositionCheck>,
     /// Which values read each value.
     users: HashMap<ValueId, Vec<ValueId>>,
     /// The elementwise values gathered for the next kernel, and its shape.
@@ -57,6 +58,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         launches: Vec::new(),
         source: String::new(),
         places: HashMap::new(),
+        position_checks: Vec::new(),
         users,
         group: Vec::new(),
         group_shape: None,
@@ -94,6 +96,10 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
             Op::Rotate { axis, amounts, arg } => {
                 b.flush(&outputs);
                 b.rotate(id, *arg, *axis, amounts);
+            }
+            Op::Lookup { axis, idx, arg } => {
+                b.flush(&outputs);
+                b.lookup(id, *idx, *arg, *axis);
             }
             Op::Reshape { shape, arg } => {
                 b.flush(&outputs);
@@ -178,6 +184,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         kernels: b.kernels,
         launches: b.launches,
         outputs,
+        position_checks: b.position_checks,
     }
 }
 
@@ -461,6 +468,87 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
             note: format!(
                 "%{name}: {how}, {copies} cop{} of {per} items gathered",
                 if copies == 1 { "y" } else { "ies" }
+            ),
+        });
+        self.kernels.push(KernelInfo {
+            name: kname,
+            computes: vec![id],
+            writes: vec![id],
+            elements: n,
+            about: String::new(),
+        });
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A lookup: a gather, one work-item per result item, the position
+    /// read from its buffer (a literal for a single one); the kernel
+    /// clamps a position to the axis, since a device cannot refuse one:
+    /// bound positions are checked by the runtime first
+    /// (`Plan::position_checks`), written ones by the checker.
+    fn lookup(&mut self, id: ValueId, idx: ValueId, arg: ValueId, axis: usize) {
+        let elem = self.elem_of(arg);
+        let Place::Buffer(src) = self.places[&arg].clone() else {
+            unreachable!("a lookup reads a buffer (rank 1 or more)")
+        };
+        let (outer, len, inner) = xetal_gpu_xir::interp::axis_split(&self.ty(arg).shape, axis);
+        let count = self.ty(idx).shape.len();
+        let n = outer * count * inner;
+        let kname = format!("lookup{}", self.launches.len());
+        let result = self.buffer(Some(id), elem, n, Init::Device);
+        let name = self.checked.program.value(id).name.clone();
+        let src_name = self.buffers[src.0].name.clone();
+        let out_name = self.buffers[result.0].name.clone();
+        let (mut params, mut args) = (Vec::new(), Vec::new());
+        let position = match self.places[&idx].clone() {
+            Place::Buffer(ib) => {
+                let ibuf = &self.buffers[ib.0];
+                if matches!(ibuf.init, Init::Input(_)) {
+                    self.position_checks.push(PositionCheck {
+                        buffer: ib,
+                        len,
+                        reader: name.clone(),
+                    });
+                }
+                params.push(format!("__global const {}* {}", ibuf.elem, ibuf.name));
+                args.push(Arg::Buffer(ib));
+                format!("(long){}[c]", ibuf.name)
+            }
+            Place::Literal(l) => format!("(long){l}"),
+            Place::Register(_) => unreachable!("flushed before a lookup"),
+        };
+        params.push(format!("__global const {elem}* {src_name}"));
+        args.push(Arg::Buffer(src));
+        params.push(format!("__global {elem}* {out_name}"));
+        args.push(Arg::Buffer(result));
+        self.source.push_str(&format!(
+            "
+// {kname}: %{name} := positions s_elect_{axis} a ({count} position{}, {outer} line{} of {len} along the axis, {inner} apart); a gather, one work-item per result item.
+__kernel void {kname}({}) {{
+    long k = get_global_id(0);
+    if (k >= {n}) return;
+    long o = k / ({count} * {inner}), r = k % ({count} * {inner});
+    long c = r / {inner}, i = r % {inner};
+    long p = {position};
+    p = p < 1 ? 1 : (p > {len} ? {len} : p);
+    {out_name}[k] = {src_name}[(o * {len} + p - 1) * {inner} + i];
+}}
+",
+            if count == 1 { "" } else { "s" },
+            if outer == 1 { "" } else { "s" },
+            params.join(", ")
+        ));
+        let total = n.max(1);
+        let local = self.schedule.work_group.min(total.next_power_of_two());
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args,
+            global: total.div_ceil(local) * local,
+            local,
+            note: format!(
+                "%{name}: {count} position{} along axis {axis} of {}, {n} item{} gathered",
+                if count == 1 { "" } else { "s" },
+                self.ty(arg).shape,
+                if n == 1 { "" } else { "s" }
             ),
         });
         self.kernels.push(KernelInfo {
@@ -1383,6 +1471,25 @@ mod tests {
         assert!(p.source.contains("if (k < 5) b_f[k] = 2.0f;"));
         let holder = |v: usize| p.buffer(p.outputs.iter().find(|(o, _)| o.0 == v).unwrap().1).name.clone();
         assert_eq!(holder(3), "b_x");
+    }
+
+    #[test]
+    fn a_lookup_is_a_gather_and_bound_positions_are_checked() {
+        let p = plan_of(
+            "%t = const f64 [5 4] 1.0\n%ids = input i64 [2 3]\n%e = lookup %ids %t\n%m = const i64 [3 2] 1\n%two = const i64 [] 2\n%col = lookup axis=2 %two %m\noutput %e\noutput %col\n",
+            &Schedule::default(),
+        );
+        assert!(p.source.contains("long p = (long)b_ids[c];"));
+        assert!(p.source.contains("p = p < 1 ? 1 : (p > 5 ? 5 : p);"));
+        assert!(p.source.contains("b_e[k] = b_t[(o * 5 + p - 1) * 4 + i];"));
+        assert_eq!(p.launches[0].note, "%e: 6 positions along axis 1 of [5 4], 24 items gathered");
+        assert_eq!(p.position_checks.len(), 1);
+        assert_eq!((p.position_checks[0].len, p.position_checks[0].reader.as_str()), (5, "e"));
+        assert_eq!(p.buffer(p.position_checks[0].buffer).init, Init::Input("ids".into()));
+        // A single written position is a literal; along axis 2 of [3 2]: 3 lines of 2, 1 apart.
+        assert!(p.source.contains("long p = (long)2L;"));
+        assert!(p.source.contains("b_col[k] = b_m[(o * 2 + p - 1) * 1 + i];"));
+        assert_eq!(p.launches[1].note, "%col: 1 position along axis 2 of [3 2], 3 items gathered");
     }
 
     #[test]

@@ -46,3 +46,6 @@ p := 2 4 5 r_eshape r_ange 40
 (2 1 2 3 r_eshape 7 8 9 12 13 14 27 28 29 32 33 34) u:c_heck (1 9 r_eshape 0 0 0 0 1 0 0 0 0) ac:c_onv p
 ('+ r_/ ac:w_indows p) u:c_heck r_avel (1 9 r_eshape 1) ac:c_onv p
 (9 12) u:c_heck s_hape ac:w_indows p
+tb := 6 4 r_eshape r_ange 24
+tb u:c_heck tb ac:e_mbed r_ange 6
+(2 4 r_eshape 21 22 23 24 1 2 3 4) u:c_heck tb ac:e_mbed 6 1

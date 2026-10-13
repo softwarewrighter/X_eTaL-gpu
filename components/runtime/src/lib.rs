@@ -22,7 +22,7 @@ use opencl3::platform::get_platforms;
 use opencl3::program::Program;
 use opencl3::types::{cl_long, CL_BLOCKING};
 
-use xetal_gpu_opencl::{Arg, Elem, Init, Plan};
+use xetal_gpu_opencl::{Arg, BufferId, Elem, Init, Plan};
 use xetal_gpu_xir::{Array, Checked, Const, Data, Error, Result, Scalar, Shape};
 
 /// One OpenCL device, as `xetal-gpu devices` lists it; `index` is
@@ -133,6 +133,23 @@ pub struct Stats {
     pub total_ms: f64,
 }
 
+/// An input a lookup reads as positions must hold positions of its
+/// axis (Ints from 1); the device's kernel would clamp a stray one
+/// where the evaluator refuses it, so the host refuses it first.
+pub fn check_positions(plan: &Plan, buffer: BufferId, name: &str, a: &Array) -> Result<()> {
+    for check in plan.position_checks.iter().filter(|c| c.buffer == buffer) {
+        if let Data::Int(items) = &a.data {
+            if let Some(bad) = items.iter().find(|p| **p < 1 || **p > check.len as i64) {
+                return Err(Error(format!(
+                    "input %{name}: index {bad} is outside 1..{} (%{} looks it up)",
+                    check.len, check.reader
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Execute a plan on device `index`, with the inputs bound by name;
 /// the outputs in order, as arrays of the program's types.
 pub fn execute(checked: &Checked, plan: &Plan, inputs: &HashMap<String, Array>, index: usize) -> Result<Vec<Array>> {
@@ -232,6 +249,7 @@ impl Prepared {
                     if a.ty() != *ty {
                         return Err(Error(format!("input %{name} is {ty}, bound to {}", a.ty())));
                     }
+                    check_positions(plan, b.id, name, a)?;
                     Some(a.clone())
                 }
                 Init::Const(c) => Some(const_array(c, checked.ty(b.value.expect("a const holds a value")).scalar, len)),
@@ -303,6 +321,7 @@ impl Prepared {
         if array.ty() != *ty {
             return Err(Error(format!("input %{name} is {ty}, bound to {}", array.ty())));
         }
+        check_positions(&self.plan, BufferId(id), name, array)?;
         // An empty array has no bytes to upload; its buffer is a dummy allocation.
         if !array.data.is_empty() {
             unsafe {
@@ -554,6 +573,28 @@ mod tests {
             st.setup_ms + st.upload_ms + st.launch_ms + st.download_ms <= st.total_ms + 0.5,
             "{st:?}"
         );
+    }
+
+    #[test]
+    fn positions_outside_the_axis_are_refused_on_the_host() {
+        // No device needed: the check runs before anything is uploaded.
+        let checked = check(text::parse("%t = input f64 [5 4]\n%ids = input i64 [2 3]\n%e = lookup %ids %t\noutput %e\n").unwrap()).unwrap();
+        let p = plan(&checked, &Schedule::default());
+        let ids = p
+            .buffers
+            .iter()
+            .find(|b| matches!(&b.init, Init::Input(n) if n == "ids"))
+            .unwrap()
+            .id;
+        let good = Array::ints(Shape(vec![2, 3]), vec![1, 5, 2, 4, 4, 3]);
+        assert!(check_positions(&p, ids, "ids", &good).is_ok());
+        let bad = Array::ints(Shape(vec![2, 3]), vec![1, 5, 2, 4, 6, 3]);
+        assert_eq!(
+            check_positions(&p, ids, "ids", &bad).unwrap_err().0,
+            "input %ids: index 6 is outside 1..5 (%e looks it up)"
+        );
+        let table = p.buffers.iter().find(|b| matches!(&b.init, Init::Input(n) if n == "t")).unwrap().id;
+        assert!(check_positions(&p, table, "t", &Array::floats(Shape(vec![5, 4]), vec![0.0; 20])).is_ok());
     }
 
     #[test]
