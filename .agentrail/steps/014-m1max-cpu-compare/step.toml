@@ -1,0 +1,8 @@
+number = 14
+slug = "m1max-cpu-compare"
+status = "in-progress"
+description = "The session benchmark (scripts/bench-session.py, the Arch lane's) on the Appl..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T18:06:02"
+commits = []
