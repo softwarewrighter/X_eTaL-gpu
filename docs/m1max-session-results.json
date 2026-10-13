@@ -1,0 +1,422 @@
+[
+  {
+    "batch": 1,
+    "held": 1,
+    "counts": [
+      "1",
+      "0"
+    ],
+    "interpreter": 0.081,
+    "cpu": 0.02241646870970726,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        0.02241646870970726,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 1.467,
+        "stream": 1.6075,
+        "setup": 59.571,
+        "first": 65.596,
+        "upload": 0.4145,
+        "kernel": 0.011
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 1.234,
+        "stream": 1.8235000000000001,
+        "setup": 55.46,
+        "first": 61.403,
+        "upload": 0.4325,
+        "kernel": 0.02
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 1.3479999999999999,
+        "stream": 1.539,
+        "setup": 58.356,
+        "first": 65.228,
+        "upload": 0.388,
+        "kernel": 0.007
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 16,
+      "resident": 1.3479999999999999,
+      "stream": 1.539,
+      "setup": 58.356,
+      "first": 65.228,
+      "upload": 0.388,
+      "kernel": 0.007
+    },
+    "break_even": null
+  },
+  {
+    "batch": 16,
+    "held": 16,
+    "counts": [
+      "16",
+      "14"
+    ],
+    "interpreter": 1.1415,
+    "cpu": 0.0430629588663578,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        0.0430629588663578,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 1.2570000000000001,
+        "stream": 1.956,
+        "setup": 60.892,
+        "first": 68.254,
+        "upload": 0.4565,
+        "kernel": 0.027
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 1.4395,
+        "stream": 1.8570000000000002,
+        "setup": 61.728,
+        "first": 69.36,
+        "upload": 0.4715,
+        "kernel": 0.021
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 1.3365,
+        "stream": 1.834,
+        "setup": 59.602,
+        "first": 66.722,
+        "upload": 0.4585,
+        "kernel": 0.02
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 16,
+      "resident": 1.3365,
+      "stream": 1.834,
+      "setup": 59.602,
+      "first": 66.722,
+      "upload": 0.4585,
+      "kernel": 0.02
+    },
+    "break_even": null
+  },
+  {
+    "batch": 64,
+    "held": 64,
+    "counts": [
+      "64",
+      "59"
+    ],
+    "interpreter": 4.4135,
+    "cpu": 0.10047946125268936,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        0.10047946125268936,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 1.5594999999999999,
+        "stream": 2.0614999999999997,
+        "setup": 59.813,
+        "first": 68.688,
+        "upload": 0.4795,
+        "kernel": 0.029
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 1.4300000000000002,
+        "stream": 1.785,
+        "setup": 60.049,
+        "first": 68.514,
+        "upload": 0.46699999999999997,
+        "kernel": 0.014
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 1.463,
+        "stream": 1.885,
+        "setup": 60.598,
+        "first": 69.612,
+        "upload": 0.503,
+        "kernel": 0.021
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 8,
+      "resident": 1.4300000000000002,
+      "stream": 1.785,
+      "setup": 60.049,
+      "first": 68.514,
+      "upload": 0.46699999999999997,
+      "kernel": 0.014
+    },
+    "break_even": null
+  },
+  {
+    "batch": 256,
+    "held": 256,
+    "counts": [
+      "253",
+      "229"
+    ],
+    "interpreter": 17.6265,
+    "cpu": 0.30718836933374405,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        0.30718836933374405,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 1.714,
+        "stream": 1.913,
+        "setup": 59.917,
+        "first": 72.304,
+        "upload": 0.5894999999999999,
+        "kernel": 0.014
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 1.7275,
+        "stream": 2.058,
+        "setup": 59.63,
+        "first": 69.307,
+        "upload": 0.57,
+        "kernel": 0.0225
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 1.668,
+        "stream": 1.7770000000000001,
+        "setup": 74.251,
+        "first": 88.262,
+        "upload": 0.553,
+        "kernel": 0.0095
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 16,
+      "resident": 1.668,
+      "stream": 1.7770000000000001,
+      "setup": 74.251,
+      "first": 88.262,
+      "upload": 0.553,
+      "kernel": 0.0095
+    },
+    "break_even": null
+  },
+  {
+    "batch": 1024,
+    "held": 387,
+    "counts": [
+      "1003",
+      "348"
+    ],
+    "interpreter": 48.738,
+    "cpu": 0.7816459983587265,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        0.7816459983587265,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 1.807,
+        "stream": 2.3255,
+        "setup": 59.62,
+        "first": 75.975,
+        "upload": 0.784,
+        "kernel": 0.03
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 1.7435,
+        "stream": 2.0995,
+        "setup": 57.593,
+        "first": 69.53,
+        "upload": 0.751,
+        "kernel": 0.019
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 2.721,
+        "stream": 2.4690000000000003,
+        "setup": 60.125,
+        "first": 75.357,
+        "upload": 0.7989999999999999,
+        "kernel": 0.0375
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 8,
+      "resident": 1.7435,
+      "stream": 2.0995,
+      "setup": 57.593,
+      "first": 69.53,
+      "upload": 0.751,
+      "kernel": 0.019
+    },
+    "break_even": null
+  },
+  {
+    "batch": 1936,
+    "held": 387,
+    "counts": [
+      "1897",
+      "348"
+    ],
+    "interpreter": 80.662,
+    "cpu": 1.2875627726316452,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        1.2875627726316452,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 3.721,
+        "stream": 3.075,
+        "setup": 64.324,
+        "first": 87.424,
+        "upload": 1.049,
+        "kernel": 0.046
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 1.5950000000000002,
+        "stream": 2.5140000000000002,
+        "setup": 65.89,
+        "first": 79.206,
+        "upload": 0.903,
+        "kernel": 0.028
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 1.6735,
+        "stream": 2.786,
+        "setup": 61.989,
+        "first": 79.222,
+        "upload": 1.0390000000000001,
+        "kernel": 0.035500000000000004
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 8,
+      "resident": 1.5950000000000002,
+      "stream": 2.5140000000000002,
+      "setup": 65.89,
+      "first": 79.206,
+      "upload": 0.903,
+      "kernel": 0.028
+    },
+    "break_even": null
+  },
+  {
+    "batch": 8192,
+    "held": 387,
+    "counts": [
+      "8023",
+      "348"
+    ],
+    "interpreter": 297.03049999999996,
+    "cpu": 4.676417447626591,
+    "threads": "as is",
+    "cpu_candidates": [
+      [
+        4.676417447626591,
+        "as is"
+      ]
+    ],
+    "candidates": [
+      {
+        "device": "opencl:0",
+        "tile": 0,
+        "resident": 4.5785,
+        "stream": 6.9215,
+        "setup": 56.021,
+        "first": 79.652,
+        "upload": 2.253,
+        "kernel": 0.153
+      },
+      {
+        "device": "opencl:0",
+        "tile": 8,
+        "resident": 3.2045,
+        "stream": 5.498,
+        "setup": 58.934,
+        "first": 80.244,
+        "upload": 2.234,
+        "kernel": 0.094
+      },
+      {
+        "device": "opencl:0",
+        "tile": 16,
+        "resident": 3.758,
+        "stream": 6.275,
+        "setup": 60.314,
+        "first": 85.571,
+        "upload": 2.2984999999999998,
+        "kernel": 0.126
+      }
+    ],
+    "best": {
+      "device": "opencl:0",
+      "tile": 8,
+      "resident": 3.2045,
+      "stream": 5.498,
+      "setup": 58.934,
+      "first": 80.244,
+      "upload": 2.234,
+      "kernel": 0.094
+    },
+    "break_even": null
+  }
+]

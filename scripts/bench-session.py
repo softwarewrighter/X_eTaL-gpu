@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Repeated trained-model inference: resident weights, refreshed batches,
-reference interpreter, and (for timing) NumPy/OpenBLAS with tuned thread counts.
+reference interpreter, and (for timing) NumPy's BLAS: OpenBLAS with tuned
+thread counts where NumPy carries it (Linux wheels), or the BLAS the wheel
+links otherwise (Accelerate on macOS, which threadpoolctl cannot limit, so
+it runs as it is and is named in the report).
 Inputs are prepared by ml-bench --check from the pinned evaluator's model.
 """
 import argparse
+import contextlib
 import importlib.util
 import json
 import math
@@ -60,9 +64,18 @@ def main():
     if not args.check:
         import numpy as np
         from threadpoolctl import threadpool_info, threadpool_limits
-        pools = threadpool_info()
-        if not any(p.get("internal_api") == "openblas" for p in pools):
-            raise RuntimeError("timed comparison requires NumPy with OpenBLAS; see docs/gpu-sessions.md")
+        pools = [p for p in threadpool_info() if p.get("user_api") == "blas"]
+        if any(p.get("internal_api") == "openblas" for p in pools):
+            blas = f"OpenBLAS {pools[0].get('version')}, {pools[0].get('architecture')}"
+            thread_settings = [1, 6, 12]
+        else:
+            # NumPy's macOS wheels link Accelerate, which threadpoolctl does not see or limit.
+            try:
+                name = np.__config__.CONFIG["Build Dependencies"]["blas"]["name"]
+            except (AttributeError, KeyError):
+                name = "the wheel's BLAS"
+            blas = f"{name} (NumPy's wheel; its own threading, not limited here)"
+            thread_settings = ["as is"]
     data = {}
     for tag in bench.MODELS["world-model"]["shapes"]:
         data[tag] = [float(x) for x in (bench.WORK / f"world-model-{tag}.txt").read_text().split()]
@@ -123,17 +136,18 @@ def main():
                 return counts
 
             numpy_rows = []
-            for threads in [1, 6, 12]:
-                with threadpool_limits(limits=threads, user_api="blas"):
+            for threads in thread_settings:
+                limits = threadpool_limits(limits=threads, user_api="blas") if isinstance(threads, int) else contextlib.nullcontext()
+                with limits:
                     samples = []
                     for _ in range(args.repeats):
                         start = time.perf_counter()
                         got = predict()
                         samples.append((time.perf_counter() - start) * 1000)
                         if got != expected:
-                            raise RuntimeError(f"NumPy/OpenBLAS disagrees on batch {batch}: {got} vs {expected}")
+                            raise RuntimeError(f"NumPy ({blas}) disagrees on batch {batch}: {got} vs {expected}")
                     numpy_rows.append((median(samples[3:]), threads))
-            best_cpu, threads = min(numpy_rows)
+            best_cpu, threads = min(numpy_rows, key=lambda r: r[0])
             best = min(candidates, key=lambda r: r["stream"])
             saving = best_cpu - best["stream"]
             # Both start with in-memory inputs. Charge the GPU's full first call
@@ -141,23 +155,34 @@ def main():
             break_even = max(1, math.ceil((best["first"] - best["stream"]) / saving)) if saving > 0 else None
             rows.append(dict(batch=batch, held=held, counts=expected, interpreter=cpu_ms, cpu=best_cpu, threads=threads,
                              cpu_candidates=numpy_rows, candidates=candidates, best=best, break_even=break_even))
-            print(f"CPU OpenBLAS {best_cpu:.3f} ms ({threads} threads); stream speedup {best_cpu / best['stream']:.2f}x, break-even {break_even}", flush=True)
+            print(f"CPU {blas.split(' (')[0]} {best_cpu:.3f} ms ({threads} threads); stream speedup {best_cpu / best['stream']:.2f}x, break-even {break_even}", flush=True)
         if not args.check:
             names = bench.device_names()
-            lines = ["# Repeated inference on the RTX 5060 Ti", "", f"Measured {date.today()} on `{platform.node()}` ({names.get('opencl:0')}).",
-                     f"NumPy {np.__version__}; OpenBLAS {pools[0].get('version')}, {pools[0].get('architecture')}. ML fac586c; X_eTaL 1998414.", "",
+            device_name = names.get("opencl:0", "opencl:0")
+            ml_commit = (bench.ROOT / "XETAL_ML_COMMIT").read_text()[:7]
+            xetal_commit = (bench.ROOT / "XETAL_COMMIT").read_text()[:7]
+            threads_text = ("the fastest of " + ", ".join(str(t) for t in thread_settings[:-1]) + f" and {thread_settings[-1]} BLAS threads"
+                            if len(thread_settings) > 1 else "NumPy's BLAS as it is")
+            wins = [r for r in rows if r["break_even"] is not None]
+            verdict = (["This model does not beat optimized CPU inference with refreshed inputs at",
+                        "any measured batch size. Resident-only timings isolate execution reuse,",
+                        "but repeating identical inputs is not a practical throughput speedup."]
+                       if not wins else
+                       ["With refreshed inputs the GPU is ahead of the CPU at batch " + ", ".join(str(r["batch"]) for r in wins) +
+                        " (break-even calls in the table) and behind elsewhere. Resident-only",
+                        "timings isolate execution reuse, but repeating identical inputs is not a",
+                        "practical throughput speedup."])
+            lines = [f"# Repeated inference on the {device_name}", "", f"Measured {date.today()} on `{platform.node()}` ({device_name}).",
+                     f"NumPy {np.__version__}; {blas}. ML {ml_commit}; X_eTaL {xetal_commit}.", "",
                      "The trained world model runs both dense layers, biases, ReLU, sigmoid",
                      "and exact-frame counts. The two batches contain N states and min(N, 387)",
                      "held-out states. Larger batches cycle the committed data; this is a throughput",
                      "test of a trained model, not additional unseen evaluation data.", "",
                      f"Each setting runs {args.repeats} times; report medians after discarding the first three.",
-                     "CPU: the fastest of 1, 6 and 12 OpenBLAS threads. GPU: the fastest refreshed",
+                     f"CPU: {threads_text}. GPU: the fastest refreshed",
                      "run of tiles 0, 8 and 16. All settings give the same exact counts as the",
-                     "reference interpreter; the full batch gives the evaluator baseline 1897/348.", "",
-                     "This model does not beat optimized CPU inference with refreshed inputs at",
-                     "any measured batch size. Resident-only timings isolate execution reuse,",
-                     "but repeating identical inputs is not a practical throughput speedup.", "",
-                     "| Batch N + held | Interpreter (ms) | OpenBLAS (ms), threads | Resident (ms) | New batch (ms) | Tile | Setup (ms) | First call (ms) | Stream speedup | Break-even calls |",
+                     "reference interpreter; the full batch gives the evaluator baseline 1897/348.", ""] + verdict + ["",
+                     "| Batch N + held | Interpreter (ms) | CPU BLAS (ms), threads | Resident (ms) | New batch (ms) | Tile | Setup (ms) | First call (ms) | Stream speedup | Break-even calls |",
                      "| -------------- | ---------------- | ---------------------- | ------------- | -------------- | ---- | ---------- | --------------- | -------------- | ---------------- |"]
             for r in rows:
                 b = r["best"]
@@ -175,7 +200,7 @@ def main():
             for r in rows:
                 for c in r["candidates"]:
                     lines.append(f"| {r['batch']} | {c['tile']} | {c['resident']:.3f} | {c['stream']:.3f} | {c['upload']:.3f} | {c['kernel']:.3f} |")
-            lines += ["", "## All CPU settings", "", "| N | OpenBLAS threads | Median (ms) |", "| - | ---------------- | ----------- |"]
+            lines += ["", "## All CPU settings", "", "| N | BLAS threads | Median (ms) |", "| - | ------------ | ----------- |"]
             for r in rows:
                 for value, threads in r["cpu_candidates"]:
                     lines.append(f"| {r['batch']} | {threads} | {value:.3f} |")

@@ -39,10 +39,15 @@ just session-bench --require-device
 ```
 
 Setup installs pinned NumPy and threadpoolctl into an isolated environment
-under ignored `work/`. The NumPy wheel supplies optimized OpenBLAS. The
-benchmark prepares the pinned world model, checks exact prediction counts
-against the reference interpreter, and compares 1, 6 and 12 CPU threads
-with GPU tiles 0, 8 and 16. Twenty-one calls per setting provide medians
+under ignored `work/`. On Linux the NumPy wheel supplies optimized OpenBLAS
+and the benchmark compares 1, 6 and 12 CPU threads; on macOS the wheel links
+Apple's Accelerate, which threadpoolctl neither sees nor limits, so NumPy
+runs as it is and the report names the BLAS it used. The benchmark prepares
+the pinned world model, checks exact prediction counts against the
+reference interpreter, and compares the CPU settings with GPU tiles 0, 8
+and 16. `--output FILE` writes another machine's report (the default is
+the Arch one); the title, device and pins come from the machine and the
+pin files. Twenty-one calls per setting provide medians
 after three warmup calls. Setup, resident execution, refreshed-input
 execution and break-even calls are reported separately.
 

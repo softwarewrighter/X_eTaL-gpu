@@ -147,12 +147,34 @@ include the text bridge.
 | 512 by 512 product through the extension (`just offload`) | 14545 ms | 462 ms (31 times faster) | 24994 ms | 979 ms (25 times faster) |
 | a million elementwise items, summed, through the extension | 188 ms | 2447 ms (13 times slower) | 254 ms | 1440 ms (5.7 times slower) |
 
+Against tuned CPU code, not the evaluator: the trained world model
+through a kept session (weights resident, a new batch uploaded each
+call), beside NumPy's BLAS on the same host (Accelerate on the Mac,
+OpenBLAS with the best of 1, 6 or 12 threads on the Arch host). Both
+give the counts 1897 and 348.
+
+| World model, batch | NumPy on the Mac | Apple M1 Max | NumPy on the Arch host | RTX 5060 Ti |
+| ------------------ | ---------------- | ------------ | ---------------------- | ----------- |
+| 1 state | 0.02 ms | 1.54 ms (0.01 times) | 0.07 ms | 0.21 ms (0.35 times) |
+| 1,936 states | 1.29 ms | 2.51 ms (0.51 times) | 1.94 ms | 2.97 ms (0.65 times) |
+| 8,192 states | 4.68 ms | 5.50 ms (0.85 times) | 8.64 ms | 10.53 ms (0.82 times) |
+
+Neither GPU beats the CPU's BLAS on this small model at any batch
+size: the kernels take a fraction of a millisecond, and the rest is
+the call's fixed cost (on the M1 Max about 1.3 ms of launches even
+for one state) and the batch's upload. The gap closes as the batch
+grows; a model with more work per uploaded byte is where a GPU
+starts to pay, which the model sagas are for.
+
 The full tables: the M1 Max's in `components/runtime/README.md`,
 [`extensions/gpu/README.md`](extensions/gpu/README.md) and
 [`docs/ml-results.md`](docs/ml-results.md) (X_eTaL-ML's benchmarks
 and its world model); the RTX 5060 Ti's in
 [`docs/rtx5060-results.md`](docs/rtx5060-results.md) and
-[`docs/rtx5060-ml-results.md`](docs/rtx5060-ml-results.md).
+[`docs/rtx5060-ml-results.md`](docs/rtx5060-ml-results.md); the
+session comparisons in [`docs/m1max-session-results.md`](docs/m1max-session-results.md)
+and [`docs/rtx5060-session-results.md`](docs/rtx5060-session-results.md)
+([how they are made](docs/gpu-sessions.md)).
 
 ## Build
 
