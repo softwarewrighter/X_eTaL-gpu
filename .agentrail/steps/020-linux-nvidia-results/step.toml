@@ -1,8 +1,9 @@
 number = 20
 slug = "linux-nvidia-results"
-status = "in-progress"
+status = "completed"
 description = "Document the 2026-10-14 Linux RTX 5060 Ti source-demo equivalence run in docs..."
 role = "production"
 context_files = []
 created_at = "2026-10-14T09:11:34"
-commits = []
+completed_at = "2026-10-14T09:13:16"
+commits = ["f10728a5fa00a3930f9322d1c2261784e2be4356"]

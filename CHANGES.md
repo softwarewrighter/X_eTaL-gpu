@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-14
 
+- 09:15 `chore` Save the completed Linux NVIDIA documentation step and its recorded full-gate failure; resume models-from-source next.
 - 09:11 `docs` Record the Linux RTX 5060 Ti source-demo check in `docs/linux-nvidia-results.md`: all 13 demos agree with evaluator baselines on the interpreter and GPU at tile sizes 16 and 8; include the tested revisions, toolchain, device-access requirement and verification limits.
 
 ## 2026-10-13

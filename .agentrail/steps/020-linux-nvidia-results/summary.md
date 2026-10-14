@@ -1,0 +1,1 @@
+Documented all 13 Linux RTX 5060 Ti source-demo passes at tiles 16 and 8, hardware, revisions, reproduction and limits. Markdown, spelling and diff checks passed. Full gate attempted but failed in extension rerun_rebind_and_invalidation with CL_OUT_OF_HOST_MEMORY; report records it. Documentation committed as f10728a; push follows.
