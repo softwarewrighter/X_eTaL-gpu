@@ -7,9 +7,10 @@ against X_eTaL 1998414 (this repository's pin) and X_eTaL-extensions
 
 ## Status
 
-No code here uses tuples, and nothing so far needs them. They are
-available to code that runs on the pinned `xetal`, but not to code
-that runs under `xetal-x`.
+No code here uses tuples yet, and nothing so far needs them. Since
+2026-10-13 they are available everywhere: the pinned `xetal` has
+them, and `xetal-x` (X_eTaL-extensions ee08231, embedding X_eTaL
+d284a8c) too, so ask X-1 below is landed and T1 is open to take.
 
 X_eTaL's tuples (Saga 39, decisions TU1 to TU12 in
 `../X_eTaL/docs/lang-choices.md`):

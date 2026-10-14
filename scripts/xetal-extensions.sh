@@ -41,6 +41,11 @@ fi
 # Its own X_eTaL (xetal-x is built on that clone's crates), from the
 # sibling checkout when there is one.
 if [ -d "$root/../X_eTaL/.git" ]; then export XETAL_SOURCE="${XETAL_SOURCE:-$root/../X_eTaL}"; fi
+# Its scripts run Python from its own uv environment (.venv in the clone), never the system's.
+if [ -x "$clone/scripts/venv.sh" ]; then
+    [ -x "$clone/.venv/bin/python3" ] || "$clone/scripts/venv.sh" >&2
+    export PATH="$clone/.venv/bin:$PATH"
+fi
 "$clone/scripts/xetal.sh" >/dev/null
 export CARGO_TARGET_DIR="$root/target/xetal-extensions"
 (cd "$clone" && cargo build -q --release -p xetal-x -p xetal-ext-hello -p xetal-ext-clock >&2)

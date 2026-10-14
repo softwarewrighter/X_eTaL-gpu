@@ -50,11 +50,8 @@
 
 ### Programs, as text
 
-# lint: allow deprecated-private
-# (h:n_l is unknown-namespace under xetal-x's X_eTaL v0.1.0: ask X-1)
-## A newline (private; bare, not h:n_l, because xetal-x's X_eTaL
-## v0.1.0 has no h: namespace: docs/macros-and-extensions.md).
-n_l := { @ -> f_irst "\n" }
+## A newline (private to this file).
+h:n_l := { @ -> f_irst "\n" }
 
 ## sa gp:p_roductProgram sb: the XIR text of a times b ('+ '* i_nner)
 ## for an a of the shape sa and a b of the shape sb (Floats).
@@ -66,16 +63,16 @@ n_l := { @ -> f_irst "\n" }
 ## output %c
 ##
 l:p_roductProgram := { sa sb ->
-  a := "%a = input f64 [" c_at (f_ormat sa) c_at "]" c_at n_l @
-  b := "%b = input f64 [" c_at (f_ormat sb) c_at "]" c_at n_l @
-  a c_at b c_at "%c = matmul %a %b" c_at (n_l @) c_at "output %c" c_at n_l @
+  a := "%a = input f64 [" c_at (f_ormat sa) c_at "]" c_at h:n_l @
+  b := "%b = input f64 [" c_at (f_ormat sb) c_at "]" c_at h:n_l @
+  a c_at b c_at "%c = matmul %a %b" c_at (h:n_l @) c_at "output %c" c_at h:n_l @
 }
 
 ## sx gp:d_enseProgram swb: the XIR text of the layer x W + b (Accel's
 ## ac:d_ense, the bias the last row of wb) for an x of the shape sx and
 ## a wb of the shape swb.
 l:d_enseProgram := { sx swb ->
-  nl := n_l @
+  nl := h:n_l @
   rows := f_irst sx
   inputs := "%x = input f64 [" c_at (f_ormat sx) c_at "]" c_at nl c_at "%wb = input f64 [" c_at (f_ormat swb) c_at "]" c_at nl
   split := "%w = drop -1 %wb" c_at nl c_at "%t = take -1 %wb" c_at nl c_at "%v = ravel %t" c_at nl

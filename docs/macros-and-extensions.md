@@ -212,12 +212,11 @@ To X_eTaL-extensions (recorded here; this repo does not change it):
 - tuples across the ABI (`docs/tuple-plan.md`, X-2): ABI V1 has no
   tuple value and the binding macro no tuple kind, so a run's several
   outputs are read one call at a time;
-- a newer X_eTaL pin (`docs/tuple-plan.md`, X-1): `xetal-x` embeds X_eTaL v0.1.0, which predates
-  tuples and `h:` file-private names (X_eTaL Saga 38), so the Gpu facade keeps
-  its one private helper bare (deprecated in X_eTaL d284a8c, still
-  accepted) and cannot move it to `h:` until X_eTaL-extensions pins a
-  newer X_eTaL (found 2026-10-08: `h:n_l` gives `unknown-namespace`
-  under `xetal-x`);
+- a newer X_eTaL pin (`docs/tuple-plan.md`, X-1): landed. X_eTaL-extensions
+  pins X_eTaL d284a8c (tuples, `h:` file-private names), and this
+  repository pins X_eTaL-extensions ee08231 since 2026-10-13: the Gpu
+  facade's helper is `h:n_l` now, and tuples work under `xetal-x`
+  (checked);
 - the bindings `ffi:b_ind<` expands to are never read by the
   expansion, so X_eTaL 27b3fd0's `xetal lint` reports an
   `unused-binding` for each (found 2026-10-12, X-3); `_ :=` in the
