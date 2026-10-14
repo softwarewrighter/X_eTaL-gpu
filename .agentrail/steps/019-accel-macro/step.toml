@@ -1,6 +1,6 @@
 number = 19
 slug = "accel-macro"
-status = "pending"
+status = "in-progress"
 description = "The macro and the runner (plan 0p, the user's framework): gp:a_ccel< (an .xtl..."
 role = "production"
 context_files = []
