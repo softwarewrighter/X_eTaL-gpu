@@ -36,6 +36,9 @@ are not the user's and are not targets.
 The user has other cards too; one is added here when it is used.
 The Arch machine `large12` holds the RTX 5060 Ti; measurements are
 in `docs/rtx5060-results.md` and `docs/rtx5060-ml-results.md`.
+The 2026-10-14 source-demo verification is recorded in
+`docs/linux-nvidia-results.md`: all 13 demos pass on the interpreter
+and the RTX 5060 Ti with tile sizes 16 and 8.
 
 Source: `docs/research7.txt`, the user's planning conversation
 (archival, NOT normative), which places the work in three

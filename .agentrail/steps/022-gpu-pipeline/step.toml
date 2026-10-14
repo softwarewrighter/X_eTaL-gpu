@@ -1,4 +1,4 @@
-number = 21
+number = 22
 slug = "gpu-pipeline"
 status = "pending"
 description = "Overlap and pipelining (the user, 2026-10-13; throughput over response time):..."

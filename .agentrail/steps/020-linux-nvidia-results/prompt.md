@@ -1,0 +1,1 @@
+Document the 2026-10-14 Linux RTX 5060 Ti source-demo equivalence run in docs/linux-nvidia-results.md, including hardware, command, per-demo results, toolchain and verification limits. Validate, commit and push.

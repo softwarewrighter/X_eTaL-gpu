@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-14
+
+- 09:11 `docs` Record the Linux RTX 5060 Ti source-demo check in `docs/linux-nvidia-results.md`: all 13 demos agree with evaluator baselines on the interpreter and GPU at tile sizes 16 and 8; include the tested revisions, toolchain, device-access requirement and verification limits.
+
 ## 2026-10-13
 
 - 18:30 `feat` The accelerate macro and the runner (saga gpu-models, accel-macro; the user's framework): `extensions/gpu/lib/Gpu.xtlm` beside the facade (one `u_se<` brings both under `gp:`) defines `KINDS gp:a_ccel< "{ x w -> ... }"`, which expands to a function of the same parameters that hands the text to the runner (`gp:l_ower`, with the calling file, whose `u_se<` lines are the imports, named by `[]F_ILE` at expansion, and the arguments' kinds), binds the arguments, runs on opencl:0 and reads the result back, one line sequenced by `gp:a_fter` (a after b; `xetal-x`'s X_eTaL has no `_ :=`, and an unused binding would fail the lint). The runner's `lower` entry keeps the text and lowers it through `lower_function` (the lowering applied to typed inputs) for the bound arguments' types when it runs, once per set of shapes, the session kept. The test runs a dense layer at two shapes (relowered, then reused), an embedding lookup with an int argument and softmax of attention scores on the M1 Max, each the evaluator's value; the expansion is pinned; the extension's raw-ABI test lowers a function on the interpreter and refuses a tuple pattern. The doc tests, the lint and the doc site cover the macro library. The accelerate demo (`extensions/gpu/demos/accelerate.xtl`: a layer, attention probabilities, an embedding lookup, each checked) has a doc page, and the landing page's new section shows each of its definitions beside its expansion, generated from the pinned `xetal-x` when the page is built (the user asked where the macro is demonstrated and expanded).
