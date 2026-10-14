@@ -12,6 +12,8 @@ for f in libs/*/src/*.xtl; do
   out="$(scripts/xt doc --test "$f" 2>&1)" || { echo "$out"; fail=1; }
   echo "$out" | tail -1 | sed "s#^#$f: #"
 done
-out="$(scripts/xx doc --test extensions/gpu/lib/Gpu.xtl 2>&1)" || { echo "$out"; fail=1; }
-echo "$out" | tail -1 | sed "s#^#extensions/gpu/lib/Gpu.xtl: #"
+for f in extensions/gpu/lib/Gpu.xtl extensions/gpu/lib/Gpu.xtlm; do
+  out="$(scripts/xx doc --test "$f" 2>&1)" || { echo "$out"; fail=1; }
+  echo "$out" | tail -1 | sed "s#^#$f: #"
+done
 exit $fail

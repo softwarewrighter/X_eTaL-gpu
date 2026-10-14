@@ -15,7 +15,7 @@ export XETAL_PATH="$libs:$root/extensions/gpu/lib:$root/work/xetal-extensions/li
 deny=(-D correctness -D suspicious -D complexity -D style -D deprecated)
 fail=0; n=0
 for f in libs/*/src/*.xtl libs/*/src/*.xtlm libs/*/tests/*.xtl libs/*/demos/*.xtl \
-         extensions/gpu/lib/*.xtl extensions/gpu/tests/*.xtl extensions/gpu/demos/*.xtl; do
+         extensions/gpu/lib/*.xtl extensions/gpu/lib/*.xtlm extensions/gpu/tests/*.xtl extensions/gpu/demos/*.xtl; do
   [ -e "$f" ] || continue
   n=$((n + 1))
   allow=()

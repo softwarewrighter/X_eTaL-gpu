@@ -138,6 +138,15 @@ compares fresh-input inference against optimized CPU arithmetic. This small
 model loses when input conversion and upload are included; resident-only
 timings are faster at larger batches but repeat identical data.
 
+**The framework, as of 2026-10-13:** a macro hands a function to a
+runner. `u:d_ense := "float float" gp:a_ccel< "{ x wb -> x ac:d_ense wb }"`
+defines a function that sends its text to the gpu extension, which
+lowers it for the arguments' shapes when they are bound and runs it
+on the device, the weights kept resident across calls; everything
+else in the program runs in the evaluator. The same macro with
+another runner (the FPGA repository's, say) accelerates elsewhere;
+the runner needs only load-from-source, bind and run.
+
 ## Results by GPU
 
 Two GPUs so far, more to come; every number names its card. The

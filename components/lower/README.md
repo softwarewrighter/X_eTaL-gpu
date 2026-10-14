@@ -92,6 +92,17 @@ session's binary binding when a model's batch is large.
 `xetal-gpu explain FILE.xtl` ends with a `from:` section naming,
 for each kernel, the X_eTaL lines whose values it computes.
 
+## A function for the runner
+
+`lower_function(text, params, dir, uses)` lowers one function given
+as its source (`{ x w -> ... }`) for arguments of the given types:
+the function is defined as `u:a_ccel` in a program of its own with
+the imports `uses` (the calling file's `u_se<` lines), applied to one
+input per parameter, and its result is the program's output. This is
+what the gpu extension runs for `gp:a_ccel<`: the arguments' shapes
+are known when they are bound, so the lowering is specialized to
+them and cached by the runner per set of types.
+
 ## Checked
 
 `components/lower/tests/demos.rs` lowers every demo in

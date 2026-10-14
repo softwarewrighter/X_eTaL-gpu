@@ -19,6 +19,9 @@
 "d_evices : unit -> text"      ffi:b_ind< "gpu/devices"
 ## Load an XIR program, by its text; the number of inputs.
 "l_oad : text -> int"          ffi:b_ind< "gpu/load"
+## A function from its X_eTaL text and "FILE|KINDS" (what gp:a_ccel< expands to; the
+## file gives its imports, the kinds say int or float per argument); its parameter count.
+"l_ower : text text -> int"    ffi:b_ind< "gpu/lower"
 ## n gp:b_ind a: input n (from 1) gets the array a, of its declared shape.
 "b_ind : int float -> int"     ffi:b_ind< "gpu/bind"
 ## n gp:b_indFile path: bind a binary array file; only its path crosses the bridge.
@@ -79,6 +82,14 @@ l:d_enseProgram := { sx swb ->
   bias := "%o = const i64 [" c_at (f_ormat rows) c_at "] " c_at (f_ormat o_ffsets rows) c_at nl c_at "%bias = table right %o %v" c_at nl
   inputs c_at split c_at bias c_at "%xw = matmul %x %w" c_at nl c_at "%y = map add %xw %bias" c_at nl c_at "output %y" c_at nl
 }
+
+## a gp:a_fter b: a, evaluated after b (the right side first, as X_eTaL
+## evaluates); what gp:a_ccel<'s expansion sequences its calls with, so
+## it binds no names it never reads.
+## >> "gp:" u_se< "Gpu"
+## >> 1 gp:a_fter 2
+## 1
+l:a_fter := { a b -> a }
 
 ### In one call
 

@@ -1,0 +1,35 @@
+#!/usr/bin/env xetal
+# Accelerate: two functions written as ordinary X_eTaL, handed to the
+# GPU by the macro gp:a_ccel<. The macro expands each to a function of
+# the same parameters that sends its text to the runner (the gpu
+# extension), which lowers it for the arguments' shapes when they are
+# bound and runs it on opencl:0; the rest of the program runs in the
+# evaluator. Each result is checked against the evaluator's own. Run
+# with "scripts/xx run extensions/gpu/demos/accelerate.xtl"; "xetal
+# expand" shows what the macro makes of each definition.
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+
+### A layer: a dense product with its bias, then ReLU
+u:l_ayer := "float float" gp:a_ccel< "{ x wb -> ac:r_elu x ac:d_ense wb }"
+x := 4 3 r_eshape 0.5 -1.0 0.25 1.0 0.0 -0.5 -0.75 0.5 1.0 0.2 0.4 -0.6
+wb := 4 5 r_eshape 0.5 -0.25 0.75 0.1 -0.6 -0.3 0.8 0.2 -0.5 0.4 0.6 0.1 -0.7 0.3 0.2 0.05 -0.1 0.2 0.0 0.1
+h := x u:l_ayer wb
+h
+(ac:r_elu x ac:d_ense wb) gp:n_ear h
+
+### Attention scores of a batch of queries against the keys, as probabilities
+u:a_ttend := "float float" gp:a_ccel< "{ q k -> ac:s_oftmax q ac:s_cores k }"
+q := 2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25
+k := 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0
+p := q u:a_ttend k
+p
+(ac:s_oftmax q ac:s_cores k) gp:n_ear p
+
+### An embedding lookup: the table resident, the ids the only upload
+u:e_mbed := "float int" gp:a_ccel< "{ t ids -> t ac:e_mbed ids }"
+t := 5 4 r_eshape 0.0 0.1 0.2 0.3 1.0 1.1 1.2 1.3 2.0 2.1 2.2 2.3 3.0 3.1 3.2 3.3 4.0 4.1 4.2 4.3
+ids := 2 3 r_eshape 1 5 2 4 4 3
+e := t u:e_mbed ids
+'+ r_/_2 e
+(t ac:e_mbed ids) gp:n_ear e

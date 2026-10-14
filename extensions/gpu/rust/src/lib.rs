@@ -16,12 +16,25 @@ use xetal_ext_sdk::{float_vector, number, text, Array as ExtArray, ArrayData, Ow
 use xetal_gpu_opencl::{explain as explain_plan, plan, Plan, Schedule};
 use xetal_gpu_runtime::{devices as list_devices, Prepared};
 use xetal_gpu_xir::{
-    binary, check, run as interpret, text as xir_text, Array, Checked, Data, Scalar, Shape,
+    binary, check, run as interpret, text as xir_text, Array, Checked, Data, Scalar, Shape, Ty,
 };
+
+/// A function given as source (`gp:a_ccel<`): lowered when its
+/// arguments are bound, since their shapes are its inputs' shapes;
+/// each distinct set of argument types lowers once.
+struct Source {
+    function: String,
+    params: Vec<String>,
+    kinds: Vec<String>,
+    uses: String,
+    dir: std::path::PathBuf,
+    lowered: HashMap<Vec<Ty>, Checked>,
+}
 
 #[derive(Default)]
 struct Session {
     program: Option<Checked>,
+    source: Option<Source>,
     inputs: HashMap<String, Array>,
     schedule: Schedule,
     outputs: Vec<Array>,
@@ -95,13 +108,129 @@ fn load(args: &[Value]) -> Result<Value, OwnedError> {
     Ok(Value::Int(i64::try_from(n).unwrap_or(i64::MAX)))
 }
 
+/// The function's parameter names, from its text (`{ x w -> ...}`).
+fn parameters(function: &str) -> Result<Vec<String>, OwnedError> {
+    let body = function.trim();
+    let inner = body.strip_prefix('{').ok_or_else(|| {
+        OwnedError::invalid_argument(
+            "the function must be written `{ x -> ... }` or `{ x w -> ... }`",
+        )
+    })?;
+    let head = inner
+        .split("->")
+        .next()
+        .ok_or_else(|| OwnedError::invalid_argument("the function has no `->`"))?;
+    let params: Vec<String> = head.split_whitespace().map(str::to_string).collect();
+    if params.is_empty()
+        || params.len() > 2
+        || params
+            .iter()
+            .any(|p| p == "@" || p.contains(',') || p.contains('('))
+    {
+        return Err(OwnedError::invalid_argument(
+            "the function takes one or two named arrays (a tuple pattern or @ is not accelerated)",
+        ));
+    }
+    Ok(params)
+}
+
+/// Load a function from its source text, to be lowered when its
+/// arguments are bound: the file it is written in gives its imports
+/// (every `u_se<` line) and the directory its libraries resolve from;
+/// the kinds (`"float"`, `"int float"`, or empty for all Floats) say
+/// how each argument is taken. The number of parameters.
+fn lower(args: &[Value]) -> Result<Value, OwnedError> {
+    let function = text(&args[0])?;
+    let spec = text(&args[1])?;
+    // "FILE" or "FILE|KINDS": the file the call is written in, then the kinds.
+    let (file, kinds_text) = match spec.split_once('|') {
+        Some((f, k)) => (f.to_string(), k.to_string()),
+        None => (spec.clone(), String::new()),
+    };
+    let params = parameters(&function)?;
+    let mut kinds: Vec<String> = kinds_text.split_whitespace().map(str::to_string).collect();
+    if kinds.is_empty() {
+        kinds = vec!["float".to_string(); params.len()];
+    }
+    if kinds.len() != params.len() || kinds.iter().any(|k| k != "float" && k != "int") {
+        return Err(OwnedError::invalid_argument(format!(
+            "the kinds say `{kinds_text}`; one of float or int per argument ({} here)",
+            params.len()
+        )));
+    }
+    let path = std::path::Path::new(&file);
+    let program_text = std::fs::read_to_string(path).unwrap_or_default();
+    let uses: String = program_text
+        .lines()
+        .filter(|l| l.contains("u_se<") && !l.trim_start().starts_with('#'))
+        .map(|l| l.to_string() + "\n")
+        .collect();
+    let dir = path
+        .parent()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let n = params.len();
+    SESSION.with(|s| {
+        let mut s = s.borrow_mut();
+        s.program = None;
+        s.source = Some(Source {
+            function,
+            params,
+            kinds,
+            uses,
+            dir,
+            lowered: HashMap::new(),
+        });
+        s.inputs.clear();
+        s.outputs.clear();
+        s.last_plan = None;
+        s.prepared = None;
+        s.dirty.clear();
+    });
+    Ok(Value::Int(i64::try_from(n).unwrap_or(i64::MAX)))
+}
+
 /// Bind input n (from 1, in program order) to an array of numbers of
 /// its declared shape; an Int input takes whole numbers only. n.
+/// For a function loaded from source, argument n takes the array as
+/// it is (its kind says Int or Float), under the parameter's name.
 fn bind(args: &[Value]) -> Result<Value, OwnedError> {
     let n = whole(&args[0], "an input's number")?;
     let (shape, items) = float_vector(&args[1])?;
     SESSION.with(|s| {
         let mut s = s.borrow_mut();
+        if let Some(source) = &s.source {
+            let i = usize::try_from(n - 1)
+                .ok()
+                .filter(|i| *i < source.params.len())
+                .ok_or_else(|| {
+                    OwnedError::invalid_argument(format!(
+                        "the function takes {} argument(s); no argument {n}",
+                        source.params.len()
+                    ))
+                })?;
+            let name = source.params[i].clone();
+            let data = if source.kinds[i] == "int" {
+                if let Some(x) = items.iter().find(|x| x.fract() != 0.0) {
+                    return Err(OwnedError::invalid_argument(format!(
+                        "argument {n} ({name}) is int: {x} is not whole"
+                    )));
+                }
+                #[allow(clippy::cast_possible_truncation)]
+                Data::Int(items.iter().map(|x| *x as i64).collect())
+            } else {
+                Data::Float(items)
+            };
+            let scalar = if source.kinds[i] == "int" {
+                Scalar::I64
+            } else {
+                Scalar::F64
+            };
+            let array = Array::new(scalar, Shape(shape), data).map_err(failure)?;
+            s.dirty.insert(name.clone());
+            s.inputs.insert(name, array);
+            return Ok(Value::Int(n));
+        }
         let checked = s
             .program
             .as_ref()
@@ -210,6 +339,35 @@ fn run_impl(args: &[Value], reuse: bool) -> Result<Value, OwnedError> {
     SESSION.with(|cell| {
         let mut borrow = cell.borrow_mut();
         let s = &mut *borrow;
+        // A function from source: lowered for the bound arguments' types, once per set of types.
+        if let Some(source) = s.source.as_mut() {
+            let mut params: Vec<(String, Ty)> = Vec::new();
+            for name in &source.params {
+                let a = s.inputs.get(name).ok_or_else(|| {
+                    OwnedError::invalid_argument(format!("argument {name} is not bound (gp:b_ind)"))
+                })?;
+                params.push((name.clone(), a.ty()));
+            }
+            let key: Vec<Ty> = params.iter().map(|(_, t)| t.clone()).collect();
+            let fresh = !source.lowered.contains_key(&key);
+            if fresh {
+                let lowered = xetal_gpu_lower::lower_function(
+                    &source.function,
+                    &params,
+                    &source.dir,
+                    &source.uses,
+                )
+                .map_err(|e| OwnedError::invalid_argument(format!("gp:a_ccel<: {e}")))?;
+                let checked = check(lowered.program).map_err(failure)?;
+                source.lowered.insert(key.clone(), checked);
+            }
+            let checked = source.lowered[&key].clone();
+            if fresh || s.program.as_ref() != Some(&checked) {
+                s.program = Some(checked);
+                s.last_plan = None;
+                s.prepared = None;
+            }
+        }
         let checked = s
             .program
             .as_ref()
@@ -329,6 +487,7 @@ xetal_ext_sdk::xetal_extension! {
     functions: {
         devices: 0, "Unit -> Char", "The OpenCL devices, one line each (opencl:N).";
         load: 1, "Char -> Int", "Load an XIR program (its text); the number of inputs.";
+        lower: 2, "Char -> Char -> Int", "Load a function from its X_eTaL text (and 'FILE|KINDS': the file it is written in, the arguments' kinds); lowered when bound; the number of parameters.";
         bind: 2, "Num a => Int -> a -> Int", "Bind input n (from 1) to an array of its shape.";
         bind_file: 2, "Int -> Char -> Int", "Bind input n from a checked XTLARR01 binary array file.";
         schedule: 1, "Char -> Int", "The schedule for later runs (a schedules/*.toml text; empty for the defaults).";

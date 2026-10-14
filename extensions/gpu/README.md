@@ -13,6 +13,7 @@ work does not).
 | `extension.toml` | the package: name `gpu`, ABI 1, the facade, the library's stem |
 | `rust/` | the native library (`xetal-ext-gpu`, a cdylib on the pinned SDK and this repository's runtime), its own Cargo workspace, with tests through the raw ABI |
 | `lib/Gpu.xtl` | the facade: the native functions with X_eTaL names and types |
+| `lib/Gpu.xtlm` | the accelerate macro, `gp:a_ccel<` |
 
 ```bash
 just xetal-x        # the pinned X_eTaL-extensions and its xetal-x
@@ -91,6 +92,47 @@ uploads only changed bindings. Loading another program, changing the
 schedule or switching devices rebuilds the session.
 See [binary arrays](../../docs/binary-arrays.md) for conversion and
 the file format, and [the report](../../docs/rtx5060-binary-results.md).
+
+## The accelerate macro
+
+`lib/Gpu.xtlm` (imported with the facade: `"gp:" u_se< "Gpu"` brings
+both files under one alias) defines `gp:a_ccel<`, the user's
+framework: a macro hands a function's text to a runner. MC10 makes a
+macro a function from source text to source text, so
+
+```
+u:d_ense := "float float" gp:a_ccel< "{ x wb -> ac:r_elu x ac:d_ense wb }"
+```
+
+expands (`xetal expand`, pinned in `tests/expand-accel-macro-device.out`) to
+
+```
+u:d_ense := ({ x wb -> gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter 2 gp:b_ind wb gp:a_fter 1 gp:b_ind x gp:a_fter "{ x wb -> ac:r_elu x ac:d_ense wb }" gp:l_ower "FILE|float float" })
+```
+
+Read from the right, as X_eTaL evaluates: the function's text goes to
+the runner (`gp:l_ower`, with the file it is written in, whose
+`u_se<` lines are its imports, and the arguments' kinds), the
+arguments are bound, the program runs on `opencl:0`, the result is
+read back. `gp:a_fter` returns its left after its right, so nothing
+is bound that is never read. The runner (the native library) lowers
+the text through `components/lower` for the arguments' shapes when
+they are bound, once per set of shapes, and keeps the session;
+`xetal-x`'s X_eTaL evaluates everything else. The same macro with a
+runner that offers load-from-source, bind and run would accelerate
+on anything.
+
+The kinds say how each argument is taken (`"float"` or `"int"` per
+parameter; `""` for all Floats); an Int array a function looks up by
+(`ac:e_mbed`) is bound as `int`. The function is one or two named
+arrays to one array, on one line, without quotes.
+`tests/accel-macro-device.xtl` runs a dense layer at two shapes
+(the second relowers, a repeat reuses), an embedding lookup with an
+int argument, and softmax of attention scores, each `ok` against the
+evaluator's own value. `demos/accelerate.xtl` is the same in demo
+form, three functions used and checked, and the live site's landing
+page shows each of its definitions beside what `xetal expand` makes
+of it, generated from the pinned `xetal-x` at build time.
 
 ## The offload demo
 

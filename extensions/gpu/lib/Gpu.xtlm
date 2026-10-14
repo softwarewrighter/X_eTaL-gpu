@@ -1,0 +1,68 @@
+## Gpu.xtlm: the accelerate macro: a function's text handed to the GPU runner
+##
+## Import it with the facade: "gp:" u_se< "Gpu" brings Gpu.xtl (the
+## functions) and this file (the macro) under one alias. The program
+## must import the facade as gp:, since the expansion calls gp:l_ower,
+## gp:b_ind, gp:r_un and gp:o_utput.
+##
+## u:f_ := KINDS gp:a_ccel< "{ x w -> ... }" defines a function of the same
+## parameters that hands the text to the gpu extension, which lowers it
+## through X_eTaL's own crates for the arguments' shapes when they are
+## bound (once per set of shapes), runs it on opencl:0 with the
+## arguments uploaded, and reads the result back. KINDS says how each
+## argument is taken, "float" or "int" per parameter ("" for all
+## Floats); an Int array must be bound as int to be looked up by. The
+## function is one or two named arrays to one array, written on one
+## line without quotes; its libraries are the ones the calling file
+## imports (the expansion names the file, so the runner reads its u_se<
+## lines). The same macro, with a runner that has load-from-source,
+## bind and run, would accelerate on anything.
+
+### Private helpers (text)
+
+## The words of a text (split on spaces).
+h:w_ords := { s -> (n_ot s = f_irst " ") p_artition s }
+h:w_ord := { i w -> d_isclose i s_elect w }
+
+## The text as a string literal (no quotes or backslashes inside).
+h:q_uote := { t -> "\"" c_at t c_at "\"" }
+
+## The second parameter's name, or "" when the function takes one.
+h:s_econd := { w ->
+  (3 h:w_ord w) m_atch "->" ? ""
+  3 h:w_ord w
+}
+
+## The parameter list and the bind calls, for one or two parameters
+## (read from the right: the last bind happens first).
+h:h_ead := { a b ->
+  b m_atch "" ? a
+  a c_at " " c_at b
+}
+h:b_inds := { a b ->
+  one := "1 gp:b_ind " c_at a c_at " gp:a_fter "
+  b m_atch "" ? one
+  "2 gp:b_ind " c_at b c_at " gp:a_fter " c_at one
+}
+
+### The macro
+
+## KINDS gp:a_ccel< "{ x w -> body }": see the file's header. A
+## function that calls a library's functions (ac:d_ense) is written in
+## a file that imports that library; here, a product of primitives.
+## >> "gp:" u_se< "Gpu"
+## >> u:s_cores := "float float" gp:a_ccel< "{ q k -> q '+ '* i_nner 2 1 t_ranspose k }"
+## >> q := 2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25
+## >> k := 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0
+## >> (q '+ '* i_nner 2 1 t_ranspose k) gp:n_ear q u:s_cores k
+## ok
+m:a_ccel< := { kinds f ->
+  (f_irst "\"") m_ember? f ? "bad-macro-argument right" []R_EJECT "the function's text holds a quote; write it without strings"
+  (f_irst "\n") m_ember? f ? "bad-macro-argument right" []R_EJECT "the function's text spans lines; write it on one"
+  w := h:w_ords f
+  n_ot (1 h:w_ord w) m_atch "{" ? "bad-macro-argument right" []R_EJECT "the function must be written { x -> ... } or { x w -> ... }"
+  p1 := 2 h:w_ord w
+  p2 := h:s_econd w
+  spec := ([]F_ILE @) c_at "|" c_at kinds
+  "{ " c_at (p1 h:h_ead p2) c_at " -> gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter " c_at (p1 h:b_inds p2) c_at (h:q_uote f) c_at " gp:l_ower " c_at (h:q_uote spec) c_at " }"
+}

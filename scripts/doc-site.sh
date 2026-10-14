@@ -20,7 +20,7 @@ out="${XETAL_DOC_OUT:-pages/doc}"
 rm -rf "$out"
 libs="$(ls -d libs/*/src | paste -sd: -)"
 export XETAL_PATH="$libs:extensions/gpu/lib:work/xetal-extensions/lib:work/xetal-extensions/extensions/clock/lib"
-files=(extensions/gpu/lib/Gpu.xtl libs/*/src/*.xtl libs/*/demos/*.xtl extensions/gpu/demos/*.xtl)
+files=(extensions/gpu/lib/Gpu.xtl extensions/gpu/lib/Gpu.xtlm libs/*/src/*.xtl libs/*/demos/*.xtl extensions/gpu/demos/*.xtl)
 "$root/scripts/xetal.sh" >/dev/null
 bin/xetal doc --out "$out" "${files[@]}" > /dev/null
 if grep -rl "$HOME" "$out" >/dev/null 2>&1; then echo "doc-site: a page names $HOME (a path that is not relative)" >&2; exit 1; fi

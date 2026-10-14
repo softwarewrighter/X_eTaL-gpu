@@ -17,13 +17,17 @@ found="$("$root/target/release/xetal-gpu" devices 2>/dev/null || true)"
 grep -q '^opencl:' <<<"$found" || has_device=0
 xx="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$root/scripts/xx" "$d")"
 wanted=("types|$xx type ../lib/Gpu.xtl|")
-for p in "$d"/*.xtl; do wanted+=("$(basename "$p" .xtl)|$xx run $(basename "$p")|$p"); done
+for p in "$d"/*.xtl; do
+  wanted+=("$(basename "$p" .xtl)|$xx run $(basename "$p")|$p")
+  # A program that uses the accelerate macro: what it expands to is pinned too.
+  grep -q 'a_ccel<' "$p" && wanted+=("expand-$(basename "$p" .xtl)|$xx expand $(basename "$p")|")
+done
 export REG_RS_DATA_DIR="$d"
 cd "$d"
 fail=0; skipped=0
 for w in "${wanted[@]}"; do
   IFS='|' read -r t cmd prog <<<"$w"
-  if [ "$has_device" = 0 ] && [[ "$t" == *-device || "$t" == demo-* ]]; then skipped=$((skipped + 1)); continue; fi
+  if [ "$has_device" = 0 ] && [[ "$t" == *-device || "$t" == demo-* ]] && [[ "$t" != expand-* ]]; then skipped=$((skipped + 1)); continue; fi
   if [ ! -f "$t.rgt" ]; then
     if [ "${XETAL_BLESS:-}" = 1 ]; then rm -f "$t".tdb*; reg-rs create -t "$t" -c "$cmd" >/dev/null; echo "created: gpu/$t"
     else echo "FAIL: gpu/$t: no baseline $t.rgt (XETAL_BLESS=1 to create)"; fail=1; continue; fi

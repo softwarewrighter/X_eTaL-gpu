@@ -84,6 +84,7 @@ fn descriptor_lists_every_function() {
         [
             "devices",
             "load",
+            "lower",
             "bind",
             "bind_file",
             "schedule",
@@ -247,4 +248,58 @@ fn rerun_rebind_and_invalidation() {
     .unwrap();
     call("rerun", &[Value::Int(0)]).unwrap();
     assert_eq!(call("output", &[Value::Int(1)]).unwrap(), Value::Int(91));
+}
+
+/// A function from its source text (what gp:a_ccel< hands over): lowered
+/// for its arguments' shapes when they are bound, on the interpreter.
+#[test]
+fn a_function_from_source_is_lowered_for_its_arguments() {
+    let libs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../libs/Accel/src");
+    std::env::set_var("XETAL_PATH", libs.canonicalize().unwrap());
+    // The "file" names the calling program: its u_se< lines are the function's imports.
+    let dir = std::env::temp_dir().join(format!("xetal-gpu-accel-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let program = dir.join("prog.xtl");
+    std::fs::write(&program, "\"ac:\" u_se< \"Accel\"\n").unwrap();
+    let n = call(
+        "lower",
+        &[
+            Value::Text("{ x w -> ac:r_elu x ac:m_atmul w }".into()),
+            Value::Text(format!("{}|float float", program.display())),
+        ],
+    )
+    .unwrap();
+    assert_eq!(n, Value::Int(2));
+    call(
+        "bind",
+        &[
+            Value::Int(1),
+            floats(&[2, 3], &[1.0, -2.0, 3.0, 4.0, 5.0, -6.0]),
+        ],
+    )
+    .unwrap();
+    call("bind", &[Value::Int(2), floats(&[3, 1], &[1.0, 1.0, 1.0])]).unwrap();
+    assert_eq!(call("run", &[Value::Int(-1)]).unwrap(), Value::Int(1));
+    // 1 - 2 + 3 = 2; 4 + 5 - 6 = 3; relu keeps both.
+    assert_eq!(
+        call("output", &[Value::Int(1)]).unwrap(),
+        floats(&[2, 1], &[2.0, 3.0])
+    );
+    // Another shape relowers; an int kind must be whole.
+    call("bind", &[Value::Int(1), floats(&[1, 3], &[1.0, 1.0, 1.0])]).unwrap();
+    assert_eq!(call("run", &[Value::Int(-1)]).unwrap(), Value::Int(1));
+    assert_eq!(
+        call("output", &[Value::Int(1)]).unwrap(),
+        floats(&[1, 1], &[3.0])
+    );
+    let e = call(
+        "lower",
+        &[
+            Value::Text("{ (a, b) -> a }".into()),
+            Value::Text(program.display().to_string()),
+        ],
+    )
+    .unwrap_err();
+    assert!(format!("{e:?}").contains("tuple pattern"), "{e:?}");
+    let _ = std::fs::remove_dir_all(&dir);
 }

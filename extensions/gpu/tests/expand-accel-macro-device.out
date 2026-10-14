@@ -1,0 +1,24 @@
+#!/usr/bin/env xetal
+# The accelerate macro on opencl:0: a dense layer and an embedding
+# lookup written as X_eTaL functions, handed to the runner by
+# gp:a_ccel<, lowered for their arguments' shapes and run; each result
+# compared with the evaluator's own; a second shape relowers, a
+# repeat reuses. Run with "scripts/xx run accel-macro-device.xtl".
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+u:d_ense := ({ x wb -> gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter 2 gp:b_ind wb gp:a_fter 1 gp:b_ind x gp:a_fter "{ x wb -> ac:r_elu x ac:d_ense wb }" gp:l_ower "accel-macro-device.xtl|float float" })
+x := 2 3 r_eshape 1.0 2.0 3.0 -1.0 0.5 0.0
+wb := 4 2 r_eshape 0.5 -1.0 1.0 0.25 -0.5 2.0 0.1 0.2
+(ac:r_elu x ac:d_ense wb) gp:n_ear x u:d_ense wb
+x2 := 4 3 r_eshape 0.5 -1.0 0.25 1.0 0.0 -0.5 -0.75 0.5 1.0 0.2 0.4 -0.6
+(ac:r_elu x2 ac:d_ense wb) gp:n_ear x2 u:d_ense wb
+(ac:r_elu x2 ac:d_ense wb) gp:n_ear x2 u:d_ense wb
+u:e_mbed := ({ t ids -> gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter 2 gp:b_ind ids gp:a_fter 1 gp:b_ind t gp:a_fter "{ t ids -> t ac:e_mbed ids }" gp:l_ower "accel-macro-device.xtl|float int" })
+t := 4 3 r_eshape 0.0 0.1 0.2 1.0 1.1 1.2 2.0 2.1 2.2 3.0 3.1 3.2
+ids := 2 2 r_eshape 4 1 2 4
+(t ac:e_mbed ids) gp:n_ear t u:e_mbed ids
+u:s_cores := ({ q k -> gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter 2 gp:b_ind k gp:a_fter 1 gp:b_ind q gp:a_fter "{ q k -> ac:s_oftmax q ac:s_cores k }" gp:l_ower "accel-macro-device.xtl|float float" })
+q := 2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25
+k := 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0
+(ac:s_oftmax q ac:s_cores k) gp:n_ear q u:s_cores k
+

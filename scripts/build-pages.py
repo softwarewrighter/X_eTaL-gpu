@@ -25,6 +25,27 @@ def render(line):
     return out.strip()
 
 
+MACRO_DEMO = "extensions/gpu/demos/accelerate.xtl"
+
+
+def macro_expansions():
+    """Each definition of the demo that uses gp:a_ccel<, as written and as
+    xetal expand makes it (the pinned xetal-x, so the expansion is the
+    one the runner sees), as (source line, expanded line) pairs."""
+    source = (ROOT / MACRO_DEMO).read_text().splitlines()
+    expanded = subprocess.run(
+        [str(ROOT / "scripts/xx"), "expand", MACRO_DEMO], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.splitlines()
+    pairs = []
+    for line in source:
+        if "gp:a_ccel<" not in line or line.startswith("#"):
+            continue
+        name = line.split(":=")[0].strip()
+        made = next((e for e in expanded if e.startswith(name + " :=")), "")
+        pairs.append((line, made))
+    return pairs
+
+
 LINES = [
     ("The acceptance pipeline, as Accel writes it", "l:p_ipeline := { x w -> l:s_um l:r_elu x + x * w }"),
     ("A layer of a network", "l:d_ense := { x wb -> (x '+ '* i_nner -1 d_rop wb) + (o_ffsets t_ally x) 'r_ight t_able r_avel -1 t_ake wb }"),
@@ -57,6 +78,7 @@ a {{ color: var(--accent); }}
 .card p {{ margin:0; color:var(--muted); }}
 .card .go {{ margin-top:auto; font-weight:600; }}
 pre.flow {{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; overflow-x:auto; font-size:.85rem; line-height:1.35; margin:0; }}
+pre.wrap {{ white-space: pre-wrap; word-break: break-word; }}
 .xline {{ margin: 6px 0 14px; padding: 8px 10px; background: var(--chip); border-radius: 8px; overflow-x: auto; font-size: .92rem; line-height: 1.6; }}
 .xline code, code, pre {{ font-family: "JuliaMono", "DejaVu Sans Mono", Menlo, ui-monospace, monospace; }}
 .cap {{ color: var(--muted); font-size: .9rem; margin: 0; }}
@@ -97,11 +119,15 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <div class="grid">
 <div class="card"><h3>Documentation</h3><p>Every library, example program and the GPU facade: doc comments, examples that run, the source drawn decorated, every name linked to its definition and uses.</p><a class="go" href="doc/index.html">Browse the docs</a></div>
 <div class="card"><h3>Accel</h3><p>The acceleratable subset of X_eTaL as a library: elementwise arithmetic, masks, reductions, products, transposes (attention scores, a weight gradient), a dense layer, a softmax. Each export is one array expression.</p><a class="go" href="doc/libs-Accel-src-Accel.xtl.html">Accel's reference</a></div>
-<div class="card"><h3>The gpu extension</h3><p>X_eTaL programs that call the GPU themselves, through X_eTaL-extensions' native ABI and its <code>xetal-x</code> bridge.</p><a class="go" href="doc/extensions-gpu-lib-Gpu.xtl.html">Gpu's reference</a></div>
+<div class="card"><h3>The gpu extension</h3><p>X_eTaL programs that call the GPU themselves, through X_eTaL-extensions' native ABI and its <code>xetal-x</code> bridge; and <code>gp:a_ccel&lt;</code>, the macro that hands a function's text to the runner.</p><a class="go" href="doc/extensions-gpu-lib-Gpu.xtlm.html">The macro</a> <a class="go" href="doc/extensions-gpu-lib-Gpu.xtl.html">Gpu's reference</a></div>
 </div>
 
 <h2>In X_eTaL</h2>
 {lines}
+
+<h2>The macro, expanded</h2>
+<p class="cap">The framework: a macro hands a function's text to a runner. In <a href="doc/extensions-gpu-demos-accelerate.xtl.html">accelerate.xtl</a> each accelerated function is one definition, written as any X_eTaL function; below each, what <code>xetal expand</code> makes of it (generated here from the pinned <code>xetal-x</code>, the expansion the runner sees). Read the expansion from the right, as X_eTaL evaluates: the text goes to the runner with the calling file and the arguments' kinds, the arguments are bound, the program runs on the device, the result is read back; <code>gp:a_fter</code> returns its left after its right. The runner lowers the text for the arguments' shapes when they are bound and keeps the session. <a href="doc/extensions-gpu-lib-Gpu.xtlm.html">The macro's page</a>.</p>
+{macro}
 
 <h2>Measured</h2>
 <p class="cap">One X_eTaL program, <a href="doc/extensions-gpu-demos-offload.xtl.html">offload.xtl</a>, on two GPUs so far: an Apple M1 Max (OpenCL 1.2, this Mac) and an RTX 5060 Ti (16 GB, an Arch Linux machine). Each GPU is compared with the evaluator on its own host, not with the other card. The GPU side includes the bridge, which carries arrays as text.</p>
@@ -135,8 +161,11 @@ def main():
     )
     out = ROOT / "pages" / "index.html"
     out.parent.mkdir(exist_ok=True)
+    macro = "\n".join(
+        f'<div class="xline">{render(src)}</div>\n<pre class="flow wrap">{html.escape(made)}</pre>' for src, made in macro_expansions()
+    )
     out.write_text(PAGE.format(
-        lines=lines, repo=REPO, commit=git("rev-parse", "--short", "HEAD"),
+        lines=lines, macro=macro, repo=REPO, commit=git("rev-parse", "--short", "HEAD"),
         xetal=(ROOT / "XETAL_COMMIT").read_text()[:7], ext=(ROOT / "XETAL_EXTENSIONS_COMMIT").read_text()[:7]))
     print(f"pages: {out.relative_to(ROOT)}")
 

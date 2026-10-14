@@ -17,6 +17,7 @@ xetal-ext-sdk = { path = "../../../work/xetal-extensions/crates/xetal-ext-sdk" }
 xetal-gpu-xir = { path = "../../../components/xir" }
 xetal-gpu-opencl = { path = "../../../components/opencl" }
 xetal-gpu-runtime = { path = "../../../components/runtime" }
+xetal-gpu-lower = { path = "../../../components/lower" }
 
 [features]
 # Link statically beside other extensions (no unmangled entry point);

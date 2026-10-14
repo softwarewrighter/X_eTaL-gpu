@@ -157,6 +157,60 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
     })
 }
 
+/// Lower one function, given as its source text (`{ x w -> ... }`), for
+/// arguments of the given types: the function is defined as `u:a_ccel`
+/// in a program of its own (so its libraries resolve from `dir` and
+/// `XETAL_PATH`), applied to one input per parameter, and its result
+/// is the program's output. This is what the gpu extension runs for
+/// `gp:a_ccel<`: the arguments' shapes are known when they are bound,
+/// so the lowering is specialized to them (and cached by the caller).
+pub fn lower_function(function: &str, params: &[(String, Ty)], dir: &Path, uses: &str) -> Result<Lowered> {
+    let src = format!("{uses}\nu:a_ccel := {function}\n");
+    let loaded = xetal_program::load("gp:a_ccel<", &src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
+    let mut t = Translator {
+        program: Program::default(),
+        types: Vec::new(),
+        globals: HashMap::new(),
+        dir: dir.to_path_buf(),
+        names: HashMap::new(),
+        inputs: HashMap::new(),
+        printed: Vec::new(),
+        lines: HashMap::new(),
+        line: "the accelerated function".into(),
+    };
+    for item in &loaded.program.items {
+        match item {
+            Item::Def { name, value } => {
+                t.globals.insert(name.clone(), value.clone());
+            }
+            Item::Eval(_) | Item::Let { .. } | Item::Set { .. } => {}
+        }
+    }
+    let Some(def) = t.globals.get("u:a_ccel").cloned() else {
+        return err("the function did not define itself (is it `{ x -> ... }`?)");
+    };
+    let mut f = t.eval(&def, &Env::default())?;
+    for (name, ty) in params {
+        let id = t.push(name, Some(ty.clone()), Op::Input)?;
+        f = t.apply(f, V::Node(id))?;
+    }
+    match f {
+        V::Node(id) => t.program.outputs.push(id),
+        V::Static(a, _) => {
+            let id = t.constant(a, None);
+            t.program.outputs.push(id);
+        }
+        other => return err(format!("the function gives a {}, which the device cannot return", other.what())),
+    }
+    let printed = t.program.outputs.iter().map(|o| Printed::Device(*o)).collect();
+    Ok(Lowered {
+        program: t.program,
+        inputs: HashMap::new(),
+        printed,
+        lines: t.lines,
+    })
+}
+
 /// The source line at `offset` of `text`, prefixed with its number.
 fn source_line(text: &str, offset: usize, line: usize) -> String {
     let offset = offset.min(text.len());
