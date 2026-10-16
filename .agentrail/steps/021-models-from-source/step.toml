@@ -1,8 +1,9 @@
 number = 21
 slug = "models-from-source"
-status = "in-progress"
+status = "completed"
 description = "X_eTaL-ML's world model from its own world-model.xtl through the macro (the g..."
 role = "production"
 context_files = []
 created_at = "2026-10-13T08:12:03"
-commits = []
+completed_at = "2026-10-16T11:11:42"
+commits = ["0fbf5f28e0880dee749d2194462dd27318c91a02"]
