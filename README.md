@@ -232,8 +232,11 @@ every result the evaluator's within 1e-5.
 | tiny GPT, 1,000 names (the loop on the evaluator) | 0.003 ms per call | 79 ms | 0.066 ms per call | 746 ms |
 
 The whole process on the Arch host includes about 450 ms of OpenCL
-setup per run against about 65 ms on the Mac, which is why its
-columns are larger for the same kernels.
+setup per run against about 65 ms on the Mac, and that repository
+sits on a hard disk while the Mac's is on an SSD (the user,
+2026-10-16), so reading the data, the pinned evaluator and the
+lowering cache costs more there: the whole-process columns compare
+hosts, not cards; the kernel columns compare the cards.
 
 **Through the Mojo backend** (`--device mojo`, the same IR, the
 elementwise and reduction demos only so far; saga 12): the five

@@ -16,7 +16,11 @@ The cards this work runs on are the user's (2026-10-12); this table
 is the one place that names them, and the README, the component
 pages and the schedule templates follow it. `docs/research7.txt`
 named other cards (K80, M40, P40, P100, RTX 2060) as examples; they
-are not the user's and are not targets.
+are not the user's and are not targets. The two hosts differ in
+their disks (the user, 2026-10-16): this Mac's repository is on an
+SSD, the Arch machine's on a hard disk, so whole-process times (data
+read, the pinned evaluator started, the lowering cache read) compare
+hosts, not cards; only the kernels' own times compare the cards.
 
 | Card | Architecture | Memory | Role here | Schedule |
 | ---- | ------------ | ------ | --------- | -------- |
