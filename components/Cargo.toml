@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["xir", "opencl", "runtime", "cli", "lower"]
+members = ["xir", "opencl", "runtime", "cli", "lower", "mojo"]
 
 [workspace.package]
 version = "0.1.0"

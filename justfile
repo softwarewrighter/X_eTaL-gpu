@@ -48,6 +48,18 @@ test-ext:
 xetal-ml:
     @scripts/xetal-ml.sh
 
+# The pinned Mojo toolchain (MOJO_VERSION) into work/mojo/.venv, linked as bin/mojo; --check only reports
+mojo *args:
+    scripts/mojo.sh "$@"
+
+# A demo on the GPU through the Mojo backend, timed: just run-mojo libs/Accel/demos/saxpy.xtl
+run-mojo FILE *args: build
+    XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu run {{FILE}} --device mojo --time "$@"
+
+# The Mojo source the Mojo backend builds for a program
+mojo-kernel FILE: build
+    XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu kernel {{FILE}} --backend mojo
+
 # Pin a committed ref of ../X_eTaL-ML (default HEAD) in XETAL_ML_COMMIT; commit it on its own after just ml-bench
 ml-pin ref="HEAD":
     scripts/xetal-ml.sh --pin "$1"

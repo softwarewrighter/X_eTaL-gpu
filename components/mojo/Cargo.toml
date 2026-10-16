@@ -1,0 +1,20 @@
+[package]
+name = "xetal-gpu-mojo"
+description = "The Mojo backend of X_eTaL-gpu: from a checked XIR program to Mojo source, built as a shared library and run on the GPU through Mojo's DeviceContext (Metal, CUDA, HIP)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+xetal-gpu-xir = { path = "../xir" }
+# The schedule (element widths) is the OpenCL crate's: one schedule, two backends (plan A6).
+xetal-gpu-opencl = { path = "../opencl" }
+libloading = "0.8"
+
+[dev-dependencies]
+xetal-gpu-lower = { path = "../lower" }

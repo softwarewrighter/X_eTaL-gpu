@@ -39,3 +39,8 @@ bin/xetal-x
 
 # The lowering cache (components/lower, cache.rs)
 /work/lower-cache/
+
+# The pinned Mojo toolchain (scripts/mojo.sh) and its build cache
+bin/mojo
+/work/mojo/
+/work/mojo-cache/

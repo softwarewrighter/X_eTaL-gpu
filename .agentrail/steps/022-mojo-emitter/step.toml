@@ -1,6 +1,6 @@
 number = 22
 slug = "mojo-emitter"
-status = "pending"
+status = "in-progress"
 description = "Saga gpu-mojo, step 1 (the blog agent's proposal, the user, 2026-10-16): a Mo..."
 role = "production"
 context_files = []

@@ -15,4 +15,5 @@ path = "src/main.rs"
 xetal-gpu-xir = { path = "../xir" }
 xetal-gpu-opencl = { path = "../opencl" }
 xetal-gpu-runtime = { path = "../runtime" }
+xetal-gpu-mojo = { path = "../mojo" }
 xetal-gpu-lower = { path = "../lower" }

@@ -76,6 +76,13 @@ the M1 Max ([`docs/ml-results.md`](docs/ml-results.md)); a
 statement the device cannot take (a sort, a text, a loop over calls)
 is evaluated by `xetal` and its value bound. The same workloads
 written through the macro `gp:a_ccel<` are in [`ml/`](ml/README.md).
+Since 2026-10-16 a second backend of the same IR,
+[Mojo](components/mojo/README.md), runs the elementwise and reduction
+demos (saxpy, threshold, reduce-sum, pipeline, vector-add) on the M1
+Max through Metal with the evaluator's answers, `xetal-gpu run
+FILE.xtl --device mojo`; the structural operations follow (saga 12).
+Mojo on NVIDIA goes through the CUDA driver, so the without-CUDA claim
+rests on the OpenCL backend, and every result names its backend.
 The lowering belongs to X_eTaL in the end (asks G1 and G2), and what
 is built here moves there when it does.
 
@@ -239,6 +246,11 @@ is X_eTaL's CLI plus native extensions, which the GPU extension
 needs. It embeds the X_eTaL that X_eTaL-extensions pins (v0.1.0),
 so the gate checks that every library program here prints the same
 under it.
+
+The Mojo toolchain is pinned the same way (`MOJO_VERSION`, `just
+mojo`: the MAX nightly installed with `uv` into `work/mojo/.venv`,
+linked as `bin/mojo`); without it the tool says so and the Mojo tests
+skip, loudly.
 
 X_eTaL-ML is pinned too (`XETAL_ML_COMMIT`, cloned into
 `work/xetal-ml/` by `scripts/xetal-ml.sh`): its benchmarks and models

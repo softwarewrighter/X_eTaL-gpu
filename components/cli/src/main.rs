@@ -26,12 +26,12 @@ usage: xetal-gpu COMMAND FILE [OPTIONS]
   lower FILE.xtl                 the XIR program the X_eTaL source lowers to
   check FILE.xir                 parse and check: every value with its type
   devices                        the OpenCL devices found (opencl:N)
-  run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
+  run FILE.xir [--device cpu|opencl:N|mojo] [SCHEDULE]   run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   items, text file or XTLARR01 binary array
       [--time]                       on a device, where the time went, to standard error
       [--repeat N] [--refresh NAME]...   reuse kernels/buffers; reupload named inputs each repeat
   print FILE.xir                 the program in its canonical text form
-  kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run
+  kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run (--backend mojo: the Mojo source)
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
     SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)  --schedule FILE (a schedules/*.toml; the flags override it)
   pack f32|f64|i64 SHAPE INPUT.txt OUTPUT.xta   convert text items (shape: 2,3 or scalar)
@@ -97,6 +97,27 @@ fn dispatch(args: &[String]) -> Result<()> {
                     if d.fp64 { "fp64" } else { "no fp64" }
                 );
             }
+            Ok(())
+        }
+        "kernel" if args.iter().any(|a| a == "--backend") => {
+            // --backend mojo: the Mojo source the Mojo backend would build.
+            let loaded = load(args.get(1))?;
+            let k = args.iter().position(|a| a == "--backend").unwrap();
+            let backend = args.get(k + 1).cloned().unwrap_or_default();
+            if backend != "mojo" {
+                return Err(Error(format!(
+                    "--backend takes `mojo` (the OpenCL source needs no flag), got `{backend}`"
+                )));
+            }
+            let rest: Vec<String> = args[2..]
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| *i + 2 != k && *i + 2 != k + 1)
+                .map(|(_, a)| a.clone())
+                .collect();
+            let schedule = schedule(&rest)?;
+            let (source, _) = xetal_gpu_mojo::emit(&loaded.checked, &schedule, &program_name(args.get(1))).map_err(|e| Error(e.0))?;
+            print!("{source}");
             Ok(())
         }
         "kernel" | "explain" => {
@@ -222,9 +243,28 @@ fn dispatch(args: &[String]) -> Result<()> {
                     }
                 }
                 outputs
+            } else if device == "mojo" {
+                // The Mojo backend: emit, build (cached by the source), load, run.
+                let name = program_name(args.get(1));
+                let mut outputs = Vec::new();
+                for n in 1..=repeat {
+                    let start = std::time::Instant::now();
+                    let (out, info, built, ran) =
+                        xetal_gpu_mojo::host::execute(&checked, &schedule, &name, &inputs).map_err(|e| Error(e.0))?;
+                    outputs = out;
+                    if timed {
+                        eprintln!(
+                            "repeat {n} mojo time ({info}): build {:.3} ms, run {:.3} ms (the device context, uploads, kernels and downloads), total {:.3} ms",
+                            built.as_secs_f64() * 1000.0,
+                            ran.as_secs_f64() * 1000.0,
+                            start.elapsed().as_secs_f64() * 1000.0
+                        );
+                    }
+                }
+                outputs
             } else {
                 return Err(Error(format!(
-                    "unknown device `{device}` (cpu, or opencl:N from `xetal-gpu devices`)"
+                    "unknown device `{device}` (cpu, opencl:N from `xetal-gpu devices`, or mojo)"
                 )));
             };
             // Printed in the program's order: the device's values and what the evaluator printed.
@@ -243,6 +283,12 @@ fn dispatch(args: &[String]) -> Result<()> {
         }
         other => Err(Error(format!("unknown command `{other}`\n{USAGE}"))),
     }
+}
+
+/// The program's name for generated files: its file's stem, `program` otherwise.
+fn program_name(path: Option<&String>) -> String {
+    path.and_then(|p| std::path::Path::new(p).file_stem().map(|s| s.to_string_lossy().replace('-', "_")))
+        .unwrap_or_else(|| "program".into())
 }
 
 /// `--float f32|f64 --int i32|i64 --work-group N --tile T`, the defaults otherwise.
