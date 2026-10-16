@@ -328,6 +328,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
 
 ## Documentation
 
+- [Array languages on GPUs: X_eTaL-gpu](https://blog.softwarewrighter.com/2026/10/13/array-languages-xetal-gpu/),
+  the blog post on this repository in the array-language series
 - [The live site](https://softwarewrighter.github.io/X_eTaL-gpu/) and
   its [`doc/`](https://softwarewrighter.github.io/X_eTaL-gpu/doc/):
   `xetal doc` of the libraries, the example programs and the GPU

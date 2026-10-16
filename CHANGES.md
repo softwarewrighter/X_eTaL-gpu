@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-16
 
+- 17:50 `docs` README links the blog post on this repository (the array-language series, 2026-10-13) at the top of its documentation list.
 - 17:40 `docs` The hosts' disks noted (the user): the Mac's repository is on an SSD, the Arch machine's on a hard disk, so whole-process times compare hosts and only the kernels' times compare the cards (README's results, the plan's hardware section).
 - 17:20 `docs` README brought up to date after the Arch lane's re-run (its 15:37 commit): the status now runs through the lowering, the macro, the models from source and the Mojo backend; the stale world-model paragraph (the generated twin's 0.237 ms on ML fac586c) replaced by the program from its own source on both cards (counts, kernels, whole process, cold lowering, why the kernel time grew); a table of X_eTaL-ML's four models from source per GPU; the Mojo results on the M1 Max (Metal) and the RTX 5060 Ti (CUDA driver) in one paragraph that names each driver.
 - 15:40 `chore` Save the completed Arch NVIDIA rerun and successful full-gate record; next is mojo-ints-shapes.
