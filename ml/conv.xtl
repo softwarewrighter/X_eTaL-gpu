@@ -1,0 +1,14 @@
+#!/usr/bin/env xetal
+# X_eTaL-ML's bench/conv.xtl through the macro: nine shifted copies of
+# a 28 x 28 picture as 9 x 676, times 8 x 9 filters, ten times, and
+# the sum.
+"gp:" u_se< "Gpu"
+"ck:" u_se< "Clock"
+u:f_ := "float float" gp:a_ccel< "{ x k -> '+ r_/ '{ i -> '+ r_/ r_avel k '+ '* i_nner 9 676 r_eshape 1 d_rop_4 -1 d_rop_4 1 d_rop_3 -1 d_rop_3 -1 0 1 o_-_2 -1 0 1 o_-_2 x } e_ach r_ange 10 }"
+x := 28 28 r_eshape 0.0 0.5 1.0 0.25
+k := 8 9 r_eshape 0.3 -0.2 0.1
+t1 := '{ a -> a u:f_ k } ck:t_ime x
+t2 := '{ a -> a u:f_ k } ck:t_ime x
+x u:f_ k
+t1
+t2

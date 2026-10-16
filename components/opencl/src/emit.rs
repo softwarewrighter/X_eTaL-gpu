@@ -76,7 +76,12 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                 if ty.shape.is_scalar() {
                     b.places.insert(id, Place::Literal(literal(c, b.schedule.elem(ty.scalar))));
                 } else {
-                    let buf = b.buffer(Some(id), b.schedule.elem(ty.scalar), ty.shape.len(), Init::Const(c.clone()));
+                    // A device buffer holds at least one item; an empty
+                    // constant's is one zero that nothing reads, decided
+                    // here so the runtime's constants always fit their
+                    // buffers (len items, or one for every position).
+                    let init = if ty.shape.is_empty() { c.empty_fill() } else { c.clone() };
+                    let buf = b.buffer(Some(id), b.schedule.elem(ty.scalar), ty.shape.len(), Init::Const(init));
                     b.places.insert(id, Place::Buffer(buf));
                 }
             }
@@ -100,6 +105,10 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
             Op::Lookup { axis, idx, arg } => {
                 b.flush(&outputs);
                 b.lookup(id, *idx, *arg, *axis);
+            }
+            Op::Concat { axis, a, b: rhs } => {
+                b.flush(&outputs);
+                b.concat(id, *a, *rhs, *axis);
             }
             Op::TopK { k, axis, arg } => {
                 b.flush(&outputs);
@@ -613,6 +622,70 @@ __kernel void {kname}({}) {{
             kinfo.computes.push(id);
             kinfo.writes.push(id);
         }
+        self.places.insert(id, Place::Buffer(result));
+    }
+
+    /// A concatenation along an axis: one work-item per result item,
+    /// reading from a or from b by its position along the axis.
+    fn concat(&mut self, id: ValueId, a: ValueId, b: ValueId, axis: usize) {
+        let elem = self.elem_of(id);
+        let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
+        let (sa, sb) = (lift(&self.ty(a).shape), lift(&self.ty(b).shape));
+        let (outer, la, inner) = xetal_gpu_xir::interp::axis_split(&sa, axis);
+        let lb = sb.0[axis - 1];
+        let n = outer * (la + lb) * inner;
+        let kname = format!("concat{}", self.launches.len());
+        let result = self.buffer(Some(id), elem, n, Init::Device);
+        let name = self.checked.program.value(id).name.clone();
+        let out_name = self.buffers[result.0].name.clone();
+        let (mut params, mut args) = (Vec::new(), Vec::new());
+        let read = |s: &mut Self, v: ValueId, params: &mut Vec<String>, args: &mut Vec<Arg>| -> String {
+            match s.places[&v].clone() {
+                Place::Buffer(buf) => {
+                    let bb = &s.buffers[buf.0];
+                    let p = format!("__global const {}* {}", bb.elem, bb.name);
+                    if !params.contains(&p) {
+                        params.push(p);
+                        args.push(Arg::Buffer(buf));
+                    }
+                    bb.name.clone()
+                }
+                Place::Literal(l) => format!("(({elem}[1]){{{l}}})"),
+                Place::Register(_) => unreachable!("flushed before a concat"),
+            }
+        };
+        let (ra, rb) = (read(self, a, &mut params, &mut args), read(self, b, &mut params, &mut args));
+        params.push(format!("__global {elem}* {out_name}"));
+        args.push(Arg::Buffer(result));
+        self.source.push_str(&format!(
+            "
+// {kname}: %{name} := a c_at_{axis} b, {sa} and {sb}; one work-item per result item, reading a or b by its place along the axis.
+__kernel void {kname}({}) {{
+    long k = get_global_id(0);
+    if (k >= {n}) return;
+    long o = k / ({la} + {lb}) / {inner} , r = k % (({la} + {lb}) * {inner});
+    long j = r / {inner}, i = r % {inner};
+    {out_name}[k] = j < {la} ? {ra}[(o * {la} + j) * {inner} + i] : {rb}[(o * {lb} + (j - {la})) * {inner} + i];
+}}
+",
+            params.join(", ")
+        ));
+        let total = n.max(1);
+        let local = self.schedule.work_group.min(total.next_power_of_two());
+        self.launches.push(Launch {
+            kernel: kname.clone(),
+            args,
+            global: total.div_ceil(local) * local,
+            local,
+            note: format!("%{name}: {sa} and {sb} joined along axis {axis}, {n} items"),
+        });
+        self.kernels.push(KernelInfo {
+            name: kname,
+            computes: vec![id],
+            writes: vec![id],
+            elements: n,
+            about: String::new(),
+        });
         self.places.insert(id, Place::Buffer(result));
     }
 
@@ -1131,6 +1204,10 @@ fn map_expr(op: MapOp, a: &[String], arg_elem: Elem) -> String {
         }
         MapOp::Exp => format!("exp({})", a[0]),
         MapOp::Log => format!("log({})", a[0]),
+        MapOp::Cos => format!("cos({})", a[0]),
+        MapOp::Sin => format!("sin({})", a[0]),
+        MapOp::Sqrt => format!("sqrt({})", a[0]),
+        MapOp::Pow => format!("pow({}, {})", a[0], a[1]),
         MapOp::Eq => format!("({} == {})", a[0], a[1]),
         MapOp::Ne => format!("({} != {})", a[0], a[1]),
         MapOp::Lt => format!("({} < {})", a[0], a[1]),
@@ -1373,6 +1450,27 @@ __kernel void {name}(__global const {elem}* in, __global {elem}* out, const long
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn empty_constant_plans_to_a_one_item_buffer() {
+        // concat of an empty constant and an input: the runtime's rule is
+        // len items or one, decided here, not at upload time.
+        let p = xetal_gpu_xir::text::parse("%e = const i64 [0 2]\n%x = input i64 [3 2]\n%c = concat %e %x\noutput %c\n").unwrap();
+        let checked = xetal_gpu_xir::check::check(p).unwrap();
+        let plan = plan(&checked, &Schedule::default());
+        let consts: Vec<_> = plan
+            .buffers
+            .iter()
+            .filter_map(|b| {
+                if let Init::Const(c) = &b.init {
+                    Some((b.len, c.len()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert_eq!(consts, vec![(0, 1)]);
+    }
+
     use super::*;
     use crate::Width;
     use xetal_gpu_xir::{check, text};
@@ -1602,6 +1700,21 @@ mod tests {
             "%a: the 2 largest of each line along axis 2: 3 lines of 4, one work-item each"
         );
         assert!(p.source.contains("float t_f = (float)b_a[i];"));
+    }
+
+    #[test]
+    fn a_concat_reads_either_side_by_place() {
+        let p = plan_of(
+            "%a = const f64 [2 3] 1.0\n%b = const f64 [1 3] 2.0\n%c = concat %a %b\n%d = concat axis=2 %a %a\n%x = const f64 [2] 0.5\n%two = const f64 [] 2.0\n%p = map pow %x %two\n%s = map sqrt %x\noutput %c\noutput %d\noutput %p\noutput %s\n",
+            &Schedule::default(),
+        );
+        assert!(p
+            .source
+            .contains("b_c[k] = j < 2 ? b_a[(o * 2 + j) * 3 + i] : b_b[(o * 1 + (j - 2)) * 3 + i];"));
+        assert_eq!(p.launches[0].note, "%c: [2 3] and [1 3] joined along axis 1, 9 items");
+        assert_eq!(p.launches[1].note, "%d: [2 3] and [2 3] joined along axis 2, 12 items");
+        assert!(p.source.contains("float t_p = pow(b_x[i], 2.0f);"));
+        assert!(p.source.contains("float t_s = sqrt(b_x[i]);"));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Compare binary file and text bindings on prepared world-model inputs.
-Run ml-bench --check first to prepare those inputs from the pinned model.
+The inputs are the world-model fixture's (scripts/world-model-fixture.py), prepared from the pinned model if missing.
 """
 import argparse
 import importlib.util
@@ -10,7 +10,7 @@ import platform
 from datetime import date
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("ml_bench", Path(__file__).with_name("ml-bench.py"))
+spec = importlib.util.spec_from_file_location("world_model_fixture", Path(__file__).with_name("world-model-fixture.py"))
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
 
@@ -32,8 +32,7 @@ def main():
     if args.require_device and not devices:
         raise RuntimeError("no OpenCL device; --require-device refuses to skip GPU checks")
     model = bench.MODELS["world-model"]
-    if not (bench.WORK / "world-model.xir").exists():
-        raise RuntimeError("prepare world-model inputs first: just ml-bench --check")
+    bench.prepare()
     rows = []
     # All files created here are private scratch files, cleaned after the run.
     with tempfile.TemporaryDirectory(prefix="binary-", dir=bench.WORK) as scratch:

@@ -4,7 +4,7 @@ reference interpreter, and (for timing) NumPy's BLAS: OpenBLAS with tuned
 thread counts where NumPy carries it (Linux wheels), or the BLAS the wheel
 links otherwise (Accelerate on macOS, which threadpoolctl cannot limit, so
 it runs as it is and is named in the report).
-Inputs are prepared by ml-bench --check from the pinned evaluator's model.
+Inputs are the world-model fixture's (scripts/world-model-fixture.py), prepared from the pinned model if missing.
 """
 import argparse
 import contextlib
@@ -21,7 +21,7 @@ import time
 from datetime import date
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("ml_bench", Path(__file__).with_name("ml-bench.py"))
+spec = importlib.util.spec_from_file_location("world_model_fixture", Path(__file__).with_name("world-model-fixture.py"))
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
 
@@ -76,6 +76,7 @@ def main():
                 name = "the wheel's BLAS"
             blas = f"{name} (NumPy's wheel; its own threading, not limited here)"
             thread_settings = ["as is"]
+    bench.prepare()
     data = {}
     for tag in bench.MODELS["world-model"]["shapes"]:
         data[tag] = [float(x) for x in (bench.WORK / f"world-model-{tag}.txt").read_text().split()]

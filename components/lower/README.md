@@ -92,6 +92,19 @@ session's binary binding when a model's batch is large.
 `xetal-gpu explain FILE.xtl` ends with a `from:` section naming,
 for each kernel, the X_eTaL lines whose values it computes.
 
+## Cached
+
+Lowering a program with host-evaluated statements costs an evaluator
+run per statement (the world model: 41 s), so a lowering is kept
+(`cache.rs`) under `work/lower-cache/` of the repository holding the
+tool (or `XETAL_GPU_CACHE`; `XETAL_GPU_NO_CACHE=1` turns it off):
+the XIR text, the evaluator-made inputs as `.xta`, the printed order,
+the lines and the reasons, keyed by a hash of everything the lowering
+read (the program and its libraries as one text, the files `[]N_GET`
+read) and of the tool's executable (its size and modification time,
+so a rebuild invalidates). The world model lowers in 0.15 s from the
+cache.
+
 ## A function for the runner
 
 `lower_function(text, params, dir, uses)` lowers one function given
@@ -119,8 +132,10 @@ the twin shared, or spells top-k as its composition.
 
 ## Not yet
 
-The models of X_eTaL-ML need `c_at` of arrays, `'= t_able` and `^`
-(GA7); `s_\`; tuples as several inputs and outputs; `m_ap` over rows.
+`s_\`; `w_here`; `g_rade`; tuples as several inputs and outputs;
+`m_ap` over rows; `e_ach` over a vector the device computes (a loop
+over calls, as the tiny GPT's batch has it, stays on the evaluator).
 A statement inside a function that is outside the subset still fails
 the whole function (only top-level statements fall back to the
-evaluator).
+evaluator). A reshape whose shape comes from data (not from a
+shape) is refused: shapes are folded statically, data is not.

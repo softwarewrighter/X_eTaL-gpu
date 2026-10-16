@@ -1,0 +1,13 @@
+#!/usr/bin/env xetal
+# X_eTaL-ML's bench/dense.xtl through the macro: a dense layer's
+# product, 1024 x 16 by 16 x 16, four times, and the sum.
+"gp:" u_se< "Gpu"
+"ck:" u_se< "Clock"
+u:f_ := "float float" gp:a_ccel< "{ x w -> '+ r_/ '{ i -> '+ r_/ r_avel x '+ '* i_nner w } e_ach r_ange 4 }"
+x := 1024 16 r_eshape 0.1 0.2 -0.3 0.5 0.7
+w := 16 16 r_eshape 0.3 -0.1 0.2 0.0 0.4
+t1 := '{ a -> a u:f_ w } ck:t_ime x
+t2 := '{ a -> a u:f_ w } ck:t_ime x
+x u:f_ w
+t1
+t2

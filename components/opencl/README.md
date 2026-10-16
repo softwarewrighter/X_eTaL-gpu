@@ -141,6 +141,13 @@ xetal-gpu run FILE.xir --device opencl:0 --schedule schedules/apple-m1-max.toml 
   gather, 0.021 ms. The Apple schedule file stays untiled (it is the
   defaults); the NVIDIA files tile, so their transposes go through
   local memory, to be measured there.
+- **Empty values.** A device buffer holds at least one item, so an
+  empty constant (`0 2 r_eshape` nothing, a loop's first
+  accumulator) is planned as one zero that nothing reads; the plan
+  thereby promises the runtime that every constant has its buffer's
+  items or exactly one, and the runtime refuses a plan that breaks
+  it by name rather than indexing (found 2026-10-16 with the world
+  model's dream loop; the lowering folds such a `c_at` away first).
 - **Semantics kept.** `idiv` and `mod` are floored
   (`xetal_idiv_long`, `xetal_imod_long`), Float to Int casts take
   `floor`, a number to Bool is `!= 0`, `abs` of a `long` avoids the

@@ -223,6 +223,38 @@ pub fn check(program: Program) -> Result<Checked> {
                     shape: Shape(dims),
                 }
             }
+            Op::Concat { axis, a, b } => {
+                let (ta, tb) = (ty_of(*a), ty_of(*b));
+                if ta.scalar != tb.scalar {
+                    return err(format!(
+                        "%{name}: concat needs items of one scalar type, got {} and {}",
+                        ta.scalar, tb.scalar
+                    ));
+                }
+                // A single value joins a vector as one item.
+                let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
+                let (sa, sb) = (lift(&ta.shape), lift(&tb.shape));
+                if sa.rank() != sb.rank() {
+                    return err(format!("%{name}: concat: ranks differ, {} and {}", sa, sb));
+                }
+                if *axis > sa.rank() {
+                    return err(format!("%{name}: concat axis={axis}: the arrays have rank {}", sa.rank()));
+                }
+                for (i, (x, y)) in sa.0.iter().zip(&sb.0).enumerate() {
+                    if i + 1 != *axis && x != y {
+                        return err(format!(
+                            "%{name}: concat along axis {axis}: the other axes differ, {} and {}",
+                            sa, sb
+                        ));
+                    }
+                }
+                let mut dims = sa.0.clone();
+                dims[axis - 1] += sb.0[axis - 1];
+                Ty {
+                    scalar: ta.scalar,
+                    shape: Shape(dims),
+                }
+            }
             Op::TopK { k, axis, arg } => {
                 let t = ty_of(*arg);
                 if !t.scalar.is_num() {
@@ -495,6 +527,18 @@ mod tests {
         assert_eq!(
             error_of("%x = const i64 [0]\n%r = reshape [2 2] %x\noutput %r\n"),
             "%r: reshape [2 2] of an empty array: there is no item to repeat"
+        );
+    }
+
+    #[test]
+    fn concats() {
+        let t = types_of("%a = const f64 [2 3] 1.0\n%b = const f64 [1 3] 2.0\n%c = concat %a %b\n%d = concat axis=2 %a %a\n%v = const i64 [2] 1\n%k = const i64 [] 7\n%e = concat %v %k\noutput %c\n");
+        assert_eq!(t[2], "f64 [3 3]");
+        assert_eq!(t[3], "f64 [2 6]");
+        assert_eq!(t[6], "i64 [3]");
+        assert_eq!(
+            error_of("%a = const f64 [2 3] 1.0\n%b = const f64 [2 2] 2.0\n%c = concat %a %b\noutput %c\n"),
+            "%c: concat along axis 1: the other axes differ, [2 3] and [2 2]"
         );
     }
 

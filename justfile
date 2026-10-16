@@ -52,7 +52,7 @@ xetal-ml:
 ml-pin ref="HEAD":
     scripts/xetal-ml.sh --pin "$1"
 
-# X_eTaL-ML's benchmarks on the evaluator, the interpreter, every device and the facade, timed: docs/ml-results.md
+# X_eTaL-ML's workloads from source on the evaluator, the interpreter, every device and through the macro, timed: docs/ml-results.md
 ml-bench *args:
     scripts/ml-bench.py "$@"
 

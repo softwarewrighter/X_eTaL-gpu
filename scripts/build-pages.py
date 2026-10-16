@@ -102,7 +102,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 </header>
 
 <h2>What runs today</h2>
-<p class="cap">X_eTaL source, lowered. Every example program is lowered from its own <code>.xtl</code> by this repository's translator, which takes the program's Core (libraries included) from X_eTaL's own crates and builds the program the device runs; the checks prove each one gives the evaluator's output, exactly on the interpreter and within f32's tolerance on the GPU. The hand-written twins that stood in until 2026-10-13 were the translator's oracle and are gone. X_eTaL-ML's models still run from a script that writes their programs; their own source is next. The lowering belongs to X_eTaL in the end (<a href="{repo}/blob/main/docs/xetal-asks.md">asks G1 and G2</a>).</p>
+<p class="cap">X_eTaL source, lowered. Every example program is lowered from its own <code>.xtl</code> by this repository's translator, which takes the program's Core (libraries included) from X_eTaL's own crates and builds the program the device runs; the checks prove each one gives the evaluator's output, exactly on the interpreter and within f32's tolerance on the GPU. The hand-written twins that stood in until 2026-10-13 were the translator's oracle and are gone. X_eTaL-ML's own programs run the same way, unchanged: its benchmarks, the world model, the digit reader, the denoiser and the tiny GPT, each lowered from its source (<a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>); what the device cannot take, the evaluator computes. The lowering belongs to X_eTaL in the end (<a href="{repo}/blob/main/docs/xetal-asks.md">asks G1 and G2</a>).</p>
 
 <h2>One program, three executions</h2>
 <pre class="flow">                X_eTaL program (.xtl)
@@ -136,7 +136,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <tr><td>512 by 512 product</td><td class="n">14545 ms</td><td class="n">462 ms <span class="good">(31 times faster)</span></td><td class="n">24994 ms</td><td class="n">979 ms <span class="good">(25 times faster)</span></td></tr>
 <tr><td>a million items, elementwise, summed</td><td class="n">188 ms</td><td class="n">2447 ms <span class="bad">(13 times slower)</span></td><td class="n">254 ms</td><td class="n">1440 ms <span class="bad">(5.7 times slower)</span></td></tr>
 </table></div>
-<p class="cap">Products gain even through the bridge; elementwise work does not. Why, and which macros and extensions are justified: <a href="{repo}/blob/main/docs/macros-and-extensions.md">the analysis</a>. X_eTaL-ML's benchmarks and its world model, the device's time and the bridge's apart: on the M1 Max <a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>, on the RTX 5060 Ti <a href="{repo}/blob/main/docs/rtx5060-ml-results.md">docs/rtx5060-ml-results.md</a> and <a href="{repo}/blob/main/docs/rtx5060-results.md">its hardware report</a>.</p>
+<p class="cap">Products gain even through the bridge; elementwise work does not. Why, and which macros and extensions are justified: <a href="{repo}/blob/main/docs/macros-and-extensions.md">the analysis</a>. X_eTaL-ML's benchmarks and models from their own source, the device's time and the lowering's apart: on the M1 Max <a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>, on the RTX 5060 Ti <a href="{repo}/blob/main/docs/rtx5060-ml-results.md">docs/rtx5060-ml-results.md</a> and <a href="{repo}/blob/main/docs/rtx5060-results.md">its hardware report</a>.</p>
 
 <h2>More</h2>
 <div class="grid">

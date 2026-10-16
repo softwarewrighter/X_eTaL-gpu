@@ -175,6 +175,65 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
                 }
                 gather(a, &index, ty)?
             }
+            Op::Concat { axis, a, b } => {
+                let (x, y) = (&values[a.0], &values[b.0]);
+                let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
+                let (sx, sy) = (lift(&x.shape), lift(&y.shape));
+                let (outer, lx, inner) = axis_split(&sx, *axis);
+                let ly = sy.0[axis - 1];
+                let n = outer * (lx + ly) * inner;
+                let pick = |k: usize| -> (bool, usize) {
+                    let o = k / ((lx + ly) * inner);
+                    let r = k % ((lx + ly) * inner);
+                    let j = r / inner;
+                    let i = r % inner;
+                    if j < lx {
+                        (true, (o * lx + j) * inner + i)
+                    } else {
+                        (false, (o * ly + (j - lx)) * inner + i)
+                    }
+                };
+                let data = match (&x.data, &y.data) {
+                    (Data::Int(p), Data::Int(q)) => Data::Int(
+                        (0..n)
+                            .map(|k| {
+                                let (l, i) = pick(k);
+                                if l {
+                                    p[i]
+                                } else {
+                                    q[i]
+                                }
+                            })
+                            .collect(),
+                    ),
+                    (Data::Float(p), Data::Float(q)) => Data::Float(
+                        (0..n)
+                            .map(|k| {
+                                let (l, i) = pick(k);
+                                if l {
+                                    p[i]
+                                } else {
+                                    q[i]
+                                }
+                            })
+                            .collect(),
+                    ),
+                    (Data::Bool(p), Data::Bool(q)) => Data::Bool(
+                        (0..n)
+                            .map(|k| {
+                                let (l, i) = pick(k);
+                                if l {
+                                    p[i]
+                                } else {
+                                    q[i]
+                                }
+                            })
+                            .collect(),
+                    ),
+                    _ => unreachable!("checked: one scalar type"),
+                };
+                Array::new(ty.scalar, ty.shape.clone(), data)?
+            }
             Op::TopK { k, axis, arg } => {
                 let a = &values[arg.0];
                 let axis = topk_axis(*axis, a.shape.rank());
@@ -317,6 +376,9 @@ fn map(name: &str, op: MapOp, args: &[&Array], ty: &Ty) -> Result<Array> {
                     MapOp::Abs => x.abs(),
                     MapOp::Exp => x.exp(),
                     MapOp::Log => x.ln(),
+                    MapOp::Cos => x.cos(),
+                    MapOp::Sin => x.sin(),
+                    MapOp::Sqrt => x.sqrt(),
                     _ => {
                         let y = args[1].at(i).float();
                         match op {
@@ -324,6 +386,7 @@ fn map(name: &str, op: MapOp, args: &[&Array], ty: &Ty) -> Result<Array> {
                             MapOp::Sub => x - y,
                             MapOp::Mul => x * y,
                             MapOp::Div => x / y,
+                            MapOp::Pow => x.powf(y),
                             MapOp::Min => x.min(y),
                             MapOp::Max => x.max(y),
                             _ => unreachable!(),
@@ -782,6 +845,23 @@ mod tests {
                 "10 20\n20 40\n30 60",
                 "5 6 7\n5 6 7",
                 "10 10 10\n20 20 20"
+            ]
+        );
+    }
+
+    #[test]
+    fn concats_and_float_maps_as_xetal() {
+        // (2 3 r_eshape r_ange 6) c_at 1 3 r_eshape 7 8 9; a c_at_2 a; 1 2 c_at 7; 2.0 ^ 3.0 0.5; c_os 0.0.
+        let out = eval("%a = const i64 [2 3] 1 2 3 4 5 6\n%b = const i64 [1 3] 7 8 9\n%c = concat %a %b\n%d = concat axis=2 %a %a\n%v = const i64 [2] 1 2\n%k = const i64 [] 7\n%e = concat %v %k\n%x = const f64 [2] 3.0 0.5\n%two = const f64 [] 2.0\n%p = map pow %two %x\n%z = const f64 [1] 0.0\n%cz = map cos %z\n%s = map sqrt %x\noutput %c\noutput %d\noutput %e\noutput %p\noutput %cz\noutput %s\n");
+        assert_eq!(
+            out,
+            [
+                "1 2 3\n4 5 6\n7 8 9",
+                "1 2 3 1 2 3\n4 5 6 4 5 6",
+                "1 2 7",
+                "8.0 1.4142135623730951",
+                "1.0",
+                "1.7320508075688772 0.7071067811865476"
             ]
         );
     }

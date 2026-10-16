@@ -36,3 +36,6 @@ bin/xetal-x
 
 # The lowering's temporary program for a host-evaluated statement (components/lower)
 .xetal-gpu-host-*.xtl
+
+# The lowering cache (components/lower, cache.rs)
+/work/lower-cache/

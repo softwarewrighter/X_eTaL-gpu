@@ -1,0 +1,54 @@
+#!/usr/bin/env xetal
+# X_eTaL-ML's world model (demos/world-model/world-model.xtl) through
+# the macro: the network's prediction of every window (432 pixels in,
+# 64 ReLU, 144 sigmoid out) runs on the GPU, the weights resident as
+# one argument (the two layers' weights with their biases, padded and
+# stacked: 498 x 144); the world (the states, their frames and
+# windows) and the counting run in the evaluator, as X_eTaL-ML wrote
+# them. Prints the counts the model's program prints: the next frames
+# predicted exactly of all 1,936 states and of the 387 it never saw.
+"gp:" u_se< "Gpu"
+"ck:" u_se< "Clock"
+"nn:" u_se< "NN"
+
+### The world, as world-model.xtl has it
+u:s_tep := { s ->
+  P := 2 t_ake o_\ s
+  V := -2 t_ake o_\ s
+  n := P + V
+  lo := n < 0
+  hi := n > 10
+  o_\ (n + ((n_eg 2 * n) * lo) + (20 - 2 * n) * hi) c_at V * 1 - 2 * lo + hi
+}
+u:i_n := { D -> f_loat (D <= 0) * D >= -1 }
+u:f_rames := { xy ->
+  c := o_ffsets 144
+  (u:i_n (2 s_elect o_\ xy) '- t_able c d_iv 12) * u:i_n (1 s_elect o_\ xy) '- t_able c m_od 12
+}
+u:w_indow := { s ->
+  s1 := u:s_tep s
+  s2 := u:s_tep s1
+  s3 := u:s_tep s2
+  ((u:f_rames 2 t_ake_2 s) c_at_2 (u:f_rames 2 t_ake_2 s1) c_at_2 u:f_rames 2 t_ake_2 s2, u:f_rames 2 t_ake_2 s3)
+}
+u:e_xact := { P T -> f_loor '+ r_/ 'm_in r_/_2 f_loat (P > 0.5) = T > 0.5 }
+
+### The network: both layers as one resident argument
+d := "work/xetal-ml/demos/world-model/data/"
+wb1 := 433 64 r_eshape (n_umbers []N_GET d c_at "w1.txt") c_at n_umbers []N_GET d c_at "b1.txt"
+wb2 := 65 144 r_eshape (n_umbers []N_GET d c_at "w2.txt") c_at n_umbers []N_GET d c_at "b2.txt"
+wb := (wb1 c_at_2 433 80 r_eshape 0.0) c_at wb2
+u:p_redict := "float float" gp:a_ccel< "{ X wb -> nn:s_igmoid (nn:r_elu X nn:d_ense 64 t_ake_2 433 t_ake wb) nn:d_ense 433 d_rop wb }"
+
+### Every state at once, and the held-out fifth
+i := o_ffsets 1936
+all := o_\ 4 1936 r_eshape (i d_iv 176) c_at ((i d_iv 16) m_od 11) c_at ((1 + (i d_iv 4) m_od 4) s_elect -2 -1 1 2) c_at (1 + i m_od 4) s_elect -2 -1 1 2
+held := 387 4 r_eshape f_loor n_umbers []N_GET d c_at "held-out.txt"
+(X, T) := u:w_indow all
+(Xh, Th) := u:w_indow held
+t1 := '{ a -> a u:p_redict wb } ck:t_ime X
+t2 := '{ a -> a u:p_redict wb } ck:t_ime X
+(X u:p_redict wb) u:e_xact T
+(Xh u:p_redict wb) u:e_xact Th
+t1
+t2

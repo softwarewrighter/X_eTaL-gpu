@@ -266,7 +266,7 @@ impl Prepared {
                     check_positions(plan, b.id, name, a)?;
                     Some(a.clone())
                 }
-                Init::Const(c) => Some(const_array(c, checked.ty(b.value.expect("a const holds a value")).scalar, len)),
+                Init::Const(c) => Some(const_array(c, checked.ty(b.value.expect("a const holds a value")).scalar, len)?),
                 Init::Device => None,
             };
             let buf = unsafe {
@@ -448,7 +448,17 @@ impl Prepared {
     }
 }
 
-fn const_array(c: &Const, scalar: Scalar, len: usize) -> Array {
+/// The host copy of a constant's buffer: its items, or one item spread
+/// over every position. The plan promises one of the two (an empty
+/// constant arrives as one item, see the emitter); a plan that breaks
+/// the promise is refused by name, never indexed blindly.
+fn const_array(c: &Const, scalar: Scalar, len: usize) -> Result<Array> {
+    let items = c.len();
+    if items != len && items != 1 {
+        return Err(Error(format!(
+            "the plan's constant buffer has {items} items for {len} positions: the emitter must give len items or one"
+        )));
+    }
     let fill = |n: usize| if n == len { None } else { Some(len) };
     let data = match c {
         Const::Int(v) => Data::Int(match fill(v.len()) {
@@ -464,7 +474,7 @@ fn const_array(c: &Const, scalar: Scalar, len: usize) -> Array {
             None => v.clone(),
         }),
     };
-    Array::new(scalar, Shape(vec![len]), data).expect("a checked constant")
+    Array::new(scalar, Shape(vec![len]), data).map_err(|e| Error(format!("a constant's buffer: {e}")))
 }
 
 fn to_i64(a: &Array) -> Vec<i64> {

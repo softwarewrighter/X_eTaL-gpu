@@ -315,6 +315,24 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 },
             ))
         }
+        "concat" => {
+            // `concat %a %b` (along the first axis), or `concat axis=2 %a %b`.
+            let (axis, rest) = match rest {
+                ["axis", "=", k, rest @ ..] => (axis_number(k)?, rest),
+                _ => (1, rest),
+            };
+            if rest.len() != 2 {
+                return err("concat takes an optional axis and two values: concat %a %b, concat axis=2 %a %b");
+            }
+            Ok((
+                None,
+                Op::Concat {
+                    axis,
+                    a: reference(program, rest[0])?,
+                    b: reference(program, rest[1])?,
+                },
+            ))
+        }
         "reshape" => {
             let (shape, rest) = shape(rest)?;
             if rest.len() != 1 {
@@ -392,7 +410,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             ))
         }
         other => err(format!(
-            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup, topk)"
+            "unknown operation `{other}` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup, topk, concat)"
         )),
     }
 }
@@ -479,6 +497,8 @@ pub fn print(program: &Program) -> String {
                 }
             }
             Op::Reshape { shape, arg } => out.push_str(&format!("reshape {shape} {}", name(*arg))),
+            Op::Concat { axis: 1, a, b } => out.push_str(&format!("concat {} {}", name(*a), name(*b))),
+            Op::Concat { axis, a, b } => out.push_str(&format!("concat axis={axis} {} {}", name(*a), name(*b))),
             Op::TopK { k, axis: 0, arg } => out.push_str(&format!("topk {k} {}", name(*arg))),
             Op::TopK { k, axis, arg } => out.push_str(&format!("topk {k} axis={axis} {}", name(*arg))),
             Op::Lookup { axis: 1, idx, arg } => out.push_str(&format!("lookup {} {}", name(*idx), name(*arg))),
@@ -532,6 +552,8 @@ mod tests {
 %lc = lookup axis=2 %v %mm
 %tk2 = topk 2 %mm
 %tk1 = topk 1 axis=1 %mm
+%cc = concat %mm %mm
+%cc2 = concat axis=2 %mm %mm
 output %c
 output %f
 ";
@@ -573,7 +595,7 @@ output %f
             e("%a = const i64 [1] 1\n%b = map neg %a %a\n"),
             "line 2: map neg takes 1 argument, got 2"
         );
-        assert_eq!(e("%a = const i64 [1] 1\n%b = map plus %a\n"), "line 2: unknown map operation `plus` (one of add, sub, mul, div, idiv, mod, min, max, neg, abs, exp, log, eq, ne, lt, le, gt, ge, and, or, not)");
+        assert_eq!(e("%a = const i64 [1] 1\n%b = map plus %a\n"), "line 2: unknown map operation `plus` (one of add, sub, mul, div, idiv, mod, min, max, neg, abs, exp, log, eq, ne, lt, le, gt, ge, and, or, not, pow, cos, sin, sqrt)");
         assert_eq!(
             e("%a = input i6 [1]\n"),
             "line 1: expected a scalar type (i32, i64, f32, f64, bool), got `i6`"
@@ -585,7 +607,7 @@ output %f
         );
         assert_eq!(
             e("%a = frob\n"),
-            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup, topk)"
+            "line 1: unknown operation `frob` (input, const, map, select, reduce, cast, matmul, take, drop, ravel, table, transpose, rotate, reshape, lookup, topk, concat)"
         );
         assert_eq!(
             e("%a = const i64 [2 2] 1\n%b = rotate axis=0 1 %a\n"),

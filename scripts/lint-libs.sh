@@ -10,12 +10,14 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 xetal="$(scripts/xetal.sh)"
 scripts/xetal-extensions.sh >/dev/null   # Ffi.xtlm and Clock.xtl, which the facade imports
+scripts/xetal-ml.sh >/dev/null           # X_eTaL-ML's libraries, which ml/*.xtl import
 libs="$(scripts/libs.py path)"
-export XETAL_PATH="$libs:$root/extensions/gpu/lib:$root/work/xetal-extensions/lib:$root/work/xetal-extensions/extensions/clock/lib"
+ml="$(ls -d "$root"/work/xetal-ml/libs/*/src | paste -sd: -)"
+export XETAL_PATH="$libs:$root/extensions/gpu/lib:$root/work/xetal-extensions/lib:$root/work/xetal-extensions/extensions/clock/lib:$ml"
 deny=(-D correctness -D suspicious -D complexity -D style -D deprecated)
 fail=0; n=0
 for f in libs/*/src/*.xtl libs/*/src/*.xtlm libs/*/tests/*.xtl libs/*/demos/*.xtl \
-         extensions/gpu/lib/*.xtl extensions/gpu/lib/*.xtlm extensions/gpu/tests/*.xtl extensions/gpu/demos/*.xtl; do
+         extensions/gpu/lib/*.xtl extensions/gpu/lib/*.xtlm extensions/gpu/tests/*.xtl extensions/gpu/demos/*.xtl ml/*.xtl; do
   [ -e "$f" ] || continue
   n=$((n + 1))
   allow=()

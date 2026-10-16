@@ -19,6 +19,8 @@
 //! and the folding of static values runs the XIR interpreter on them,
 //! which reproduces the evaluator (its tests say so).
 
+pub mod cache;
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -50,6 +52,8 @@ pub struct Lowered {
     pub inputs: HashMap<String, Array>,
     pub printed: Vec<Printed>,
     pub lines: HashMap<ValueId, String>,
+    /// Why each host-evaluated input (and printed statement) was not lowered.
+    pub reasons: Vec<(String, String)>,
 }
 
 /// Lower the program in `path` (its libraries found beside it and on
@@ -63,13 +67,35 @@ pub fn lower_file(path: &Path) -> Result<Program> {
 /// evaluated by the pinned `xetal` and bound (see [`Lowered`]).
 pub fn lower_file_full(path: &Path) -> Result<Lowered> {
     let src = std::fs::read_to_string(path).map_err(|e| Error(format!("cannot read {}: {e}", path.display())))?;
-    let dir = path.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."));
+    let dir = match path.parent() {
+        Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
+        _ => PathBuf::from("."),
+    };
+    let dir = std::fs::canonicalize(&dir).unwrap_or(dir);
     lower_source(&path.to_string_lossy(), &src, &dir)
 }
 
 /// Lower `src`, reported as `name`; files are read relative to `dir`.
+/// A lowering is cached by everything it read (see [`cache`]).
 pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
     let loaded = xetal_program::load(name, src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
+    let cache_dir = cache::dir();
+    // The files []N_GET reads are part of the key; they are known only after
+    // translating, so the key is checked against a manifest of them.
+    let combined = loaded.sources.combined().to_string();
+    if let Some(cd) = &cache_dir {
+        let manifest = cd.join(format!("{}.files", cache::key(&combined, &[])));
+        if let Ok(list) = std::fs::read_to_string(&manifest) {
+            let files: Vec<(PathBuf, String)> = list
+                .lines()
+                .filter(|l| !l.is_empty())
+                .map(|l| cache::file_entry(Path::new(l)))
+                .collect();
+            if let Some(hit) = cache::read(cd, &cache::key(&combined, &files)) {
+                return Ok(hit);
+            }
+        }
+    }
     let mut t = Translator {
         program: Program::default(),
         types: Vec::new(),
@@ -78,8 +104,11 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
         names: HashMap::new(),
         inputs: HashMap::new(),
         printed: Vec::new(),
+        reasons: Vec::new(),
         lines: HashMap::new(),
         line: String::new(),
+        top: Env::default(),
+        files_read: Vec::new(),
     };
     let host = Host::new(dir, src);
     let mut env = Env::default();
@@ -98,12 +127,23 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
                         // Outside the subset: the evaluator makes the value, the
                         // device takes it as an input. Whatever the attempt pushed goes.
                         t.rollback(mark);
+                        if name.starts_with('%') {
+                            // A tuple pattern's hidden value: its parts, bound next
+                            // by name, fall back to the evaluator one by one.
+                            continue;
+                        }
                         let end = loaded.sources.locate(value.span.end);
-                        let a = host.value(name, end.offset, &reason.0)?;
-                        let ty = a.ty();
-                        let id = t.push(name, Some(ty), Op::Input)?;
-                        t.inputs.insert(t.program.value(id).name.clone(), a);
-                        V::Node(id)
+                        let end = statement_end(loaded.sources.written_text(end.index), end.offset);
+                        t.reasons.push((name.clone(), reason.0.clone()));
+                        match host.value(name, end, &reason.0)? {
+                            HostValue::Array(a) => {
+                                let ty = a.ty();
+                                let id = t.push(name, Some(ty), Op::Input)?;
+                                t.inputs.insert(t.program.value(id).name.clone(), a);
+                                V::Node(id)
+                            }
+                            HostValue::Text(s) => V::Str(s),
+                        }
                     }
                 };
                 // Data bound at the top level (weights, a batch) is written in
@@ -113,6 +153,7 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
                     v => v,
                 };
                 env = env.bind(name, v);
+                t.top = env.clone();
             }
             Item::Set { name, .. } => return err(format!("{name}!: a variable that changes is outside the subset")),
             Item::Eval(e) => {
@@ -124,7 +165,9 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
                     Err(reason) => {
                         t.rollback(mark);
                         let (start, end) = (loaded.sources.locate(e.span.start), loaded.sources.locate(e.span.end));
-                        let text = host.printed(start.offset, end.offset, &reason.0)?;
+                        let end_offset = statement_end(loaded.sources.written_text(end.index), end.offset);
+                        let text = host.printed(start.offset, end_offset, &reason.0)?;
+                        t.reasons.push((t.line.clone(), reason.0.clone()));
                         t.printed.push(Printed::Host(text));
                         continue;
                     }
@@ -149,12 +192,21 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
     if t.program.outputs.is_empty() {
         return err("the program prints nothing the device could compute");
     }
-    Ok(Lowered {
+    let lowered = Lowered {
         program: t.program,
         inputs: t.inputs,
         printed: t.printed,
         lines: t.lines,
-    })
+        reasons: t.reasons,
+    };
+    if let Some(cd) = &cache_dir {
+        let files: Vec<(PathBuf, String)> = t.files_read.iter().map(|p| cache::file_entry(p)).collect();
+        let _ = std::fs::create_dir_all(cd);
+        let manifest: String = t.files_read.iter().map(|p| p.to_string_lossy().into_owned() + "\n").collect();
+        let _ = std::fs::write(cd.join(format!("{}.files", cache::key(&combined, &[]))), manifest);
+        cache::write(cd, &cache::key(&combined, &files), &lowered);
+    }
+    Ok(lowered)
 }
 
 /// Lower one function, given as its source text (`{ x w -> ... }`), for
@@ -175,8 +227,11 @@ pub fn lower_function(function: &str, params: &[(String, Ty)], dir: &Path, uses:
         names: HashMap::new(),
         inputs: HashMap::new(),
         printed: Vec::new(),
+        reasons: Vec::new(),
         lines: HashMap::new(),
         line: "the accelerated function".into(),
+        top: Env::default(),
+        files_read: Vec::new(),
     };
     for item in &loaded.program.items {
         match item {
@@ -208,7 +263,36 @@ pub fn lower_function(function: &str, params: &[(String, Ty)], dir: &Path, uses:
         inputs: HashMap::new(),
         printed,
         lines: t.lines,
+        reasons: Vec::new(),
     })
+}
+
+/// The end of the statement containing `offset`: the end of its line,
+/// or of the last line of a brace block it opens (a lambda over lines).
+fn statement_end(text: &str, offset: usize) -> usize {
+    let offset = offset.min(text.len());
+    let start = text[..offset].rfind('\n').map_or(0, |n| n + 1);
+    let mut depth = 0i32;
+    let mut end = start;
+    for (i, c) in text[start..].char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => depth -= 1,
+            '\n' if depth <= 0 && start + i >= offset => {
+                end = start + i;
+                return end;
+            }
+            _ => {}
+        }
+        end = start + i + c.len_utf8();
+    }
+    end
+}
+
+/// What the evaluator gave for a binding: an array, or text.
+enum HostValue {
+    Array(Array),
+    Text(String),
 }
 
 /// The source line at `offset` of `text`, prefixed with its number.
@@ -270,7 +354,9 @@ impl Host {
             .arg(temp.file_name().expect("a file name"))
             .current_dir(&self.dir)
             .output();
-        let _ = std::fs::remove_file(&temp);
+        if std::env::var_os("XETAL_GPU_KEEP_HOST").is_none() {
+            let _ = std::fs::remove_file(&temp);
+        }
         let out = out.map_err(|e| Error(format!("cannot run {}: {e}", xetal.display())))?;
         if !out.status.success() {
             return err(format!(
@@ -282,8 +368,9 @@ impl Host {
     }
 
     /// The value of `name` after the statements up to `end`: its shape
-    /// and its items, printed by the evaluator and read back.
-    fn value(&self, name: &str, end: usize, reason: &str) -> Result<Array> {
+    /// and its items, printed by the evaluator and read back (text, when
+    /// the items are not numbers).
+    fn value(&self, name: &str, end: usize, reason: &str) -> Result<HostValue> {
         let prefix = &self.src[..end.min(self.src.len())];
         let lines = self.run(&format!("{prefix}\ns_hape {name}\nr_avel {name}\n"), reason)?;
         let n = lines.len();
@@ -297,7 +384,12 @@ impl Host {
         let items: Vec<&str> = lines[n - 1].split_whitespace().collect();
         let shape = Shape(dims);
         if items.iter().all(|t| t.parse::<i64>().is_ok()) {
-            Ok(Array::ints(shape, items.iter().map(|t| t.parse().unwrap()).collect()))
+            Ok(HostValue::Array(Array::ints(
+                shape,
+                items.iter().map(|t| t.parse().unwrap()).collect(),
+            )))
+        } else if items.iter().any(|t| t.parse::<f64>().is_err() && *t != "inf" && *t != "-inf") {
+            Ok(HostValue::Text(lines[n - 1].clone()))
         } else {
             let floats: Vec<f64> = items
                 .iter()
@@ -309,14 +401,16 @@ impl Host {
                         .map_err(|_| Error(format!("{name}: the evaluator printed `{t}`, not a number"))),
                 })
                 .collect::<Result<_>>()?;
-            Ok(Array::floats(shape, floats))
+            Ok(HostValue::Array(Array::floats(shape, floats)))
         }
     }
 
     /// What the statement from `start` to `end` prints: the program
     /// run with and without it, the difference.
     fn printed(&self, start: usize, end: usize, reason: &str) -> Result<String> {
-        let before = &self.src[..start.min(self.src.len())];
+        let start = start.min(self.src.len());
+        let start = self.src[..start].rfind('\n').map_or(0, |n| n + 1);
+        let before = &self.src[..start];
         let with = &self.src[..end.min(self.src.len())];
         let n = self.run(before, reason)?.len();
         let lines = self.run(with, reason)?;
@@ -416,10 +510,15 @@ struct Translator {
     names: HashMap<String, usize>,
     inputs: HashMap<String, Array>,
     printed: Vec<Printed>,
+    reasons: Vec<(String, String)>,
     /// The X_eTaL line each value came from.
     lines: HashMap<ValueId, String>,
     /// The line of the statement being translated.
     line: String,
+    /// The top-level bindings so far: what a definition's body sees.
+    top: Env,
+    /// The files `[]N_GET` read, for the cache's key.
+    files_read: Vec<PathBuf>,
 }
 
 impl Translator {
@@ -498,6 +597,15 @@ impl Translator {
     }
 
     /// A value as a node of the program (a static one written in).
+    /// The rank of a value's array; no rank for what is not an array.
+    fn rank_of(&self, v: &V) -> usize {
+        match v {
+            V::Static(a, _) => a.shape.rank(),
+            V::Node(id) => self.types[id.0].shape.rank(),
+            _ => usize::MAX,
+        }
+    }
+
     fn node(&mut self, v: V, base: &str) -> Result<ValueId> {
         match v {
             V::Node(id) => Ok(id),
@@ -582,8 +690,9 @@ impl Translator {
                 let Some(def) = self.globals.get(name).cloned() else {
                     return err(format!("{name} is not defined (is its library on XETAL_PATH?)"));
                 };
-                // A definition sees the globals, not the caller's locals.
-                self.eval(&def, &Env::default())
+                // A definition sees the globals and the top-level bindings, not the caller's locals.
+                let top = self.top.clone();
+                self.eval(&def, &top)
             }
             Kind::Prim(name) => Ok(V::Prim(Prim {
                 name: name.clone(),
@@ -678,6 +787,27 @@ impl Translator {
                 return Ok(V::Prim(p));
             }
         }
+        if p.name == "e_ach" && matches!(x, V::Fun(_) | V::Prim(_) | V::Waiting { .. }) {
+            return Ok(V::Prim(Prim {
+                name: "e_ach".into(),
+                axes: Vec::new(),
+                funs: vec![Prim {
+                    name: "%each".into(),
+                    axes: Vec::new(),
+                    funs: Vec::new(),
+                }],
+            }))
+            .map(|v| match v {
+                V::Prim(mut q) => {
+                    q.funs.clear();
+                    V::Waiting {
+                        prim: q,
+                        left: Box::new(x),
+                    }
+                }
+                v => v,
+            });
+        }
         if p.name == "p_ower" && matches!(x, V::Fun(_) | V::Prim(_) | V::Waiting { .. }) {
             // `'f p_ower`: the function kept until the count and the data arrive.
             return Ok(V::Power {
@@ -698,11 +828,15 @@ impl Translator {
     fn monadic(&mut self, p: &Prim, x: V) -> Result<V> {
         match p.name.as_str() {
             "u_se<" => Ok(V::Unit),
-            "n_eg" | "a_bs" | "e_xp" | "l_og" => {
+            "p_i" => Ok(V::Static(Array::floats(Shape::scalar(), vec![std::f64::consts::PI]), false)),
+            "n_eg" | "a_bs" | "e_xp" | "l_og" | "c_os" | "s_in" | "s_qrt" => {
                 let op = match p.name.as_str() {
                     "n_eg" => MapOp::Neg,
                     "a_bs" => MapOp::Abs,
                     "e_xp" => MapOp::Exp,
+                    "c_os" => MapOp::Cos,
+                    "s_in" => MapOp::Sin,
+                    "s_qrt" => MapOp::Sqrt,
                     _ => MapOp::Log,
                 };
                 if let V::Static(a, true) = &x {
@@ -711,7 +845,7 @@ impl Translator {
                     }
                 }
                 let id = self.node(x, "x")?;
-                let (id, _) = self.float_if_needed(id, matches!(op, MapOp::Exp | MapOp::Log))?;
+                let (id, _) = self.float_if_needed(id, matches!(op, MapOp::Exp | MapOp::Log | MapOp::Cos | MapOp::Sin | MapOp::Sqrt))?;
                 let base = p.name.replace('_', "");
                 Ok(V::Node(self.push(&base, None, Op::Map { op, args: vec![id] })?))
             }
@@ -739,19 +873,37 @@ impl Translator {
                 }
                 other => err(format!("f_loat of a {}", other.what())),
             },
-            "f_loor" => {
-                let id = self.node(x, "x")?;
-                if self.ty(id).scalar.is_int() {
-                    return Ok(V::Node(id));
-                }
-                Ok(V::Node(self.push(
-                    "fl",
-                    None,
-                    Op::Cast {
+            "f_loor" => match x {
+                V::Static(a, shapey) if a.scalar.is_int() => Ok(V::Static(a, shapey)),
+                V::Static(a, _) => Ok(V::Static(
+                    self.fold("fl", vec![a], |ids| Op::Cast {
                         op: xetal_gpu_xir::ir::CastOp { to: Scalar::I64 },
-                        arg: id,
-                    },
-                )?))
+                        arg: ids[0],
+                    })?,
+                    false,
+                )),
+                x => {
+                    let id = self.node(x, "x")?;
+                    if self.ty(id).scalar.is_int() {
+                        return Ok(V::Node(id));
+                    }
+                    Ok(V::Node(self.push(
+                        "fl",
+                        None,
+                        Op::Cast {
+                            op: xetal_gpu_xir::ir::CastOp { to: Scalar::I64 },
+                            arg: id,
+                        },
+                    )?))
+                }
+            },
+            "s_hape" if matches!(x, V::Str(_)) => {
+                let V::Str(s) = x else { unreachable!() };
+                Ok(V::Static(Array::ints(Shape(vec![1]), vec![s.chars().count() as i64]), true))
+            }
+            "t_ally" if matches!(x, V::Str(_)) => {
+                let V::Str(s) = x else { unreachable!() };
+                Ok(V::Static(Array::ints(Shape::scalar(), vec![s.chars().count() as i64]), true))
             }
             "s_hape" => {
                 let s = self.shape_of(&x)?;
@@ -824,6 +976,7 @@ impl Translator {
             "[]N_GET" => match x {
                 V::Str(path) => {
                     let full = self.dir.join(&path);
+                    self.files_read.push(full.clone());
                     std::fs::read_to_string(&full)
                         .map(V::Str)
                         .map_err(|e| Error(format!("[]N_GET: cannot read {}: {e}", full.display())))
@@ -833,6 +986,19 @@ impl Translator {
             "r_/" => {
                 let f = p.funs.first().ok_or_else(|| Error("r_/ needs a function: '+ r_/".into()))?;
                 let op = reduce_op(&f.name)?;
+                let x = self.bool_to_int(x)?;
+                if let V::Static(a, true) = &x {
+                    if a.shape.rank() == 1 && a.scalar.is_int() {
+                        return Ok(V::Static(
+                            self.fold("r", vec![a.clone()], |ids| Op::Reduce {
+                                op,
+                                arg: ids[0],
+                                axis: None,
+                            })?,
+                            true,
+                        ));
+                    }
+                }
                 let id = self.node(x, "x")?;
                 let rank = self.ty(id).shape.rank();
                 let axis = match p.axes.as_slice() {
@@ -840,7 +1006,24 @@ impl Translator {
                     [] => Some(1),
                     [a] => Some(*a as usize),
                     axes if axes.len() == rank => None,
-                    axes => return err(format!("r_/ over axes {axes:?} is outside the subset (one axis, or all of them)")),
+                    axes => {
+                        // Several axes: each folded in turn, the highest first so the others keep their numbers.
+                        let mut axes: Vec<usize> = axes.iter().map(|a| *a as usize).collect();
+                        axes.sort_unstable();
+                        let mut cur = id;
+                        for a in axes.into_iter().rev() {
+                            cur = self.push(
+                                &format!("{}r", op.name()),
+                                None,
+                                Op::Reduce {
+                                    op,
+                                    arg: cur,
+                                    axis: Some(a),
+                                },
+                            )?;
+                        }
+                        return Ok(V::Node(cur));
+                    }
                 };
                 let axis = if axis == Some(1) && rank == 1 { None } else { axis };
                 Ok(V::Node(self.push(
@@ -876,6 +1059,12 @@ impl Translator {
                     ">" => MapOp::Gt,
                     _ => MapOp::Ge,
                 };
+                // A Bool counts as 0 or 1 in arithmetic, as X_eTaL has it (a mask times a value).
+                let (l, r) = if !matches!(op.kind(), xetal_gpu_xir::ir::MapKind::EqCompare | xetal_gpu_xir::ir::MapKind::Logic) {
+                    (self.bool_to_int(l)?, self.bool_to_int(r)?)
+                } else {
+                    (l, r)
+                };
                 // A literal adapts to the type it meets: an Int beside a Float is a Float (`x m_ax 0`).
                 let (l, r) = self.adapt_literal(l, r)?;
                 // Int arithmetic on shape-like values (shapes, counts) folds; data goes to the device.
@@ -904,7 +1093,19 @@ impl Translator {
                 let b = self.node(r, "r")?;
                 Ok(V::Node(self.push(op.name(), None, Op::Map { op, args: vec![a, b] })?))
             }
-            "^" => err("^ (power) is not in the IR yet"),
+            "^" => {
+                let (l, r) = (self.made_float(l)?, self.made_float(r)?);
+                let a = self.node(l, "l")?;
+                let b = self.node(r, "r")?;
+                Ok(V::Node(self.push(
+                    "pow",
+                    None,
+                    Op::Map {
+                        op: MapOp::Pow,
+                        args: vec![a, b],
+                    },
+                )?))
+            }
             "r_eshape" => {
                 let dims: Vec<usize> = self.ints_of(&l, "r_eshape")?.into_iter().map(|d| d.max(0) as usize).collect();
                 match r {
@@ -926,20 +1127,49 @@ impl Translator {
                     other => err(format!("r_eshape of a {}", other.what())),
                 }
             }
-            "c_at" => match (&l, &r) {
-                (V::Static(a, _), V::Static(b, _))
-                    if a.scalar.is_int() && b.scalar.is_int() && a.shape.rank() <= 1 && b.shape.rank() <= 1 =>
-                {
-                    let (Data::Int(x), Data::Int(y)) = (&a.data, &b.data) else {
-                        unreachable!()
-                    };
-                    let mut v = x.clone();
-                    v.extend_from_slice(y);
-                    let n = v.len();
-                    Ok(V::Static(Array::ints(Shape(vec![n]), v), true))
+            "c_at" => {
+                let axis = axis.unwrap_or(1);
+                match (&l, &r) {
+                    // Shapes and counts (Int vectors known now) stay shape-like.
+                    (V::Static(a, sa), V::Static(b, sb))
+                        if a.scalar.is_int() && b.scalar.is_int() && a.shape.rank() <= 1 && b.shape.rank() <= 1 && (*sa || *sb) =>
+                    {
+                        let (Data::Int(x), Data::Int(y)) = (&a.data, &b.data) else {
+                            unreachable!()
+                        };
+                        let mut v = x.clone();
+                        v.extend_from_slice(y);
+                        let n = v.len();
+                        Ok(V::Static(Array::ints(Shape(vec![n]), v), true))
+                    }
+                    // Data known now joins now (weights with their bias row); the rest on the device.
+                    (V::Static(_, _), V::Static(_, _)) => {
+                        let (l, r) = self.adapt_literal(l, r)?;
+                        let (V::Static(a, _), V::Static(b, _)) = (l, r) else {
+                            unreachable!()
+                        };
+                        Ok(V::Static(
+                            self.fold("cat", vec![a, b], |ids| Op::Concat {
+                                axis,
+                                a: ids[0],
+                                b: ids[1],
+                            })?,
+                            false,
+                        ))
+                    }
+                    // An empty side known now (a loop's first accumulator) adds
+                    // nothing: the other side is the result, and no empty
+                    // constant reaches the device.
+                    (V::Static(a, _), V::Node(_)) if a.shape.is_empty() && a.shape.rank() == self.rank_of(&r) => Ok(r),
+                    (V::Node(_), V::Static(b, _)) if b.shape.is_empty() && b.shape.rank() == self.rank_of(&l) => Ok(l),
+                    _ => {
+                        let (l, r) = self.adapt_literal(l, r)?;
+                        let a = self.node(l, "a")?;
+                        let b = self.node(r, "b")?;
+                        Ok(V::Node(self.push("cat", None, Op::Concat { axis, a, b })?))
+                    }
                 }
-                _ => err("c_at of arrays the device computes is not in the IR yet (c_at of shapes and counts folds)"),
-            },
+            }
             "t_ake" | "d_rop" => {
                 let n = self.int_of(&l, &p.name)?;
                 let axis = axis.unwrap_or(1);
@@ -1035,6 +1265,53 @@ impl Translator {
                 Ok(V::Node(self.push("tb", None, Op::Table { op, a, b })?))
             }
             "u_se<" => Ok(V::Unit),
+            "e_ach" => {
+                // `'f e_ach v`: f on each item of v, known now (r_ange n, a strand); each
+                // result a single value, the results a vector (a nested result is not an array).
+                let f = l;
+                let V::Static(items, _) = r else {
+                    return err("e_ach over a value the device computes is outside the subset (its items must be known now)");
+                };
+                if items.shape.rank() != 1 {
+                    return err("e_ach over other than a vector is outside the subset");
+                }
+                let n = items.shape.len();
+                let mut acc: Option<V> = None;
+                for i in 0..n {
+                    let item = match &items.data {
+                        Data::Int(v) => Array::ints(Shape::scalar(), vec![v[i]]),
+                        Data::Float(v) => Array::floats(Shape::scalar(), vec![v[i]]),
+                        Data::Bool(_) => return err("e_ach over Bools is outside the subset"),
+                    };
+                    let shapey = items.scalar.is_int();
+                    let v = self.apply(f.clone(), V::Static(item, shapey))?;
+                    let rank = self.shape_of(&v)?.rank();
+                    if rank != 0 {
+                        return err("e_ach whose results are arrays gives a nested array, which the device cannot (outside the subset)");
+                    }
+                    acc = Some(match acc {
+                        None => v,
+                        Some(prev) => {
+                            let (prev, v) = self.adapt_literal(prev, v)?;
+                            let a = self.node(prev, "each")?;
+                            let b = self.node(v, "each")?;
+                            V::Node(self.push("each", None, Op::Concat { axis: 1, a, b })?)
+                        }
+                    });
+                }
+                match acc {
+                    Some(V::Node(id)) if n == 1 => Ok(V::Node(self.push(
+                        "each",
+                        None,
+                        Op::Reshape {
+                            shape: Shape(vec![1]),
+                            arg: id,
+                        },
+                    )?)),
+                    Some(v) => Ok(v),
+                    None => err("e_ach over nothing"),
+                }
+            }
             "p_ower" => err("p_ower without its function"),
             other => err(format!("`{other}` is outside the subset the device runs")),
         }
@@ -1109,6 +1386,28 @@ impl Translator {
         Ok((a, b))
     }
 
+    /// A Bool value as an Int (0 or 1); anything else as it is.
+    fn bool_to_int(&mut self, v: V) -> Result<V> {
+        match v {
+            V::Static(a, _) if a.scalar == Scalar::Bool => Ok(V::Static(
+                self.fold("b", vec![a], |ids| Op::Cast {
+                    op: xetal_gpu_xir::ir::CastOp { to: Scalar::I64 },
+                    arg: ids[0],
+                })?,
+                false,
+            )),
+            V::Node(id) if self.ty(id).scalar == Scalar::Bool => Ok(V::Node(self.push(
+                "b",
+                None,
+                Op::Cast {
+                    op: xetal_gpu_xir::ir::CastOp { to: Scalar::I64 },
+                    arg: id,
+                },
+            )?)),
+            v => Ok(v),
+        }
+    }
+
     /// A value as a Float: a static one cast now, a device one by a kernel.
     fn made_float(&mut self, v: V) -> Result<V> {
         match v {
@@ -1181,7 +1480,7 @@ fn scalar_of(a: Array, shapey: bool) -> Result<V> {
 }
 
 fn takes_functions(name: &str) -> bool {
-    matches!(name, "r_/" | "i_nner" | "t_able" | "s_\\" | "p_ower")
+    matches!(name, "r_/" | "i_nner" | "t_able" | "s_\\" | "p_ower" | "e_ach")
 }
 
 fn is_dyadic(name: &str) -> bool {
@@ -1214,6 +1513,7 @@ fn is_dyadic(name: &str) -> bool {
             | "u_se<"
             | "i_ndexOf"
             | "m_atch"
+            | "e_ach"
     )
 }
 

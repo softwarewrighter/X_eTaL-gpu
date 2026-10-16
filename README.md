@@ -67,11 +67,17 @@ X_eTaL's own crates and builds the XIR program the device runs. The
 checks prove each lowered program gives the evaluator's output,
 exactly on the interpreter and within f32's tolerance on the device.
 The hand-written `.xir` twins that stood in until then were the
-translator's oracle and are gone. X_eTaL-ML's benchmarks and world
-model still run through a script that writes their XIR from the
-definitions; they move to their own source next (the step
-models-from-source). The lowering belongs to X_eTaL in the end (asks
-G1 and G2), and what is built here moves there when it does.
+translator's oracle and are gone. Since 2026-10-16 X_eTaL-ML's own
+programs run the same way, unchanged: its four benchmarks, the world
+model, the digit reader over 1,000 MNIST digits, the learned
+denoiser and the tiny GPT over 1,000 names, each lowered from its
+source in the pinned X_eTaL-ML and giving the evaluator's output on
+the M1 Max ([`docs/ml-results.md`](docs/ml-results.md)); a
+statement the device cannot take (a sort, a text, a loop over calls)
+is evaluated by `xetal` and its value bound. The same workloads
+written through the macro `gp:a_ccel<` are in [`ml/`](ml/README.md).
+The lowering belongs to X_eTaL in the end (asks G1 and G2), and what
+is built here moves there when it does.
 
 ## Status
 
@@ -184,9 +190,11 @@ starts to pay, which the model sagas are for.
 The full tables: the M1 Max's in `components/runtime/README.md`,
 [`extensions/gpu/README.md`](extensions/gpu/README.md) and
 [`docs/ml-results.md`](docs/ml-results.md) (X_eTaL-ML's benchmarks
-and its world model); the RTX 5060 Ti's in
-[`docs/rtx5060-results.md`](docs/rtx5060-results.md) and
-[`docs/rtx5060-ml-results.md`](docs/rtx5060-ml-results.md); the
+and models, from their own source); the RTX 5060 Ti's in
+[`docs/rtx5060-results.md`](docs/rtx5060-results.md),
+[`docs/rtx5060-ml-results.md`](docs/rtx5060-ml-results.md) and
+[`docs/linux-nvidia-results.md`](docs/linux-nvidia-results.md) (the
+thirteen demos lowered from source, checked on the RTX 5060 Ti); the
 session comparisons in [`docs/m1max-session-results.md`](docs/m1max-session-results.md)
 and [`docs/rtx5060-session-results.md`](docs/rtx5060-session-results.md)
 ([how they are made](docs/gpu-sessions.md)).
@@ -222,7 +230,7 @@ target/release/xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0   #
 just sizes                           # a million-item reduction: evaluator, interpreter, GPU, timed
 just xetal-x && just gpu-ext         # X_eTaL-extensions' xetal-x and the gpu extension beside it
 just offload                         # X_eTaL calling the GPU itself: a 512 by 512 product, timed
-just ml-bench                        # X_eTaL-ML's benchmarks on every device, docs/ml-results.md
+just ml-bench                        # X_eTaL-ML's workloads from source on every device, docs/ml-results.md
 ```
 
 X_eTaL-extensions is pinned the same way (`XETAL_EXTENSIONS_COMMIT`,
@@ -234,8 +242,9 @@ under it.
 
 X_eTaL-ML is pinned too (`XETAL_ML_COMMIT`, cloned into
 `work/xetal-ml/` by `scripts/xetal-ml.sh`): its benchmarks and models
-run here on the devices, at its ask (`just ml-bench` writes
-[`docs/ml-results.md`](docs/ml-results.md)).
+run here on the devices from their own source, at its ask (`just
+ml-bench` writes [`docs/ml-results.md`](docs/ml-results.md); the
+`--check` form is in the gate).
 
 X_eTaL is not tracked here: `XETAL_COMMIT` pins a known-good commit
 (one line, the full SHA), `just xetal` clones X_eTaL into `work/xetal/`

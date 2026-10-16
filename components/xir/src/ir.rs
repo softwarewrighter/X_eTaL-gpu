@@ -132,10 +132,15 @@ pub enum MapOp {
     And,
     Or,
     Not,
+    /// `a ^ b` on Floats (X_eTaL-ML's `^ 0.5`, `^ 2.0`).
+    Pow,
+    Cos,
+    Sin,
+    Sqrt,
 }
 
 impl MapOp {
-    pub const ALL: [MapOp; 21] = [
+    pub const ALL: [MapOp; 25] = [
         MapOp::Add,
         MapOp::Sub,
         MapOp::Mul,
@@ -157,6 +162,10 @@ impl MapOp {
         MapOp::And,
         MapOp::Or,
         MapOp::Not,
+        MapOp::Pow,
+        MapOp::Cos,
+        MapOp::Sin,
+        MapOp::Sqrt,
     ];
 
     pub fn name(self) -> &'static str {
@@ -182,6 +191,10 @@ impl MapOp {
             MapOp::And => "and",
             MapOp::Or => "or",
             MapOp::Not => "not",
+            MapOp::Pow => "pow",
+            MapOp::Cos => "cos",
+            MapOp::Sin => "sin",
+            MapOp::Sqrt => "sqrt",
         }
     }
 
@@ -191,7 +204,7 @@ impl MapOp {
 
     pub fn arity(self) -> usize {
         match self {
-            MapOp::Neg | MapOp::Abs | MapOp::Exp | MapOp::Log | MapOp::Not => 1,
+            MapOp::Neg | MapOp::Abs | MapOp::Exp | MapOp::Log | MapOp::Not | MapOp::Cos | MapOp::Sin | MapOp::Sqrt => 1,
             _ => 2,
         }
     }
@@ -200,7 +213,7 @@ impl MapOp {
     pub fn kind(self) -> MapKind {
         match self {
             MapOp::Add | MapOp::Sub | MapOp::Mul | MapOp::Min | MapOp::Max | MapOp::Neg | MapOp::Abs => MapKind::Num,
-            MapOp::Div | MapOp::Exp | MapOp::Log => MapKind::Float,
+            MapOp::Div | MapOp::Exp | MapOp::Log | MapOp::Pow | MapOp::Cos | MapOp::Sin | MapOp::Sqrt => MapKind::Float,
             MapOp::IDiv | MapOp::Mod => MapKind::Int,
             MapOp::Eq | MapOp::Ne => MapKind::EqCompare,
             MapOp::Lt | MapOp::Le | MapOp::Gt | MapOp::Ge => MapKind::OrdCompare,
@@ -320,6 +333,16 @@ impl Const {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// One zero of the same kind: what a buffer holds for an empty
+    /// constant (a buffer has at least one item).
+    pub fn empty_fill(&self) -> Const {
+        match self {
+            Const::Int(_) => Const::Int(vec![0]),
+            Const::Float(_) => Const::Float(vec![0.0]),
+            Const::Bool(_) => Const::Bool(vec![false]),
+        }
+    }
 }
 
 /// A value's position in the program.
@@ -370,6 +393,10 @@ pub enum Op {
     /// a batch of rows of an embedding table. Along a later axis the
     /// index is a vector or a single value, as X_eTaL has it.
     Lookup { axis: usize, idx: ValueId, arg: ValueId },
+    /// `a c_at_k b`: b's items after a's along axis k (1 the first, the
+    /// default); the other axes agree. A single value joins a vector
+    /// as one item.
+    Concat { axis: usize, a: ValueId, b: ValueId },
     /// `k ac:t_opk a` along axis k2 (the last of a matrix, X_eTaL-ML's
     /// `sm:t_op`): a Bool mask, 1 where an item is among its line's k
     /// largest, the largest taken out k times with its ties (so the
@@ -394,6 +421,7 @@ impl Op {
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],
             Op::Matmul { a, b } | Op::Table { a, b, .. } => vec![*a, *b],
             Op::Lookup { idx, arg, .. } => vec![*idx, *arg],
+            Op::Concat { a, b, .. } => vec![*a, *b],
             Op::Take { arg, .. }
             | Op::Drop { arg, .. }
             | Op::Ravel { arg }

@@ -73,8 +73,8 @@ fn dispatch(args: &[String]) -> Result<()> {
         "print" | "lower" => {
             let loaded = load(args.get(1))?;
             print!("{}", text::print(&loaded.checked.program));
-            for (name, a) in &loaded.inputs {
-                eprintln!("input %{name} {}: evaluated by xetal (a statement outside the subset)", a.ty());
+            for (what, reason) in &loaded.reasons {
+                eprintln!("evaluated by xetal: {what}: {reason}");
             }
             Ok(())
         }
@@ -305,6 +305,7 @@ struct Loaded {
     inputs: HashMap<String, Array>,
     printed: Vec<Printed>,
     lines: HashMap<ValueId, String>,
+    reasons: Vec<(String, String)>,
 }
 
 /// The program in FILE: an `.xir` parsed, an `.xtl` lowered from
@@ -320,6 +321,7 @@ fn load(path: Option<&String>) -> Result<Loaded> {
             inputs: lowered.inputs,
             printed: lowered.printed,
             lines: lowered.lines,
+            reasons: lowered.reasons,
         });
     }
     let src = std::fs::read_to_string(path).map_err(|e| Error(format!("{path}: {e}")))?;
@@ -331,6 +333,7 @@ fn load(path: Option<&String>) -> Result<Loaded> {
         inputs: HashMap::new(),
         printed,
         lines: HashMap::new(),
+        reasons: Vec::new(),
     })
 }
 
@@ -360,6 +363,7 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Reshape { shape, arg } => format!("reshape {shape} {}", name(*arg)),
         Op::Lookup { axis, idx, arg } => format!("lookup axis={axis} {} {}", name(*idx), name(*arg)),
         Op::TopK { k, axis, arg } => format!("topk {k} axis={axis} {}", name(*arg)),
+        Op::Concat { axis, a, b } => format!("concat axis={axis} {} {}", name(*a), name(*b)),
         Op::Ravel { arg } => format!("ravel {}", name(*arg)),
         Op::Table { op, a, b } => format!("table {op} {} {}", name(*a), name(*b)),
         Op::Transpose { perm: None, arg } => format!("transpose {}", name(*arg)),
