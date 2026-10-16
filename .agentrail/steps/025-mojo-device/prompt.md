@@ -1,0 +1,1 @@
+Saga gpu-mojo, step 4: Mojo as a device of the tool and of the Gpu extension (xetal-gpu run FILE.xtl --device mojo, devices listing it, gp:a_ccel< and the facade choosing it), scripts/check-equiv.sh running every demo on both backends against the evaluator when the toolchain is present, --time giving the kernels' own time through Mojo as it does through OpenCL

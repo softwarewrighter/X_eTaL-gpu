@@ -1,0 +1,8 @@
+number = 23
+slug = "mojo-ints-shapes"
+status = "pending"
+description = "Saga gpu-mojo, step 2: Ints (i64, or i32 as the schedule's int asks) and Bool..."
+role = "production"
+context_files = []
+created_at = "2026-10-16T09:57:34"
+commits = []

@@ -1,0 +1,8 @@
+number = 26
+slug = "mojo-results"
+status = "pending"
+description = "Saga gpu-mojo, step 5: the results by GPU and backend: the demos and X_eTaL-M..."
+role = "production"
+context_files = []
+created_at = "2026-10-16T09:57:34"
+commits = []

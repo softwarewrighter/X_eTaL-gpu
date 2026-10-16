@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-16
+
+- 10:30 `plan` Saga 12, gpu-mojo, queued after models-from-source and before gpu-pipeline (the user, 2026-10-16, on a blog agent's notes: it ran the saxpy demo through `xetal-gpu lower` and `../modular-fork/rust-demo`'s Mojo emitter to Metal on the M1 Max with nothing written by hand): a Mojo backend of the same IR beside OpenCL, ported from rust-demo into `components/mojo`, in five steps following the gaps the agent found (f32 elementwise and reductions; Ints, Bool, cast, shapes and axes; the structural operations; `--device mojo` in the tool and the extension; results per GPU and backend). The docs will say that Mojo on NVIDIA goes through the CUDA driver, so the without-CUDA claim rests on OpenCL, and that the toolchain is pinned under `work/` and skipped loudly when absent.
+
 ## 2026-10-14
 
 - 09:15 `chore` Save the completed Linux NVIDIA documentation step and its recorded full-gate failure; resume models-from-source next.

@@ -1,0 +1,8 @@
+number = 22
+slug = "mojo-emitter"
+status = "pending"
+description = "Saga gpu-mojo, step 1 (the blog agent's proposal, the user, 2026-10-16): a Mo..."
+role = "production"
+context_files = []
+created_at = "2026-10-16T09:57:34"
+commits = []

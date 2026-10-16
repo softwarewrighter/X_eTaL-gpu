@@ -1,0 +1,8 @@
+number = 24
+slug = "mojo-structure"
+status = "pending"
+description = "Saga gpu-mojo, step 3: matmul (tiled under the schedule's tile), transpose, l..."
+role = "production"
+context_files = []
+created_at = "2026-10-16T09:57:34"
+commits = []
