@@ -39,6 +39,13 @@ in `docs/rtx5060-results.md` and `docs/rtx5060-ml-results.md`.
 The 2026-10-14 source-demo verification is recorded in
 `docs/linux-nvidia-results.md`: all 13 demos pass on the interpreter
 and the RTX 5060 Ti with tile sizes 16 and 8.
+The 2026-10-16 Arch rerun passes the full gate and all eight ML
+programs from source (the denoiser's first self-check remains
+interpreter-only). Updated RTX ML, binary and session reports retain
+the world-model counts 1897/348; refreshed-input inference still loses
+to OpenBLAS at every tested batch size. The five supported Mojo demos
+also pass through the CUDA driver; `docs/rtx5060-mojo-results.md`
+records their outputs, cold builds, first calls and repeated calls.
 
 Source: `docs/research7.txt`, the user's planning conversation
 (archival, NOT normative), which places the work in three

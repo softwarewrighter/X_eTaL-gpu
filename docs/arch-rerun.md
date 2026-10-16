@@ -45,8 +45,8 @@ which numbers moved.
 ## 3. The session and binary-binding benchmarks
 
 ```sh
-just bench-binary --require-device
-just bench-session --require-device
+just binary-bench --require-device
+just session-bench --require-device
 ```
 
 Both now take their fixed world-model program from

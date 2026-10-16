@@ -1,0 +1,8 @@
+number = 23
+slug = "arch-nvidia-rerun"
+status = "in-progress"
+description = "Execute docs/arch-rerun.md on RTX 5060 Ti: gate, source-model timings, sessio..."
+role = "production"
+context_files = []
+created_at = "2026-10-16T15:22:17"
+commits = []

@@ -1,4 +1,4 @@
-number = 23
+number = 24
 slug = "mojo-ints-shapes"
 status = "pending"
 description = "Saga gpu-mojo, step 2: Ints (i64, or i32 as the schedule's int asks) and Bool..."

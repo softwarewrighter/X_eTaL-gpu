@@ -1,4 +1,4 @@
-number = 24
+number = 25
 slug = "mojo-structure"
 status = "pending"
 description = "Saga gpu-mojo, step 3: matmul (tiled under the schedule's tile), transpose, l..."

@@ -183,9 +183,9 @@ give the counts 1897 and 348.
 
 | World model, batch | NumPy on the Mac | Apple M1 Max | NumPy on the Arch host | RTX 5060 Ti |
 | ------------------ | ---------------- | ------------ | ---------------------- | ----------- |
-| 1 state | 0.02 ms | 1.54 ms (0.01 times) | 0.07 ms | 0.21 ms (0.35 times) |
-| 1,936 states | 1.29 ms | 2.51 ms (0.51 times) | 1.94 ms | 2.97 ms (0.65 times) |
-| 8,192 states | 4.68 ms | 5.50 ms (0.85 times) | 8.64 ms | 10.53 ms (0.82 times) |
+| 1 state | 0.02 ms | 1.54 ms (0.01 times) | 0.08 ms | 0.24 ms (0.32 times) |
+| 1,936 states | 1.29 ms | 2.51 ms (0.51 times) | 1.95 ms | 4.89 ms (0.40 times) |
+| 8,192 states | 4.68 ms | 5.50 ms (0.85 times) | 7.81 ms | 17.41 ms (0.45 times) |
 
 Neither GPU beats the CPU's BLAS on this small model at any batch
 size: the kernels take a fraction of a millisecond, and the rest is
@@ -205,6 +205,10 @@ thirteen demos lowered from source, checked on the RTX 5060 Ti); the
 session comparisons in [`docs/m1max-session-results.md`](docs/m1max-session-results.md)
 and [`docs/rtx5060-session-results.md`](docs/rtx5060-session-results.md)
 ([how they are made](docs/gpu-sessions.md)).
+
+The [RTX Mojo results](docs/rtx5060-mojo-results.md) record the five
+supported source demos through the CUDA driver, with build and run
+times separate. The OpenCL results above use the NVIDIA OpenCL driver.
 
 ## Build
 

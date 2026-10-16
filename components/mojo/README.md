@@ -76,3 +76,11 @@ On the Apple M1 Max (Metal, Mojo 1.2.0.dev2026101305, 2026-10-16)
 saxpy, threshold, reduce-sum, pipeline and vector-add agree with the
 evaluator; a build takes about 2.6 s, a run about 3.5 ms including
 the device context, uploads and downloads.
+
+On the RTX 5060 Ti (CUDA driver 615.78.08, the same Mojo pin,
+2026-10-16), the same five demos agree. Cold builds take 4.25 to
+4.78 seconds; first library calls take 389 to 593 ms, repeated calls
+in the same process 0.050 to 0.094 ms. These are single samples with
+different startup and warmup costs, not a throughput comparison
+between the cards. [The RTX report](../../docs/rtx5060-mojo-results.md)
+includes outputs, total times and reproduction commands.

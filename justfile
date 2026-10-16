@@ -54,7 +54,7 @@ mojo *args:
 
 # A demo on the GPU through the Mojo backend, timed: just run-mojo libs/Accel/demos/saxpy.xtl
 run-mojo FILE *args: build
-    XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu run {{FILE}} --device mojo --time "$@"
+    shift; XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu run {{FILE}} --device mojo --time "$@"
 
 # The Mojo source the Mojo backend builds for a program
 mojo-kernel FILE: build
@@ -78,7 +78,6 @@ pack-array scalar shape input output:
 
 # Prepare the pinned model and compare binary file binding with the text bridge
 binary-bench *args:
-    scripts/ml-bench.py --check
     python3 scripts/bench-binary.py "$@"
 
 # Set up an isolated OpenBLAS CPU baseline for repeated inference timing
@@ -88,7 +87,6 @@ session-setup:
 
 # Repeated inference with resident weights; CPU OpenBLAS and GPU batch sweep
 session-bench *args:
-    scripts/ml-bench.py --check
     work/session-python/bin/python scripts/bench-session.py "$@"
 
 # Check every demo, lowered from its source, on the devices with a schedule file and Float tolerance

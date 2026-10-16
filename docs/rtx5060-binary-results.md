@@ -1,6 +1,6 @@
-# Binary file binding on the RTX 5060 Ti
+# Binary file binding on NVIDIA GeForce RTX 5060 Ti
 
-Measured on large12, 2026-10-12, NVIDIA GeForce RTX 5060 Ti; ML fac586c.
+Measured on large12, 2026-10-16, NVIDIA GeForce RTX 5060 Ti; ML c032768.
 
 Both routes bind the same f64 inputs and run the default f32 schedule.
 All CLI and facade outputs agree exactly: world-model counts 1897 and 348;
@@ -9,10 +9,10 @@ Each route is one sample; process totals include startup and data loading.
 
 | Case | Route | Bind (ms) | Device run (ms) | Output (ms) | Whole process (ms) |
 | ---- | ----- | --------- | --------------- | ----------- | ------------------ |
-| world-model | text | 460 | 202 | 0 | 1057 |
-| world-model | binary | 13 | 220 | 0 | 385 |
-| million | text | 411 | 192 | 0 | 1002 |
-| million | binary | 10 | 219 | 0 | 416 |
+| world-model | text | 460 | 443 | 0 | 1585 |
+| world-model | binary | 15 | 591 | 0 | 1084 |
+| million | text | 391 | 539 | 0 | 1657 |
+| million | binary | 10 | 466 | 0 | 1006 |
 
 File binding includes reading and decoding the binary file. Text binding
 includes serialization across the bridge, but the text route's initial

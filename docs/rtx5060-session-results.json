@@ -6,20 +6,20 @@
       "1",
       "0"
     ],
-    "interpreter": 0.2595,
-    "cpu": 0.07283250033651711,
-    "threads": 12,
+    "interpreter": 0.3355,
+    "cpu": 0.07823400665074587,
+    "threads": 6,
     "cpu_candidates": [
       [
-        0.11421949966461398,
+        0.11861350503750145,
         1
       ],
       [
-        0.09758800024428638,
+        0.07823400665074587,
         6
       ],
       [
-        0.07283250033651711,
+        0.07889000698924065,
         12
       ]
     ],
@@ -27,43 +27,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.187,
-        "stream": 0.206,
-        "setup": 160.939,
-        "first": 163.464,
-        "upload": 0.02,
-        "kernel": 0.0915
+        "resident": 0.22,
+        "stream": 0.244,
+        "setup": 564.776,
+        "first": 635.48,
+        "upload": 0.025,
+        "kernel": 0.0945
       },
       {
         "device": "opencl:0",
         "tile": 8,
-        "resident": 0.188,
-        "stream": 0.209,
-        "setup": 158.901,
-        "first": 161.379,
-        "upload": 0.02,
-        "kernel": 0.104
+        "resident": 0.221,
+        "stream": 0.2465,
+        "setup": 479.626,
+        "first": 552.307,
+        "upload": 0.025,
+        "kernel": 0.1055
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.186,
-        "stream": 0.2085,
-        "setup": 157.361,
-        "first": 159.851,
-        "upload": 0.02,
-        "kernel": 0.101
+        "resident": 0.2195,
+        "stream": 22.8215,
+        "setup": 483.222,
+        "first": 545.953,
+        "upload": 3.1885,
+        "kernel": 1.0865
       }
     ],
     "best": {
       "device": "opencl:0",
       "tile": 0,
-      "resident": 0.187,
-      "stream": 0.206,
-      "setup": 160.939,
-      "first": 163.464,
-      "upload": 0.02,
-      "kernel": 0.0915
+      "resident": 0.22,
+      "stream": 0.244,
+      "setup": 564.776,
+      "first": 635.48,
+      "upload": 0.025,
+      "kernel": 0.0945
     },
     "break_even": null
   },
@@ -74,20 +74,20 @@
       "16",
       "14"
     ],
-    "interpreter": 1.786,
-    "cpu": 0.08280600013677031,
+    "interpreter": 1.458,
+    "cpu": 0.1119874941650778,
     "threads": 12,
     "cpu_candidates": [
       [
-        0.1257485000678571,
+        0.16655647777952254,
         1
       ],
       [
-        0.12264150063856505,
+        0.16764001338742673,
         6
       ],
       [
-        0.08280600013677031,
+        0.1119874941650778,
         12
       ]
     ],
@@ -95,43 +95,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.1875,
-        "stream": 0.239,
-        "setup": 160.706,
-        "first": 163.732,
-        "upload": 0.043,
-        "kernel": 0.0975
+        "resident": 0.2315,
+        "stream": 0.2975,
+        "setup": 483.326,
+        "first": 551.487,
+        "upload": 0.066,
+        "kernel": 0.1005
       },
       {
         "device": "opencl:0",
         "tile": 8,
-        "resident": 0.188,
-        "stream": 0.2295,
-        "setup": 158.118,
-        "first": 160.598,
-        "upload": 0.042,
-        "kernel": 0.104
+        "resident": 0.218,
+        "stream": 0.297,
+        "setup": 460.159,
+        "first": 533.191,
+        "upload": 0.066,
+        "kernel": 0.11
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.1885,
-        "stream": 0.2375,
-        "setup": 158.694,
-        "first": 161.238,
-        "upload": 0.043,
-        "kernel": 0.104
+        "resident": 0.221,
+        "stream": 0.295,
+        "setup": 477.575,
+        "first": 546.802,
+        "upload": 0.065,
+        "kernel": 0.1065
       }
     ],
     "best": {
       "device": "opencl:0",
-      "tile": 8,
-      "resident": 0.188,
-      "stream": 0.2295,
-      "setup": 158.118,
-      "first": 160.598,
-      "upload": 0.042,
-      "kernel": 0.104
+      "tile": 16,
+      "resident": 0.221,
+      "stream": 0.295,
+      "setup": 477.575,
+      "first": 546.802,
+      "upload": 0.065,
+      "kernel": 0.1065
     },
     "break_even": null
   },
@@ -142,20 +142,20 @@
       "64",
       "59"
     ],
-    "interpreter": 6.845000000000001,
-    "cpu": 0.22565499966731295,
+    "interpreter": 6.076499999999999,
+    "cpu": 0.21220449707470834,
     "threads": 6,
     "cpu_candidates": [
       [
-        0.2803235001920257,
+        0.28958998154848814,
         1
       ],
       [
-        0.22565499966731295,
+        0.21220449707470834,
         6
       ],
       [
-        0.23672099996474572,
+        0.22760150022804737,
         12
       ]
     ],
@@ -163,43 +163,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.188,
-        "stream": 0.2965,
-        "setup": 161.307,
-        "first": 164.019,
-        "upload": 0.094,
-        "kernel": 0.102
+        "resident": 0.222,
+        "stream": 0.4115,
+        "setup": 487.312,
+        "first": 558.108,
+        "upload": 0.172,
+        "kernel": 0.104
       },
       {
         "device": "opencl:0",
         "tile": 8,
-        "resident": 0.1885,
-        "stream": 0.2985,
-        "setup": 155.282,
-        "first": 157.958,
-        "upload": 0.0945,
-        "kernel": 0.11
+        "resident": 0.223,
+        "stream": 0.413,
+        "setup": 479.493,
+        "first": 552.373,
+        "upload": 0.174,
+        "kernel": 0.1135
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.1885,
-        "stream": 0.2975,
-        "setup": 156.086,
-        "first": 158.807,
-        "upload": 0.094,
-        "kernel": 0.107
+        "resident": 0.219,
+        "stream": 0.418,
+        "setup": 494.086,
+        "first": 554.595,
+        "upload": 0.175,
+        "kernel": 0.11
       }
     ],
     "best": {
       "device": "opencl:0",
       "tile": 0,
-      "resident": 0.188,
-      "stream": 0.2965,
-      "setup": 161.307,
-      "first": 164.019,
-      "upload": 0.094,
-      "kernel": 0.102
+      "resident": 0.222,
+      "stream": 0.4115,
+      "setup": 487.312,
+      "first": 558.108,
+      "upload": 0.172,
+      "kernel": 0.104
     },
     "break_even": null
   },
@@ -210,20 +210,20 @@
       "253",
       "229"
     ],
-    "interpreter": 28.7815,
-    "cpu": 0.47375949998240685,
+    "interpreter": 24.545,
+    "cpu": 0.552726472960785,
     "threads": 12,
     "cpu_candidates": [
       [
-        0.6143769996924675,
+        0.6257584900595248,
         1
       ],
       [
-        0.6213410006239428,
+        0.7054999878164381,
         6
       ],
       [
-        0.47375949998240685,
+        0.552726472960785,
         12
       ]
     ],
@@ -231,43 +231,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.186,
-        "stream": 0.666,
-        "setup": 156.394,
-        "first": 160.661,
-        "upload": 0.456,
-        "kernel": 0.1155
+        "resident": 0.219,
+        "stream": 0.9575,
+        "setup": 830.068,
+        "first": 904.02,
+        "upload": 0.708,
+        "kernel": 0.119
       },
       {
         "device": "opencl:0",
         "tile": 8,
-        "resident": 0.193,
-        "stream": 0.681,
-        "setup": 160.838,
-        "first": 165.105,
-        "upload": 0.4715,
-        "kernel": 0.127
+        "resident": 0.219,
+        "stream": 0.9584999999999999,
+        "setup": 474.245,
+        "first": 590.899,
+        "upload": 0.715,
+        "kernel": 0.1275
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.188,
-        "stream": 0.6595,
-        "setup": 158.394,
-        "first": 162.505,
-        "upload": 0.4455,
-        "kernel": 0.123
+        "resident": 0.2485,
+        "stream": 0.9455,
+        "setup": 444.445,
+        "first": 449.133,
+        "upload": 0.703,
+        "kernel": 0.124
       }
     ],
     "best": {
       "device": "opencl:0",
       "tile": 16,
-      "resident": 0.188,
-      "stream": 0.6595,
-      "setup": 158.394,
-      "first": 162.505,
-      "upload": 0.4455,
-      "kernel": 0.123
+      "resident": 0.2485,
+      "stream": 0.9455,
+      "setup": 444.445,
+      "first": 449.133,
+      "upload": 0.703,
+      "kernel": 0.124
     },
     "break_even": null
   },
@@ -278,20 +278,20 @@
       "1003",
       "348"
     ],
-    "interpreter": 78.7415,
-    "cpu": 1.060221500665648,
+    "interpreter": 68.37299999999999,
+    "cpu": 1.2507459905464202,
     "threads": 12,
     "cpu_candidates": [
       [
-        1.361055500638031,
+        1.5581600309815258,
         1
       ],
       [
-        1.460043499719177,
+        1.4041380200069398,
         6
       ],
       [
-        1.060221500665648,
+        1.2507459905464202,
         12
       ]
     ],
@@ -299,43 +299,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.213,
-        "stream": 1.6875,
-        "setup": 157.507,
-        "first": 166.749,
-        "upload": 1.4140000000000001,
-        "kernel": 0.172
+        "resident": 0.2435,
+        "stream": 2.926,
+        "setup": 475.231,
+        "first": 551.686,
+        "upload": 2.581,
+        "kernel": 0.18
       },
       {
         "device": "opencl:0",
         "tile": 8,
-        "resident": 0.233,
-        "stream": 1.7095,
-        "setup": 197.116,
-        "first": 219.061,
-        "upload": 1.435,
-        "kernel": 0.1875
+        "resident": 0.2515,
+        "stream": 2.848,
+        "setup": 457.066,
+        "first": 534.859,
+        "upload": 2.5220000000000002,
+        "kernel": 0.195
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.225,
-        "stream": 1.6895,
-        "setup": 156.873,
-        "first": 165.345,
-        "upload": 1.4209999999999998,
-        "kernel": 0.1815
+        "resident": 0.261,
+        "stream": 2.983,
+        "setup": 444.878,
+        "first": 454.849,
+        "upload": 2.6505,
+        "kernel": 0.1905
       }
     ],
     "best": {
       "device": "opencl:0",
-      "tile": 0,
-      "resident": 0.213,
-      "stream": 1.6875,
-      "setup": 157.507,
-      "first": 166.749,
-      "upload": 1.4140000000000001,
-      "kernel": 0.172
+      "tile": 8,
+      "resident": 0.2515,
+      "stream": 2.848,
+      "setup": 457.066,
+      "first": 534.859,
+      "upload": 2.5220000000000002,
+      "kernel": 0.195
     },
     "break_even": null
   },
@@ -346,20 +346,20 @@
       "1897",
       "348"
     ],
-    "interpreter": 127.2165,
-    "cpu": 1.9398855001782067,
-    "threads": 12,
+    "interpreter": 113.72399999999999,
+    "cpu": 1.9534974708221853,
+    "threads": 6,
     "cpu_candidates": [
       [
-        2.7185654998902464,
+        2.6127354649361223,
         1
       ],
       [
-        2.0419225002115127,
+        1.9534974708221853,
         6
       ],
       [
-        1.9398855001782067,
+        2.068803529255092,
         12
       ]
     ],
@@ -367,43 +367,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.253,
-        "stream": 2.974,
-        "setup": 149.32,
-        "first": 162.428,
-        "upload": 2.6935000000000002,
-        "kernel": 0.2025
+        "resident": 3.3225,
+        "stream": 5.0675,
+        "setup": 470.864,
+        "first": 643.765,
+        "upload": 4.732,
+        "kernel": 0.208
       },
       {
         "device": "opencl:0",
         "tile": 8,
-        "resident": 0.29,
-        "stream": 2.992,
-        "setup": 152.929,
-        "first": 165.968,
-        "upload": 2.6715,
-        "kernel": 0.2415
+        "resident": 0.308,
+        "stream": 4.894,
+        "setup": 556.102,
+        "first": 634.433,
+        "upload": 4.561999999999999,
+        "kernel": 0.2385
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.2755,
-        "stream": 3.0614999999999997,
-        "setup": 150.913,
-        "first": 163.767,
-        "upload": 2.7525,
-        "kernel": 0.229
+        "resident": 0.285,
+        "stream": 4.973,
+        "setup": 526.281,
+        "first": 542.176,
+        "upload": 4.649,
+        "kernel": 0.2235
       }
     ],
     "best": {
       "device": "opencl:0",
-      "tile": 0,
-      "resident": 0.253,
-      "stream": 2.974,
-      "setup": 149.32,
-      "first": 162.428,
-      "upload": 2.6935000000000002,
-      "kernel": 0.2025
+      "tile": 8,
+      "resident": 0.308,
+      "stream": 4.894,
+      "setup": 556.102,
+      "first": 634.433,
+      "upload": 4.561999999999999,
+      "kernel": 0.2385
     },
     "break_even": null
   },
@@ -414,20 +414,20 @@
       "8023",
       "348"
     ],
-    "interpreter": 451.161,
-    "cpu": 8.641132499178639,
+    "interpreter": 381.337,
+    "cpu": 7.8143464925233275,
     "threads": 6,
     "cpu_candidates": [
       [
-        13.094429999910062,
+        11.232418997678906,
         1
       ],
       [
-        8.641132499178639,
+        7.8143464925233275,
         6
       ],
       [
-        10.845476500435325,
+        10.002800991060212,
         12
       ]
     ],
@@ -435,43 +435,43 @@
       {
         "device": "opencl:0",
         "tile": 0,
-        "resident": 0.564,
-        "stream": 10.532499999999999,
-        "setup": 145.044,
-        "first": 177.751,
-        "upload": 9.9345,
-        "kernel": 0.52
+        "resident": 0.576,
+        "stream": 17.886499999999998,
+        "setup": 373.147,
+        "first": 461.989,
+        "upload": 17.273000000000003,
+        "kernel": 0.5225
       },
       {
         "device": "opencl:0",
         "tile": 8,
         "resident": 0.72,
-        "stream": 10.849499999999999,
-        "setup": 147.592,
-        "first": 181.621,
-        "upload": 10.1035,
-        "kernel": 0.664
+        "stream": 17.407,
+        "setup": 435.881,
+        "first": 478.471,
+        "upload": 16.646,
+        "kernel": 0.667
       },
       {
         "device": "opencl:0",
         "tile": 16,
-        "resident": 0.631,
-        "stream": 10.9755,
-        "setup": 153.266,
-        "first": 188.825,
-        "upload": 10.3065,
-        "kernel": 0.59
+        "resident": 0.647,
+        "stream": 18.7705,
+        "setup": 506.892,
+        "first": 598.978,
+        "upload": 18.073,
+        "kernel": 0.595
       }
     ],
     "best": {
       "device": "opencl:0",
-      "tile": 0,
-      "resident": 0.564,
-      "stream": 10.532499999999999,
-      "setup": 145.044,
-      "first": 177.751,
-      "upload": 9.9345,
-      "kernel": 0.52
+      "tile": 8,
+      "resident": 0.72,
+      "stream": 17.407,
+      "setup": 435.881,
+      "first": 478.471,
+      "upload": 16.646,
+      "kernel": 0.667
     },
     "break_even": null
   }

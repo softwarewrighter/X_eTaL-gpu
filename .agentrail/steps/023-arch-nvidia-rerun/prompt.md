@@ -1,0 +1,1 @@
+Execute docs/arch-rerun.md on RTX 5060 Ti: gate, source-model timings, session and binary benchmarks, install pinned Mojo and verify five demos, document results, commit and push without changing the Mac reports.

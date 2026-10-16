@@ -148,6 +148,7 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <footer>
 Built from <a href="{repo}/commit/{commit}">X_eTaL-gpu {commit}</a>, with X_eTaL {xetal} (whose xetal doc wrote the docs) and X_eTaL-extensions {ext}.
 <br>Copyright (c) 2026 Michael A Wright. MIT License.
+<br><a href="{repo}/blob/main/docs/rtx5060-mojo-results.md">Mojo on the RTX 5060 Ti</a>: five source demos checked through the CUDA driver, with cold builds and repeated calls reported separately.
 <br><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> &middot; <a href="https://softwarewrighter.github.io/X_eTaL/">its live demo</a> &middot; <a href="https://softwarewrighter.github.io/X_eTaL-demos/">X_eTaL-demos</a> &middot; <a href="https://softwarewrighter.github.io/X_eTaL-ML/">X_eTaL-ML</a>
 </footer>
 </body>
