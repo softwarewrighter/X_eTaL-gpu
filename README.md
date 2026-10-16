@@ -124,20 +124,32 @@ convolution's windows (rotations along an axis, drops, a reshape, as
 X_eTaL-ML's Conv builds them; a small convolution as one product)
 and the lookup (`s_elect`: a batch of token ids picking rows of an
 embedding table, the ids all a prompt uploads), and the choices,
-argmax from the operations it had and a top-k mask as one operation. On 2026-10-12 the same code was run on
-the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its own lane:
-every check passes there too, with its own schedules
+argmax from the operations it had and a top-k mask as one operation.
+Then the course correction (A4b): the lowering from X_eTaL source
+through X_eTaL's own crates (2026-10-13, the hand-written twins
+deleted), running from source with the evaluator computing what the
+device cannot, the macro `gp:a_ccel<` and its runner, and on
+2026-10-16 X_eTaL-ML's own programs from their source and a second
+backend, Mojo (saga 12, in progress). On 2026-10-12 the same code
+was run on the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its
+own lane, and that lane re-runs every change there (last on
+2026-10-16: the models from source and the Mojo backend): every
+check passes there too, with its own schedules
 (`schedules/nvidia-rtx5060-ti*.toml`) and reports. See
 [`docs/plan.md`](docs/plan.md) for the roadmap and the architecture
 decisions.
 
-The committed world model (ML fac586c) now passes the gate on the
-RTX too: the evaluator, interpreter, GPU and extension return the
-same counts, 1897 and 348. Its kernels take 0.237 ms, the CLI process
-317 ms, and the extension's text binding 458 ms before a 197 ms run.
-The evaluator's 15.12 s includes the complete demo and dream rollout;
-the GPU twin measures batched inference and counts only. See the
-Arch reports below for the timing boundaries.
+X_eTaL-ML's world model (ML c032768), lowered whole from its own
+`world-model.xtl` (the batch, the held-out states and the dream
+rollout all on the device, the file reads and a tuple unpacking on
+the host), gives its complete baseline output on both cards: the
+counts 1897 and 348, the pictures, the dream. Its kernels take
+0.286 ms on the M1 Max and 2.325 ms on the RTX 5060 Ti, the whole
+process 145 and 1132 ms with the lowering cached (41 and 75 s to
+lower it cold, once). The evaluator takes 8.2 s on the Mac and 14.6 s
+on the Arch host for the same program. The earlier generated twin
+measured the batched inference alone (0.237 ms on the RTX), which is
+why the kernel time grew when the whole program moved to the device.
 
 Binary file binding now avoids transferring input arrays as text:
 the same world-model counts, with binding at 13 ms versus 460 ms
@@ -206,9 +218,34 @@ session comparisons in [`docs/m1max-session-results.md`](docs/m1max-session-resu
 and [`docs/rtx5060-session-results.md`](docs/rtx5060-session-results.md)
 ([how they are made](docs/gpu-sessions.md)).
 
-The [RTX Mojo results](docs/rtx5060-mojo-results.md) record the five
-supported source demos through the CUDA driver, with build and run
-times separate. The OpenCL results above use the NVIDIA OpenCL driver.
+X_eTaL-ML's programs from their own source, lowered whole
+(`just ml-bench`, [`docs/ml-results.md`](docs/ml-results.md) and
+[`docs/rtx5060-ml-results.md`](docs/rtx5060-ml-results.md)): the
+kernels' own time and the whole process with the lowering cached,
+every result the evaluator's within 1e-5.
+
+| Program from source | Apple M1 Max, kernels | M1 Max, whole process | RTX 5060 Ti, kernels | RTX, whole process |
+| ------------------- | --------------------- | --------------------- | -------------------- | ------------------ |
+| world model, 1,936 states and the dream | 0.286 ms | 145 ms | 2.325 ms | 1132 ms |
+| digit reader, 1,000 MNIST digits (971 right) | 0.628 ms | 149 ms | 1.346 ms | 898 ms |
+| denoiser, 128 pictures, 20 steps | 0.274 ms | 141 ms | 2.157 ms | 798 ms |
+| tiny GPT, 1,000 names (the loop on the evaluator) | 0.003 ms per call | 79 ms | 0.066 ms per call | 746 ms |
+
+The whole process on the Arch host includes about 450 ms of OpenCL
+setup per run against about 65 ms on the Mac, which is why its
+columns are larger for the same kernels.
+
+**Through the Mojo backend** (`--device mojo`, the same IR, the
+elementwise and reduction demos only so far; saga 12): the five
+demos saxpy, threshold, reduce-sum, pipeline and vector-add give the
+evaluator's answers on both cards. On the M1 Max Mojo reaches the GPU
+through Metal (a build about 2.6 s, cached after; a run about 3.5 ms
+including the device context); on the RTX 5060 Ti through the CUDA
+driver (cold builds 4.25 to 4.78 s, a first call 389 to 593 ms, a
+repeated call 0.050 to 0.094 ms in the same process:
+[`docs/rtx5060-mojo-results.md`](docs/rtx5060-mojo-results.md)).
+The OpenCL results above use Apple's and NVIDIA's OpenCL drivers;
+the without-CUDA claim of this repository rests on them.
 
 ## Build
 
