@@ -1,8 +1,9 @@
 number = 24
 slug = "opencl-binary"
-status = "in-progress"
+status = "completed"
 description = "The blog agent's ask X1 (the user, 2026-10-21, the 'more mojo (rocm on arch)'..."
 role = "production"
 context_files = []
 created_at = "2026-10-21T15:19:08"
-commits = []
+completed_at = "2026-10-21T17:10:16"
+commits = ["bb5ebe3c2c0d9f7c168a588f3fd0f4357e17ea93"]
