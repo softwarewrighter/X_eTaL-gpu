@@ -1,8 +1,9 @@
 number = 25
 slug = "rtx5060-opencl-evidence"
-status = "in-progress"
+status = "completed"
 description = "Execute docs/arch-rerun.md section 5: capture RTX 5060 Ti threshold OpenCL pr..."
 role = "production"
 context_files = []
 created_at = "2026-10-21T17:21:16"
-commits = []
+completed_at = "2026-10-21T17:30:56"
+commits = ["c4fa27bd899aa9e685149d6c27a3dd8c11b48735"]
