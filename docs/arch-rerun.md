@@ -110,6 +110,9 @@ agent (session `blog-b4`) the paths. If `opencl:0` is not the RTX
 5060 Ti on that machine, pass `--device opencl:N` after the
 directory.
 
+Completed 2026-10-21 on the RTX 5060 Ti: see
+[the handoff](rtx5060-opencl-handoff.md) and its linked evidence.
+
 ## 6. Push
 
 Commit with a `CHANGES.md` line per commit, as before, and push to

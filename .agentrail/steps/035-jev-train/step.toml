@@ -1,7 +1,7 @@
 number = 35
-slug = "jev-gpu"
+slug = "jev-train"
 status = "pending"
-description = "The whole Jev inference on the GPU: its XIR twin (or written by a program wri..."
+description = "A trainer for the typed-decision task: requests classified as DRAW, ARRAY_QUE..."
 role = "production"
 context_files = []
 created_at = "2026-10-07T17:43:00"

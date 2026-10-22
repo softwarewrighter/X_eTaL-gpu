@@ -71,10 +71,12 @@ made from an eight-element program.
 on every platform, and `scripts/opencl-evidence.sh DIR` captures the
 same set of files; NVIDIA's OpenCL returns PTX text, which the script
 recognizes and saves beside the binary as `threshold.ptx`.
-`docs/arch-rerun.md` item 6 tells the Arch lane what to run on the
+`docs/arch-rerun.md` item 5 tells the Arch lane what to run on the
 RTX 5060 Ti; its capture goes to `docs/evidence/rtx5060-opencl-<date>/`
 with its own handoff note, so the post can set the driver's PTX
-beside Mojo's and nvcc's.
+beside Mojo's and nvcc's. The capture is now available in
+[the RTX 5060 Ti handoff](rtx5060-opencl-handoff.md): 2,252 bytes
+of PTX 9.4 targeting `sm_120`, with all five baseline lines matching.
 
 ## Reproduction
 

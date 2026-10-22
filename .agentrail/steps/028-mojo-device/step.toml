@@ -1,4 +1,4 @@
-number = 27
+number = 28
 slug = "mojo-device"
 status = "pending"
 description = "Saga gpu-mojo, step 4: Mojo as a device of the tool and of the Gpu extension ..."

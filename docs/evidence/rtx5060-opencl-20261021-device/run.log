@@ -1,0 +1,2 @@
+repeat 1 time: setup 1091.371 ms, upload 9.623 ms, kernels 0.500 ms (device), launches 4.679 ms (host), download 7.007 ms, total 1112.816 ms
+RESULT: the output is identical to libs/Accel/tests/demo-threshold.out

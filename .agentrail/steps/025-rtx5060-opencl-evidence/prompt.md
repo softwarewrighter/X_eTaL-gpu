@@ -1,0 +1,1 @@
+Execute docs/arch-rerun.md section 5: capture RTX 5060 Ti threshold OpenCL program binary, verify baseline and PTX, write docs/rtx5060-opencl-handoff.md for blog-b4, gate, commit and push main, publish documentation.

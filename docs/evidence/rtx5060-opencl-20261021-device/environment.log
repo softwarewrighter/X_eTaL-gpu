@@ -1,0 +1,12 @@
+date: 2026-10-22T00:22:04Z
+host: Linux 7.2.9-arch1-1 x86_64
+PRETTY_NAME="Arch Linux"
+X_eTaL-gpu: dc53897 (37 uncommitted paths)
+XETAL_COMMIT: 27b3fd0d4903e43be4b9b6e93da7476987383dcf
+xetal-gpu: xetal-gpu 0.1.0
+rustc: rustc 1.99.0 (b940084d7 2026-09-28)
+devices:
+  opencl:0  NVIDIA GeForce RTX 5060 Ti (GPU, NVIDIA Corporation; OpenCL 3.0 CUDA), 36 compute units, work-groups to 1024, 15933 MB, fp64
+device used: opencl:0
+demo: libs/Accel/demos/threshold.xtl
+baseline: libs/Accel/tests/demo-threshold.out

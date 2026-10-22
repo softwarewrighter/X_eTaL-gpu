@@ -1,4 +1,4 @@
-number = 30
+number = 31
 slug = "retrieval"
 status = "in-progress"
 description = "Retrieval over a resident index, the first example built to beat the CPU's BL..."

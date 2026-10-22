@@ -134,6 +134,9 @@ backend, Mojo (saga 12, in progress); on 2026-10-21 `xetal-gpu
 binary`, which asks a device's OpenCL compiler for the program
 binary it keeps (Apple's is the source and the options in a
 property list, no GPU code: [`docs/m1max-opencl-handoff.md`](docs/m1max-opencl-handoff.md)).
+On the RTX 5060 Ti the same query returns 2,252 bytes of PTX 9.4
+targeting `sm_120`; the threshold outputs match the evaluator
+([NVIDIA evidence](docs/rtx5060-opencl-handoff.md)).
 On 2026-10-12 the same code
 was run on the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its
 own lane, and that lane re-runs every change there (last on
