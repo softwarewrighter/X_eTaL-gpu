@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-21
 
+- 17:45 `docs` The Apple OpenCL handoff's setup time corrected to the committed run log's (about 60 ms, not 56; the blog agent's note).
 - 17:35 `chore` Record the completed RTX OpenCL capture after the full GPU gate and evidence commit; next is Mojo Ints and shapes.
 
 - 17:25 `docs` Capture RTX 5060 Ti OpenCL evidence for blog ask A7: threshold outputs match the evaluator, the driver returns 2,252 bytes of PTX 9.4 targeting sm_120, and both runtime binary tests pass. Add the evidence and NVIDIA handoff, update README and plan, and record the inserted capture step. No baselines reblessed.

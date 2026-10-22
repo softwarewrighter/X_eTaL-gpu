@@ -14,7 +14,7 @@ C 1.2 (`k0`, one work-item per element, five outputs), handed to
 Apple's driver as source and built by it. On the M1 Max the run gives
 all five of X_eTaL's expected output lines, identical to the
 evaluator's baseline, in 0.3 ms of launch time for eight elements
-(the setup, about 56 ms, is the driver compiling the source).
+(the setup, about 60 ms, is the driver compiling the source).
 
 Asked for the program binary, Apple's OpenCL reports
 `CL_PROGRAM_BINARY_TYPE` as `executable` and returns 2,108 bytes.
