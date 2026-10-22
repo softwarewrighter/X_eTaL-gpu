@@ -1,0 +1,24 @@
+%l = const f64 [8] 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0
+%r = const f64 [] 4.0
+%div = map div %l %r
+%r_2 = const f64 [] 1.0
+%sub = map sub %div %r_2
+%r_3 = const f64 [] 0.5
+%gt = map gt %sub %r_3
+%f = cast f64 %gt
+%mul = map mul %sub %f
+%r_4 = const f64 [] 0.0
+%max = map max %sub %r_4
+%l_2 = const i64 [8] 1 2 3 4 5 6 7 8
+%r_5 = const i64 [] 4
+%sub_2 = map sub %l_2 %r_5
+%r_6 = const i64 [] 0
+%max_2 = map max %sub_2 %r_6
+%r_7 = const i64 [] 2
+%mod = map mod %sub_2 %r_7
+%mul_2 = map mul %sub_2 %mod
+output %sub
+output %mul
+output %max
+output %max_2
+output %mul_2

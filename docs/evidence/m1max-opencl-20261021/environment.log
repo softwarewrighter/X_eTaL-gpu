@@ -1,0 +1,12 @@
+date: 2026-10-22T00:03:38Z
+host: Darwin 25.5.0 arm64
+ProductName:		macOS;ProductVersion:		26.5;BuildVersion:		25F71
+X_eTaL-gpu: 8d5b943 (39 uncommitted paths)
+XETAL_COMMIT: 27b3fd0d4903e43be4b9b6e93da7476987383dcf
+xetal-gpu: xetal-gpu 0.1.0
+rustc: rustc 1.96.0 (ac68faa20 2026-05-25)
+devices:
+  opencl:0  Apple M1 Max (GPU, Apple; OpenCL 1.2), 32 compute units, work-groups to 256, 53084 MB, no fp64
+device used: opencl:0
+demo: libs/Accel/demos/threshold.xtl
+baseline: libs/Accel/tests/demo-threshold.out

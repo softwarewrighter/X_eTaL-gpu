@@ -1,0 +1,8 @@
+number = 24
+slug = "opencl-binary"
+status = "in-progress"
+description = "The blog agent's ask X1 (the user, 2026-10-21, the 'more mojo (rocm on arch)'..."
+role = "production"
+context_files = []
+created_at = "2026-10-21T15:19:08"
+commits = []

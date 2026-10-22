@@ -1,0 +1,14 @@
+$ target/release/xetal-gpu lower libs/Accel/demos/threshold.xtl
+(exit 0)
+$ target/release/xetal-gpu kernel libs/Accel/demos/threshold.xtl
+(exit 0)
+$ target/release/xetal-gpu explain libs/Accel/demos/threshold.xtl
+(exit 0)
+$ target/release/xetal-gpu run libs/Accel/demos/threshold.xtl --device opencl:0 --time
+(exit 0)
+$ target/release/xetal-gpu binary libs/Accel/demos/threshold.xtl --device opencl:0 --out docs/evidence/m1max-opencl-20261021/threshold.bin
+(exit 0)
+$ python3 (decode threshold.bin; see scripts/opencl-evidence.sh)
+(exit 0)
+$ (cd components && cargo test -q -p xetal-gpu-runtime binary_tests -- --nocapture) > runtime-tests.log 2>&1
+(exit 0)

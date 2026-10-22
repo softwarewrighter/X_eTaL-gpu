@@ -88,7 +88,29 @@ driver, one table of demo, build, run), add it to the gate's markdown
 list in `scripts/gate.sh`, and say in the README's results-by-GPU
 section that the Mojo numbers on the RTX go through the CUDA driver.
 
-## 5. Push
+## 5. The NVIDIA OpenCL program binary (the blog agent's ask A7)
+
+After pulling the 2026-10-21 commit that added `xetal-gpu binary`:
+
+```sh
+just build
+just opencl-evidence docs/evidence/rtx5060-opencl-$(date +%Y%m%d)
+```
+
+The script lowers the threshold demo, writes its OpenCL C and plan,
+runs it on `opencl:0` against the evaluator's baseline, and asks the
+driver for `CL_PROGRAM_BINARIES`. NVIDIA's OpenCL returns PTX text,
+which the script recognizes and saves as `threshold.ptx` beside the
+raw bytes and its decoding. Commit the directory and a short
+`docs/rtx5060-opencl-handoff.md` in the form of
+`docs/m1max-opencl-handoff.md` (what the post can say, the evidence
+table, what is and is not established: here the driver's PTX for the
+same program the Mojo and nvcc captures used), then tell the blog
+agent (session `blog-b4`) the paths. If `opencl:0` is not the RTX
+5060 Ti on that machine, pass `--device opencl:N` after the
+directory.
+
+## 6. Push
 
 Commit with a `CHANGES.md` line per commit, as before, and push to
 `main` (rebase first; the Mac lane commits there too).

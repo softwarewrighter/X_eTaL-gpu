@@ -1,0 +1,11 @@
+an Apple binary property list, keys and values:
+  clBinaryVersion: 2
+  clBinaryData: '<1925 bytes>'
+  clPlatformVersion: 'OpenCL 1.2 (Apr 18 2026 19:20:04)'
+  clBinaryDriver: '1.2 1.0'
+clBinaryData is a second property list, keys and values:
+  OPTIONS: ' -Dcl_khr_byte_addressable_store -Dcl_khr_global_int32_base_atomics -Dcl_khr_global_int32_extended_atomics -Dcl_khr_local_int32_base_atomics -Dcl_khr_local_int32_extended_atomics -Dcl_khr_3d_image_writes -Dcl_khr_image2d_from_buffer -Dcl_khr_depth_images -D__IMAGE_SUPPORT__ -D__OPENCL_VERSION__=120 -D__OPENCL_C_VERSION__=120  -I"/Users/mike/github/softwarewrighter/X_eTaL-gpu"'
+  FLAGS: 0
+  SOURCE: a list of 27 strings (lines)
+SOURCE joined with newlines is identical to threshold.cl (the OpenCL C handed to clCreateProgramWithSource)
+other keys (where compiled code would be): none

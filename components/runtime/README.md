@@ -6,6 +6,7 @@ them, read the results back.
 ```
 xetal-gpu devices                                  # opencl:N, name, kind, version, units, work-group, memory, fp64
 xetal-gpu run FILE.xir --device opencl:N [SCHEDULE] [--bind NAME=...]
+xetal-gpu binary FILE.xir [--device opencl:N] [SCHEDULE] [--out FILE]   # what the compiler keeps of the kernels
 ```
 
 What `execute` does, in order: picks the device (`opencl:N` counts
@@ -104,6 +105,26 @@ on this device. The RTX 5060 Ti's table is `docs/rtx5060-results.md`
 A million-item reduction is three launches (4096 partials, 16, 1);
 the Float sums agree with the evaluator's f64 right fold within
 1e-5 although the device adds `float`s as a tree.
+
+## Program binaries
+
+`program_binary(source, index)` builds a source on device `index`
+as `Prepared::new` does and asks the program back:
+`CL_PROGRAM_BINARY_TYPE` in words, `CL_PROGRAM_BINARY_SIZES` and
+`CL_PROGRAM_BINARIES` (the standard leaves their format to the
+implementation), with the kernel names, the build log and the
+device's driver and OpenCL C versions. `describe_bytes` names what
+came back from its first bytes (LLVM bitcode, ELF, Mach-O, Apple's
+binary property list, PTX text, text, or unrecognized) and
+`readable_strings` lists the printable runs inside an opaque one.
+`xetal-gpu binary` prints all of that and writes the bytes with
+`--out`; `scripts/opencl-evidence.sh` captures a demo's whole set of
+evidence (`docs/m1max-opencl-handoff.md`). What two drivers return:
+
+| Driver | Type | Bytes |
+| --- | --- | --- |
+| Apple (M1 Max, OpenCL 1.2) | `executable` | a binary property list: the compile options and the source as lines, nothing compiled; a refused build logs `cl2Metal failed` |
+| NVIDIA (per its documentation; the Arch lane captures it) | `executable` | PTX text for the kernels |
 
 ## Checked
 

@@ -16,7 +16,7 @@ use std::process::ExitCode;
 
 use xetal_gpu_lower::Printed;
 use xetal_gpu_opencl::{explain, plan, Schedule, Width};
-use xetal_gpu_runtime::{devices, Prepared};
+use xetal_gpu_runtime::{describe_bytes, devices, program_binary, readable_strings, Prepared};
 use xetal_gpu_xir::{binary, check, format, run, text, Array, Checked, Data, Error, Op, Program, Result, Scalar, Shape, ValueId};
 
 const USAGE: &str = "\
@@ -33,6 +33,8 @@ usage: xetal-gpu COMMAND FILE [OPTIONS]
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run (--backend mojo: the Mojo source)
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
+  binary FILE.xir [--device opencl:N] [SCHEDULE] [--out FILE]   build the kernels on the device and report what
+      its compiler keeps (CL_PROGRAM_BINARY_TYPE, CL_PROGRAM_BINARY_SIZES, what the bytes look like); --out writes them
     SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)  --schedule FILE (a schedules/*.toml; the flags override it)
   pack f32|f64|i64 SHAPE INPUT.txt OUTPUT.xta   convert text items (shape: 2,3 or scalar)
   version";
@@ -144,6 +146,69 @@ fn dispatch(args: &[String]) -> Result<()> {
                         println!("  {}: {}", k.name, seen.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(" | "));
                     }
                 }
+            }
+            Ok(())
+        }
+        "binary" => {
+            // The program binary the device's OpenCL compiler hands back.
+            let loaded = load(args.get(1))?;
+            let mut device = "opencl:0".to_string();
+            let mut out: Option<String> = None;
+            let mut rest: Vec<String> = Vec::new();
+            let mut i = 2;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--device" => {
+                        device = args
+                            .get(i + 1)
+                            .cloned()
+                            .ok_or_else(|| Error("--device needs a value (opencl:N)".into()))?;
+                        i += 2;
+                    }
+                    "--out" => {
+                        out = Some(args.get(i + 1).cloned().ok_or_else(|| Error("--out needs a file".into()))?);
+                        i += 2;
+                    }
+                    _ => {
+                        rest.push(args[i].clone());
+                        i += 1;
+                    }
+                }
+            }
+            let index: usize = device
+                .strip_prefix("opencl:")
+                .and_then(|n| n.parse().ok())
+                .ok_or_else(|| Error(format!("--device takes opencl:N (an OpenCL device), got `{device}`")))?;
+            let schedule = schedule(&rest)?;
+            let p = plan(&loaded.checked, &schedule);
+            if p.kernels.is_empty() {
+                return Err(Error("the program has no kernel to build (every output is a constant)".into()));
+            }
+            let b = program_binary(&p.source, index)?;
+            println!(
+                "device: opencl:{index} {} ({}; {}; driver {}; {})",
+                b.device.name, b.device.vendor, b.device.version, b.driver_version, b.opencl_c_version
+            );
+            println!("kernels: {}", b.kernel_names);
+            println!("CL_PROGRAM_BINARY_TYPE: {}", b.binary_type);
+            println!("CL_PROGRAM_BINARY_SIZES: {} bytes", b.bytes.len());
+            println!("CL_PROGRAM_BINARIES: {}", describe_bytes(&b.bytes));
+            if !b.bytes.is_empty() {
+                let head: Vec<String> = b.bytes.iter().take(16).map(|x| format!("{x:02x}")).collect();
+                println!("first bytes: {}", head.join(" "));
+                let strings = readable_strings(&b.bytes, 8);
+                println!("readable strings of 8 characters or more: {}", strings.len());
+                for s in strings.iter().take(40) {
+                    println!("  {s}");
+                }
+                if strings.len() > 40 {
+                    println!("  ... ({} more)", strings.len() - 40);
+                }
+            }
+            println!("build log: {}", if b.build_log.is_empty() { "(empty)" } else { &b.build_log });
+            if let Some(path) = out {
+                std::fs::write(&path, &b.bytes).map_err(|e| Error(format!("--out {path}: {e}")))?;
+                println!("written: {path} ({} bytes)", b.bytes.len());
             }
             Ok(())
         }

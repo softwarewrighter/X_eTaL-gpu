@@ -56,6 +56,14 @@ mojo *args:
 run-mojo FILE *args: build
     shift; XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu run {{FILE}} --device mojo --time "$@"
 
+# What the device's OpenCL compiler keeps of a program's kernels (CL_PROGRAM_BINARIES): just kernel-binary libs/Accel/demos/threshold.xtl --out threshold.bin
+kernel-binary FILE *args: build
+    shift; XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu binary {{FILE}} "$@"
+
+# The OpenCL evidence for a demo (XIR, OpenCL C, plan, run vs baseline, program binary, environment) into DIR: just opencl-evidence docs/evidence/m1max-opencl-20261021
+opencl-evidence DIR *args: build
+    shift; scripts/opencl-evidence.sh {{DIR}} "$@"
+
 # The Mojo source the Mojo backend builds for a program
 mojo-kernel FILE: build
     XETAL_PATH="$(scripts/libs.py path)" target/release/xetal-gpu kernel {{FILE}} --backend mojo

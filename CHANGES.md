@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-21
+
+- 17:30 `feat` The program binary OpenCL hands back (saga gpu-models, opencl-binary; the blog agent's ask X1, the user 2026-10-21): `xetal-gpu binary FILE [--device opencl:N] [SCHEDULE] [--out FILE]` builds the plan's kernels on the device as `run` does and reports `CL_PROGRAM_BINARY_TYPE`, `CL_PROGRAM_BINARY_SIZES`, what the bytes look like (a known container by its magic, PTX text, or unrecognized) and the readable strings inside, writing the bytes with `--out` (`just kernel-binary`); the runtime's `program_binary`, `describe_bytes` and `readable_strings`, tested on device 0 when there is one. `scripts/opencl-evidence.sh DIR` (`just opencl-evidence`) captures a demo's evidence as modular-fork's CUDA and Metal handoffs are laid out: the lowered XIR, the OpenCL C, the plan, the run checked against the evaluator's baseline, the returned bytes decoded, environment.log and build.log. `docs/evidence/m1max-opencl-20261021/` and `docs/m1max-opencl-handoff.md`: the threshold demo on the M1 Max gives the baseline's five lines exactly, and Apple's OpenCL returns as its `executable` binary a 2,108-byte property list holding only the driver's compile options and the source's 27 lines, no AIR or GPU code (a refused build logs `cl2Metal failed`, naming the translator inside Apple's driver). `docs/arch-rerun.md` item 6 sends ask A7, NVIDIA's PTX for the same program, to the Arch lane with the same script.
+
 ## 2026-10-16
 
 - 17:50 `docs` README links the blog post on this repository (the array-language series, 2026-10-13) at the top of its documentation list.

@@ -19,7 +19,10 @@ use opencl3::device::{Device, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_ALL, CL
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_WRITE};
 use opencl3::platform::get_platforms;
-use opencl3::program::Program;
+use opencl3::program::{
+    Program, CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT, CL_PROGRAM_BINARY_TYPE_EXECUTABLE, CL_PROGRAM_BINARY_TYPE_LIBRARY,
+    CL_PROGRAM_BINARY_TYPE_NONE,
+};
 use opencl3::types::{cl_long, CL_BLOCKING};
 
 use xetal_gpu_opencl::{Arg, BufferId, Elem, Init, Plan};
@@ -99,6 +102,163 @@ fn device(index: usize) -> Result<(DeviceInfo, Device)> {
         }
     }
     unreachable!("the device was listed")
+}
+
+/// What one device's OpenCL compiler made of a program's source: the
+/// bytes `CL_PROGRAM_BINARIES` returns for it, in whatever form the
+/// implementation chooses (NVIDIA returns PTX text; Apple returns a
+/// bitcode container), with the type OpenCL 1.2 reports for them
+/// (`CL_PROGRAM_BINARY_TYPE`), the kernels found and the build log.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProgramBinary {
+    pub device: DeviceInfo,
+    /// `CL_DRIVER_VERSION`.
+    pub driver_version: String,
+    /// `CL_DEVICE_OPENCL_C_VERSION`.
+    pub opencl_c_version: String,
+    /// `none`, `compiled object`, `library`, `executable`, or the raw number.
+    pub binary_type: String,
+    /// `CL_PROGRAM_KERNEL_NAMES`, separated by `;`.
+    pub kernel_names: String,
+    pub build_log: String,
+    pub bytes: Vec<u8>,
+}
+
+/// Build `source` for device `opencl:index` and return what its
+/// compiler made of it (`CL_PROGRAM_BINARIES`). A refused source is
+/// the error, with the build log.
+pub fn program_binary(source: &str, index: usize) -> Result<ProgramBinary> {
+    let (info, dev) = device(index)?;
+    let context = Context::from_device(&dev).map_err(cl)?;
+    let program = Program::create_and_build_from_source(&context, source, "")
+        .map_err(|log| Error(format!("the OpenCL compiler of {} refused the kernels:\n{}", info.name, log.trim())))?;
+    let binary_type = match program.get_build_binary_type(dev.id()).map_err(cl)? {
+        CL_PROGRAM_BINARY_TYPE_NONE => "none".to_string(),
+        CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT => "compiled object".to_string(),
+        CL_PROGRAM_BINARY_TYPE_LIBRARY => "library".to_string(),
+        CL_PROGRAM_BINARY_TYPE_EXECUTABLE => "executable".to_string(),
+        other => format!("{other:#x}"),
+    };
+    let sizes = program.get_binary_sizes().map_err(cl)?;
+    // An implementation that keeps no binary reports every size as 0;
+    // asking for the bytes then is not worth an error.
+    let mut binaries = if sizes.iter().all(|s| *s == 0) {
+        Vec::new()
+    } else {
+        program.get_binaries().map_err(cl)?
+    };
+    // One device in the context, so one binary; its size as reported.
+    let bytes = binaries.pop().unwrap_or_default();
+    if let Some(size) = sizes.first() {
+        if *size != bytes.len() {
+            return Err(Error(format!(
+                "OpenCL: CL_PROGRAM_BINARY_SIZES says {size} bytes, CL_PROGRAM_BINARIES gave {}",
+                bytes.len()
+            )));
+        }
+    }
+    Ok(ProgramBinary {
+        device: info,
+        driver_version: dev.driver_version().unwrap_or_default().trim().to_string(),
+        opencl_c_version: dev.opencl_c_version().unwrap_or_default().trim().to_string(),
+        binary_type,
+        kernel_names: program.get_kernel_names().unwrap_or_default(),
+        build_log: program.get_build_log(dev.id()).unwrap_or_default().trim().to_string(),
+        bytes,
+    })
+}
+
+/// What `bytes` look like, from their first bytes: the containers an
+/// OpenCL implementation is known to return, or `unrecognized`.
+pub fn describe_bytes(bytes: &[u8]) -> &'static str {
+    match bytes {
+        [] => "empty",
+        [b'B', b'C', 0xC0, 0xDE, ..] => "LLVM bitcode (magic BC C0 DE)",
+        [0xDE, 0xC0, 0x17, 0x0B, ..] => "LLVM bitcode in its wrapper (magic 0B17C0DE)",
+        [0x7F, b'E', b'L', b'F', ..] => "ELF (a code object)",
+        [0xCF, 0xFA, 0xED, 0xFE, ..] | [0xFE, 0xED, 0xFA, 0xCF, ..] => "Mach-O, 64-bit",
+        [0xCE, 0xFA, 0xED, 0xFE, ..] | [0xFE, 0xED, 0xFA, 0xCE, ..] => "Mach-O, 32-bit",
+        [0xCA, 0xFE, 0xBA, 0xBE, ..] => "Mach-O universal (fat) archive",
+        _ if bytes.starts_with(b"bplist00") => "Apple binary property list",
+        _ if bytes.starts_with(b"<?xml") => "XML",
+        _ if bytes.starts_with(b"//")
+            && is_text(bytes)
+            && std::str::from_utf8(bytes).is_ok_and(|s| s.contains(".version") && s.contains(".target")) =>
+        {
+            "PTX text (NVIDIA's virtual assembly)"
+        }
+        _ if is_text(bytes) => "text",
+        _ => "unrecognized",
+    }
+}
+
+/// Printable ASCII and UTF-8 only (tabs and newlines allowed).
+fn is_text(bytes: &[u8]) -> bool {
+    std::str::from_utf8(bytes).is_ok_and(|s| s.chars().all(|c| !c.is_control() || c == '\n' || c == '\t' || c == '\r'))
+}
+
+/// The runs of `min` or more printable ASCII characters inside
+/// `bytes`, each once, in order: what an opaque binary says about
+/// itself (its target triple, the compiler's name, the kernel names).
+pub fn readable_strings(bytes: &[u8], min: usize) -> Vec<String> {
+    let mut found: Vec<String> = Vec::new();
+    let mut run: Vec<u8> = Vec::new();
+    for b in bytes.iter().chain(std::iter::once(&0u8)) {
+        if b.is_ascii_graphic() || *b == b' ' {
+            run.push(*b);
+            continue;
+        }
+        if run.len() >= min {
+            let s = String::from_utf8_lossy(&run).to_string();
+            if !found.contains(&s) {
+                found.push(s);
+            }
+        }
+        run.clear();
+    }
+    found
+}
+
+#[cfg(test)]
+mod binary_tests {
+    use super::{describe_bytes, program_binary, readable_strings};
+
+    #[test]
+    fn describes_the_known_containers() {
+        assert_eq!(describe_bytes(b""), "empty");
+        assert!(describe_bytes(b"BC\xc0\xde\x35\x14").starts_with("LLVM bitcode"));
+        assert!(describe_bytes(b"\x7fELF\x02\x01").starts_with("ELF"));
+        assert!(describe_bytes(&[0xcf, 0xfa, 0xed, 0xfe, 0, 0]).starts_with("Mach-O, 64"));
+        let ptx = "//\n// Generated by NVIDIA NVVM Compiler\n.version 8.5\n.target sm_120a\n.entry k0() {}\n";
+        assert!(describe_bytes(ptx.as_bytes()).starts_with("PTX text"));
+        assert_eq!(describe_bytes(b"// a comment\n"), "text");
+        assert_eq!(describe_bytes(&[0, 1, 2, 0xff]), "unrecognized");
+        let mut opaque = vec![0u8, 1, 2];
+        opaque.extend_from_slice(b"air64-apple-macosx");
+        opaque.push(0);
+        opaque.extend_from_slice(b"k0");
+        assert_eq!(readable_strings(&opaque, 8), vec!["air64-apple-macosx".to_string()]);
+    }
+
+    /// The query on device 0, when there is one: the kernel names come
+    /// back, and the bytes are as long as the size reported.
+    #[test]
+    fn queries_the_program_binary_on_device_0() {
+        if super::devices().unwrap().is_empty() {
+            eprintln!("skipped: queries_the_program_binary_on_device_0 (no OpenCL device)");
+            return;
+        }
+        let source = "__kernel void k0(__global float* a) { size_t i = get_global_id(0); a[i] = a[i] * 2.0f; }\n";
+        let b = program_binary(source, 0).unwrap();
+        assert_eq!(b.kernel_names, "k0");
+        assert!(!b.binary_type.is_empty());
+        if b.bytes.is_empty() {
+            eprintln!("{} returns no program binary", b.device.name);
+        } else {
+            eprintln!("{} returns {} bytes: {}", b.device.name, b.bytes.len(), describe_bytes(&b.bytes));
+        }
+        assert!(program_binary("__kernel void k0(", 0).is_err());
+    }
 }
 
 /// The largest power of two not above n (n at least 1).

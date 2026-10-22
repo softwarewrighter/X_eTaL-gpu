@@ -130,7 +130,11 @@ through X_eTaL's own crates (2026-10-13, the hand-written twins
 deleted), running from source with the evaluator computing what the
 device cannot, the macro `gp:a_ccel<` and its runner, and on
 2026-10-16 X_eTaL-ML's own programs from their source and a second
-backend, Mojo (saga 12, in progress). On 2026-10-12 the same code
+backend, Mojo (saga 12, in progress); on 2026-10-21 `xetal-gpu
+binary`, which asks a device's OpenCL compiler for the program
+binary it keeps (Apple's is the source and the options in a
+property list, no GPU code: [`docs/m1max-opencl-handoff.md`](docs/m1max-opencl-handoff.md)).
+On 2026-10-12 the same code
 was run on the RTX 5060 Ti (16 GB) in the Arch Linux machine, in its
 own lane, and that lane re-runs every change there (last on
 2026-10-16: the models from source and the Mojo backend): every
@@ -343,6 +347,11 @@ example programs the GPU runs) and `docs/README.md` (the reference).
 - [`docs/ml-results.md`](docs/ml-results.md) -- X_eTaL-ML's benchmarks
   and its world model on every device here, the device's time and
   the bridge's apart
+- [`docs/m1max-opencl-handoff.md`](docs/m1max-opencl-handoff.md) --
+  the threshold demo through Apple's OpenCL on the M1 Max and what
+  its program binary holds, with the evidence under `docs/evidence/`
+  (for the blog's GPU deep dive; the Arch lane's NVIDIA capture
+  follows)
 - [`docs/tuple-plan.md`](docs/tuple-plan.md) -- where X_eTaL's
   tuples would help here, what blocks each use, and when to adopt them
 - [`docs/macros-and-extensions.md`](docs/macros-and-extensions.md) --

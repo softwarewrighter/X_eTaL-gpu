@@ -1,0 +1,39 @@
+device: opencl:0 Apple M1 Max (Apple; OpenCL 1.2; driver 1.2 1.0; OpenCL C 1.2)
+kernels: k0
+CL_PROGRAM_BINARY_TYPE: executable
+CL_PROGRAM_BINARY_SIZES: 2108 bytes
+CL_PROGRAM_BINARIES: Apple binary property list
+first bytes: 62 70 6c 69 73 74 30 30 d4 01 02 03 04 05 06 07
+readable strings of 8 characters or more: 30
+  bplist00
+  clBinaryVersion\clBinaryData_
+  clPlatformVersion^clBinaryDriver
+  WOPTIONSUFLAGSVSOURCE_
+  z -Dcl_khr_byte_addressable_store -Dcl_khr_global_int32_base_atomics -Dcl_khr_global_int32_extended_atomics -Dcl_khr_local_int32_base_atomics -Dcl_khr_local_int32_extended_atomics -Dcl_khr_3d_image_writes -Dcl_khr_image2d_from_buffer -Dcl_khr_depth_images -D__IMAGE_SUPPORT__ -D__OPENCL_VERSION__=120 -D__OPENCL_C_VERSION__=120  -I"/Users/mike/github/softwarewrighter/X_eTaL-gpu"
+  a// X_eTaL-gpu: generated OpenCL C 1.2. Floored division and remainder, as X_eTaL's d_iv and m_od._
+  xinline long xetal_idiv_long(long a, long b) { long q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }_
+  Uinline long xetal_imod_long(long a, long b) { return a - xetal_idiv_long(a, b) * b; }_
+  sinline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }_
+  Pinline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }P_
+  d// k0: 8 elements, one work-item each; computes %div %sub %gt %f %mul %max %sub_2 %max_2 %mod %mul_2_
+  __kernel void k0(__global const float* b_l, __global const long* b_l_2, __global float* b_sub, __global float* b_mul, __global float* b_max, __global long* b_max_2, __global long* b_mul_2) {_
+       size_t i = get_global_id(0);_
+      if (i >= 8) return;_
+  "    float t_div = (b_l[i] / 4.0f);_
+  !    float t_sub = (t_div - 1.0f);_
+      int t_gt = (t_sub > 0.5f);_
+      float t_f = (float)t_gt;_
+       float t_mul = (t_sub * t_f);_
+  $    float t_max = fmax(t_sub, 0.0f);_
+  #    long t_sub_2 = (b_l_2[i] - 4L);_
+  $    long t_max_2 = max(t_sub_2, 0L);_
+  .    long t_mod = xetal_imod_long(t_sub_2, 2L);_
+  %    long t_mul_2 = (t_sub_2 * t_mod);_
+      b_sub[i] = t_sub;_
+      b_mul[i] = t_mul;_
+      b_max[i] = t_max;_
+      b_max_2[i] = t_max_2;_
+      b_mul_2[i] = t_mul_2;Q}
+  !OpenCL 1.2 (Apr 18 2026 19:20:04)W1.2 1.0
+build log: (empty)
+written: docs/evidence/m1max-opencl-20261021/threshold.bin (2108 bytes)

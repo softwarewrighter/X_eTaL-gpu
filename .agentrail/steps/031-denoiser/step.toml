@@ -1,4 +1,4 @@
-number = 30
+number = 31
 slug = "denoiser"
 status = "pending"
 description = "GA1, part 3: X_eTaL-ML's learned denoiser (20 steps from given noise, 256 pic..."
