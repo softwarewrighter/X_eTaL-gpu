@@ -337,6 +337,11 @@ example programs the GPU runs) and `docs/README.md` (the reference).
 
 - [Array languages on GPUs: X_eTaL-gpu](https://blog.softwarewrighter.com/2026/10/13/array-languages-xetal-gpu/),
   the blog post on this repository in the array-language series
+- [Rabbit hole: X_eTaL to the metal](https://blog.softwarewrighter.com/2026/10/21/rabbit-hole-xetal-to-the-metal/),
+  the GPU deep dive (2026-10-21): the threshold program from X_eTaL
+  source through XIR to Mojo, PTX, AIR, CUDA C and OpenCL C, with the
+  evidence captured here (`docs/m1max-opencl-handoff.md`,
+  `docs/rtx5060-opencl-handoff.md`)
 - [The live site](https://softwarewrighter.github.io/X_eTaL-gpu/) and
   its [`doc/`](https://softwarewrighter.github.io/X_eTaL-gpu/doc/):
   `xetal doc` of the libraries, the example programs and the GPU

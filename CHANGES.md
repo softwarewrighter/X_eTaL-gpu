@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-21
 
+- 18:05 `docs` README links today's blog post, the GPU deep dive (Rabbit hole: X_eTaL to the metal, 2026-10-21), under the array-language post in its documentation list.
 - 17:45 `docs` The Apple OpenCL handoff's setup time corrected to the committed run log's (about 60 ms, not 56; the blog agent's note).
 - 17:35 `chore` Record the completed RTX OpenCL capture after the full GPU gate and evidence commit; next is Mojo Ints and shapes.
 
