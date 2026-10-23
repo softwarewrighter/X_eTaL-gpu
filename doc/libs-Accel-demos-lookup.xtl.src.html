@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>libs/Accel/demos/lookup.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-accelerate.xtl.html">accelerate.xtl</a></li>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+<li><a href="extensions-gpu-lib-Gpu.xtlm.html">Gpu.xtlm</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-host-data.xtl.html">host-data.xtl</a></li>
+<li><a href="libs-Accel-demos-lookup.xtl.html">lookup.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-topk.xtl.html">topk.xtl</a></li>
+<li><a href="libs-Accel-demos-transpose.xtl.html">transpose.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+<li><a href="libs-Accel-demos-windows.xtl.html">windows.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#L9">v</a></li>
+<li class="item"><a href="#L13">m</a></li>
+<li class="item"><a href="#L16">t</a></li>
+<li class="item"><a href="#L17">ids</a></li>
+<li class="item"><a href="#L18">e</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">source</span><a href="libs-Accel-demos-lookup.xtl.html">libs/Accel/demos/lookup.xtl</a></h1>
+<div class="source"><span class="line" id="L1"><a class="ln" href="#L1">1</a><span class="c-comment">⍝</span><span class="c-comment">!/usr/bin/env xetal</span></span>
+<span class="line" id="L2"><a class="ln" href="#L2">2</a><span class="c-comment">⍝</span><span class="c-comment"> Lookups: items of a vector at given positions (one, several, a</span></span>
+<span class="line" id="L3"><a class="ln" href="#L3">3</a><span class="c-comment">⍝</span><span class="c-comment"> matrix of them), rows of a matrix, columns along the second axis;</span></span>
+<span class="line" id="L4"><a class="ln" href="#L4">4</a><span class="c-comment">⍝</span><span class="c-comment"> then an embedding table and a batch of two prompts of three token</span></span>
+<span class="line" id="L5"><a class="ln" href="#L5">5</a><span class="c-comment">⍝</span><span class="c-comment"> ids each, the embeddings summed per prompt. On a GPU a lookup is a</span></span>
+<span class="line" id="L6"><a class="ln" href="#L6">6</a><span class="c-comment">⍝</span><span class="c-comment"> gather with the table resident and only the ids uploaded. Run with</span></span>
+<span class="line" id="L7"><a class="ln" href="#L7">7</a><span class="c-comment">⍝</span><span class="c-comment"> &quot;just demo-lib Accel lookup&quot;.</span></span>
+<span class="line" id="L8"><a class="ln" href="#L8">8</a><span class="c-libfunc">ᵃᶜ⁼</span><span class="c-macro">u̲se&lt;</span> <a href="libs-Accel-src-Accel.xtl.html" class="c-string">&quot;Accel&quot;</a></span>
+<span class="line" id="L9"><a class="ln" href="#L9">9</a>v ← <span class="c-number">10</span> <span class="c-number">20</span> <span class="c-number">30</span> <span class="c-number">40</span> <span class="c-number">50</span></span>
+<span class="line" id="L10"><a class="ln" href="#L10">10</a><span class="c-number">2</span> <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> <a href="libs-Accel-demos-lookup.xtl.html#v">v</a></span>
+<span class="line" id="L11"><a class="ln" href="#L11">11</a><span class="c-number">2</span> <span class="c-number">4</span> <span class="c-number">1</span> <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> <a href="libs-Accel-demos-lookup.xtl.html#v">v</a></span>
+<span class="line" id="L12"><a class="ln" href="#L12">12</a>(<span class="c-number">2</span> <span class="c-number">2</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">2</span> <span class="c-number">4</span> <span class="c-number">1</span> <span class="c-number">1</span>) <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> <a href="libs-Accel-demos-lookup.xtl.html#v">v</a></span>
+<span class="line" id="L13"><a class="ln" href="#L13">13</a>m ← <span class="c-number">3</span> <span class="c-number">2</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <a href="builtins.html#r_ange" class="c-builtin">r̲ange</a> <span class="c-number">6</span></span>
+<span class="line" id="L14"><a class="ln" href="#L14">14</a><span class="c-number">3</span> <span class="c-number">1</span> <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> <a href="libs-Accel-demos-lookup.xtl.html#m">m</a></span>
+<span class="line" id="L15"><a class="ln" href="#L15">15</a><span class="c-number">2</span> <span class="c-number">1</span> <a href="builtins.html#s_elect" class="c-builtin">s̲elect₂</a> <a href="libs-Accel-demos-lookup.xtl.html#m">m</a></span>
+<span class="line" id="L16"><a class="ln" href="#L16">16</a>t ← <span class="c-number">5</span> <span class="c-number">4</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.0</span> <span class="c-number">0.1</span> <span class="c-number">0.2</span> <span class="c-number">0.3</span> <span class="c-number">1.0</span> <span class="c-number">1.1</span> <span class="c-number">1.2</span> <span class="c-number">1.3</span> <span class="c-number">2.0</span> <span class="c-number">2.1</span> <span class="c-number">2.2</span> <span class="c-number">2.3</span> <span class="c-number">3.0</span> <span class="c-number">3.1</span> <span class="c-number">3.2</span> <span class="c-number">3.3</span> <span class="c-number">4.0</span> <span class="c-number">4.1</span> <span class="c-number">4.2</span> <span class="c-number">4.3</span></span>
+<span class="line" id="L17"><a class="ln" href="#L17">17</a>ids ← <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1</span> <span class="c-number">5</span> <span class="c-number">2</span> <span class="c-number">4</span> <span class="c-number">4</span> <span class="c-number">3</span></span>
+<span class="line" id="L18"><a class="ln" href="#L18">18</a>e ← <a href="libs-Accel-demos-lookup.xtl.html#t">t</a> <a href="libs-Accel-src-Accel.xtl.html#l.e_mbed" class="c-libfunc">ᵃᶜe̲mbed</a> <a href="libs-Accel-demos-lookup.xtl.html#ids">ids</a></span>
+<span class="line" id="L19"><a class="ln" href="#L19">19</a><a href="libs-Accel-demos-lookup.xtl.html#e">e</a></span>
+<span class="line" id="L20"><a class="ln" href="#L20">20</a><span class="c-symbol">'</span><a href="builtins.html#-2b" class="c-symbol">+</a> <a href="builtins.html#r_-2f" class="c-builtin">r̲/₂</a> <a href="libs-Accel-demos-lookup.xtl.html#e">e</a></span>
+</div>
+</main>
+</body>
+</html>

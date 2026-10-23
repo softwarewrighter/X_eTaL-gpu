@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>extensions/gpu/lib/Gpu.xtlm - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-accelerate.xtl.html">accelerate.xtl</a></li>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+<li><a href="extensions-gpu-lib-Gpu.xtlm.html">Gpu.xtlm</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-host-data.xtl.html">host-data.xtl</a></li>
+<li><a href="libs-Accel-demos-lookup.xtl.html">lookup.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-topk.xtl.html">topk.xtl</a></li>
+<li><a href="libs-Accel-demos-transpose.xtl.html">transpose.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+<li><a href="libs-Accel-demos-windows.xtl.html">windows.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#L24"><span class="c-libfunc">ʰw̲ords</span></a></li>
+<li class="item"><a href="#L25"><span class="c-libfunc">ʰw̲ord</span></a></li>
+<li class="item"><a href="#L28"><span class="c-libfunc">ʰq̲uote</span></a></li>
+<li class="item"><a href="#L31"><span class="c-libfunc">ʰs̲econd</span></a></li>
+<li class="item"><a href="#L38"><span class="c-libfunc">ʰh̲ead</span></a></li>
+<li class="item"><a href="#L42"><span class="c-libfunc">ʰb̲inds</span></a></li>
+<li class="item"><a href="#L59"><span class="c-macro">ᵐa̲ccel&lt;</span></a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">source</span><a href="extensions-gpu-lib-Gpu.xtlm.html">extensions/gpu/lib/Gpu.xtlm</a></h1>
+<div class="source"><span class="line" id="L1"><a class="ln" href="#L1">1</a><span class="c-comment">⍝</span><span class="c-comment"># Gpu.xtlm: the accelerate macro: a function's text handed to the GPU runner</span></span>
+<span class="line" id="L2"><a class="ln" href="#L2">2</a><span class="c-comment">⍝</span><span class="c-comment">#</span></span>
+<span class="line" id="L3"><a class="ln" href="#L3">3</a><span class="c-comment">⍝</span><span class="c-comment"># Import it with the facade: &quot;gp:&quot; u_se&lt; &quot;Gpu&quot; brings Gpu.xtl (the</span></span>
+<span class="line" id="L4"><a class="ln" href="#L4">4</a><span class="c-comment">⍝</span><span class="c-comment"># functions) and this file (the macro) under one alias. The program</span></span>
+<span class="line" id="L5"><a class="ln" href="#L5">5</a><span class="c-comment">⍝</span><span class="c-comment"># must import the facade as gp:, since the expansion calls gp:l_ower,</span></span>
+<span class="line" id="L6"><a class="ln" href="#L6">6</a><span class="c-comment">⍝</span><span class="c-comment"># gp:b_ind, gp:r_un and gp:o_utput.</span></span>
+<span class="line" id="L7"><a class="ln" href="#L7">7</a><span class="c-comment">⍝</span><span class="c-comment">#</span></span>
+<span class="line" id="L8"><a class="ln" href="#L8">8</a><span class="c-comment">⍝</span><span class="c-comment"># u:f_ := KINDS gp:a_ccel&lt; &quot;{ x w -&gt; ... }&quot; defines a function of the same</span></span>
+<span class="line" id="L9"><a class="ln" href="#L9">9</a><span class="c-comment">⍝</span><span class="c-comment"># parameters that hands the text to the gpu extension, which lowers it</span></span>
+<span class="line" id="L10"><a class="ln" href="#L10">10</a><span class="c-comment">⍝</span><span class="c-comment"># through X_eTaL's own crates for the arguments' shapes when they are</span></span>
+<span class="line" id="L11"><a class="ln" href="#L11">11</a><span class="c-comment">⍝</span><span class="c-comment"># bound (once per set of shapes), runs it on opencl:0 with the</span></span>
+<span class="line" id="L12"><a class="ln" href="#L12">12</a><span class="c-comment">⍝</span><span class="c-comment"># arguments uploaded, and reads the result back. KINDS says how each</span></span>
+<span class="line" id="L13"><a class="ln" href="#L13">13</a><span class="c-comment">⍝</span><span class="c-comment"># argument is taken, &quot;float&quot; or &quot;int&quot; per parameter (&quot;&quot; for all</span></span>
+<span class="line" id="L14"><a class="ln" href="#L14">14</a><span class="c-comment">⍝</span><span class="c-comment"># Floats); an Int array must be bound as int to be looked up by. The</span></span>
+<span class="line" id="L15"><a class="ln" href="#L15">15</a><span class="c-comment">⍝</span><span class="c-comment"># function is one or two named arrays to one array, written on one</span></span>
+<span class="line" id="L16"><a class="ln" href="#L16">16</a><span class="c-comment">⍝</span><span class="c-comment"># line without quotes; its libraries are the ones the calling file</span></span>
+<span class="line" id="L17"><a class="ln" href="#L17">17</a><span class="c-comment">⍝</span><span class="c-comment"># imports (the expansion names the file, so the runner reads its u_se&lt;</span></span>
+<span class="line" id="L18"><a class="ln" href="#L18">18</a><span class="c-comment">⍝</span><span class="c-comment"># lines). The same macro, with a runner that has load-from-source,</span></span>
+<span class="line" id="L19"><a class="ln" href="#L19">19</a><span class="c-comment">⍝</span><span class="c-comment"># bind and run, would accelerate on anything.</span></span>
+<span class="line" id="L20"><a class="ln" href="#L20">20</a></span>
+<span class="line" id="L21"><a class="ln" href="#L21">21</a><span class="c-comment">⍝</span><span class="c-comment">## Private helpers (text)</span></span>
+<span class="line" id="L22"><a class="ln" href="#L22">22</a></span>
+<span class="line" id="L23"><a class="ln" href="#L23">23</a><span class="c-comment">⍝</span><span class="c-comment"># The words of a text (split on spaces).</span></span>
+<span class="line" id="L24"><a class="ln" href="#L24">24</a><span class="c-libfunc">ʰw̲ords</span> ← { s → (<a href="builtins.html#n_ot" class="c-builtin">n̲ot</a> s <a href="builtins.html#-3d" class="c-symbol">=</a> <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot; &quot;</span>) <a href="builtins.html#p_artition" class="c-builtin">p̲artition</a> s }</span>
+<span class="line" id="L25"><a class="ln" href="#L25">25</a><span class="c-libfunc">ʰw̲ord</span> ← { i w → <a href="builtins.html#d_isclose" class="c-builtin">d̲isclose</a> i <a href="builtins.html#s_elect" class="c-builtin">s̲elect</a> w }</span>
+<span class="line" id="L26"><a class="ln" href="#L26">26</a></span>
+<span class="line" id="L27"><a class="ln" href="#L27">27</a><span class="c-comment">⍝</span><span class="c-comment"># The text as a string literal (no quotes or backslashes inside).</span></span>
+<span class="line" id="L28"><a class="ln" href="#L28">28</a><span class="c-libfunc">ʰq̲uote</span> ← { t → <span class="c-string">&quot;\&quot;&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> t <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;\&quot;&quot;</span> }</span>
+<span class="line" id="L29"><a class="ln" href="#L29">29</a></span>
+<span class="line" id="L30"><a class="ln" href="#L30">30</a><span class="c-comment">⍝</span><span class="c-comment"># The second parameter's name, or &quot;&quot; when the function takes one.</span></span>
+<span class="line" id="L31"><a class="ln" href="#L31">31</a><span class="c-libfunc">ʰs̲econd</span> ← { w →</span>
+<span class="line" id="L32"><a class="ln" href="#L32">32</a>  (<span class="c-number">3</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#h.w_ord" class="c-libfunc">ʰw̲ord</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;-&gt;&quot;</span> ? <span class="c-string">&quot;&quot;</span></span>
+<span class="line" id="L33"><a class="ln" href="#L33">33</a>  <span class="c-number">3</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#h.w_ord" class="c-libfunc">ʰw̲ord</a> w</span>
+<span class="line" id="L34"><a class="ln" href="#L34">34</a>}</span>
+<span class="line" id="L35"><a class="ln" href="#L35">35</a></span>
+<span class="line" id="L36"><a class="ln" href="#L36">36</a><span class="c-comment">⍝</span><span class="c-comment"># The parameter list and the bind calls, for one or two parameters</span></span>
+<span class="line" id="L37"><a class="ln" href="#L37">37</a><span class="c-comment">⍝</span><span class="c-comment"># (read from the right: the last bind happens first).</span></span>
+<span class="line" id="L38"><a class="ln" href="#L38">38</a><span class="c-libfunc">ʰh̲ead</span> ← { a b →</span>
+<span class="line" id="L39"><a class="ln" href="#L39">39</a>  b <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;&quot;</span> ? a</span>
+<span class="line" id="L40"><a class="ln" href="#L40">40</a>  a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> b</span>
+<span class="line" id="L41"><a class="ln" href="#L41">41</a>}</span>
+<span class="line" id="L42"><a class="ln" href="#L42">42</a><span class="c-libfunc">ʰb̲inds</span> ← { a b →</span>
+<span class="line" id="L43"><a class="ln" href="#L43">43</a>  one ← <span class="c-string">&quot;1 gp:b_ind &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> a <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; gp:a_fter &quot;</span></span>
+<span class="line" id="L44"><a class="ln" href="#L44">44</a>  b <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;&quot;</span> ? one</span>
+<span class="line" id="L45"><a class="ln" href="#L45">45</a>  <span class="c-string">&quot;2 gp:b_ind &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> b <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; gp:a_fter &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> one</span>
+<span class="line" id="L46"><a class="ln" href="#L46">46</a>}</span>
+<span class="line" id="L47"><a class="ln" href="#L47">47</a></span>
+<span class="line" id="L48"><a class="ln" href="#L48">48</a><span class="c-comment">⍝</span><span class="c-comment">## The macro</span></span>
+<span class="line" id="L49"><a class="ln" href="#L49">49</a></span>
+<span class="line" id="L50"><a class="ln" href="#L50">50</a><span class="c-comment">⍝</span><span class="c-comment"># KINDS gp:a_ccel&lt; &quot;{ x w -&gt; body }&quot;: see the file's header. A</span></span>
+<span class="line" id="L51"><a class="ln" href="#L51">51</a><span class="c-comment">⍝</span><span class="c-comment"># function that calls a library's functions (ac:d_ense) is written in</span></span>
+<span class="line" id="L52"><a class="ln" href="#L52">52</a><span class="c-comment">⍝</span><span class="c-comment"># a file that imports that library; here, a product of primitives.</span></span>
+<span class="line" id="L53"><a class="ln" href="#L53">53</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; &quot;gp:&quot; u_se&lt; &quot;Gpu&quot;</span></span>
+<span class="line" id="L54"><a class="ln" href="#L54">54</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; u:s_cores := &quot;float float&quot; gp:a_ccel&lt; &quot;{ q k -&gt; q '+ '* i_nner 2 1 t_ranspose k }&quot;</span></span>
+<span class="line" id="L55"><a class="ln" href="#L55">55</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; q := 2 3 r_eshape 1.0 0.5 -1.0 0.0 2.0 0.25</span></span>
+<span class="line" id="L56"><a class="ln" href="#L56">56</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; k := 4 3 r_eshape 0.5 1.0 0.0 -1.0 0.5 2.0 1.5 -0.5 1.0 0.0 0.0 1.0</span></span>
+<span class="line" id="L57"><a class="ln" href="#L57">57</a><span class="c-comment">⍝</span><span class="c-comment"># &gt;&gt; (q '+ '* i_nner 2 1 t_ranspose k) gp:n_ear q u:s_cores k</span></span>
+<span class="line" id="L58"><a class="ln" href="#L58">58</a><span class="c-comment">⍝</span><span class="c-comment"># ok</span></span>
+<span class="line" id="L59"><a class="ln" href="#L59">59</a><span class="c-macro">ᵐa̲ccel&lt;</span> ← { kinds f →</span>
+<span class="line" id="L60"><a class="ln" href="#L60">60</a>  (<a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot;\&quot;&quot;</span>) <a href="builtins.html#m_ember-3f" class="c-builtin">m̲ember?</a> f ? <span class="c-string">&quot;bad-macro-argument right&quot;</span> <a href="builtins.html#-5b-5dR_EJECT" class="c-builtin">⎕R̲EJECT</a> <span class="c-string">&quot;the function's text holds a quote; write it without strings&quot;</span></span>
+<span class="line" id="L61"><a class="ln" href="#L61">61</a>  (<a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <span class="c-string">&quot;\n&quot;</span>) <a href="builtins.html#m_ember-3f" class="c-builtin">m̲ember?</a> f ? <span class="c-string">&quot;bad-macro-argument right&quot;</span> <a href="builtins.html#-5b-5dR_EJECT" class="c-builtin">⎕R̲EJECT</a> <span class="c-string">&quot;the function's text spans lines; write it on one&quot;</span></span>
+<span class="line" id="L62"><a class="ln" href="#L62">62</a>  w ← <a href="extensions-gpu-lib-Gpu.xtlm.html#h.w_ords" class="c-libfunc">ʰw̲ords</a> f</span>
+<span class="line" id="L63"><a class="ln" href="#L63">63</a>  <a href="builtins.html#n_ot" class="c-builtin">n̲ot</a> (<span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#h.w_ord" class="c-libfunc">ʰw̲ord</a> w) <a href="builtins.html#m_atch" class="c-builtin">m̲atch</a> <span class="c-string">&quot;{&quot;</span> ? <span class="c-string">&quot;bad-macro-argument right&quot;</span> <a href="builtins.html#-5b-5dR_EJECT" class="c-builtin">⎕R̲EJECT</a> <span class="c-string">&quot;the function must be written { x -&gt; ... } or { x w -&gt; ... }&quot;</span></span>
+<span class="line" id="L64"><a class="ln" href="#L64">64</a>  p1 ← <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#h.w_ord" class="c-libfunc">ʰw̲ord</a> w</span>
+<span class="line" id="L65"><a class="ln" href="#L65">65</a>  p2 ← <a href="extensions-gpu-lib-Gpu.xtlm.html#h.s_econd" class="c-libfunc">ʰs̲econd</a> w</span>
+<span class="line" id="L66"><a class="ln" href="#L66">66</a>  spec ← (<a href="builtins.html#-5b-5dF_ILE" class="c-builtin">⎕F̲ILE</a> @) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot;|&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> kinds</span>
+<span class="line" id="L67"><a class="ln" href="#L67">67</a>  <span class="c-string">&quot;{ &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (p1 <a href="extensions-gpu-lib-Gpu.xtlm.html#h.h_ead" class="c-libfunc">ʰh̲ead</a> p2) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; -&gt; gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (p1 <a href="extensions-gpu-lib-Gpu.xtlm.html#h.b_inds" class="c-libfunc">ʰb̲inds</a> p2) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="extensions-gpu-lib-Gpu.xtlm.html#h.q_uote" class="c-libfunc">ʰq̲uote</a> f) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; gp:l_ower &quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> (<a href="extensions-gpu-lib-Gpu.xtlm.html#h.q_uote" class="c-libfunc">ʰq̲uote</a> spec) <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <span class="c-string">&quot; }&quot;</span></span>
+<span class="line" id="L68"><a class="ln" href="#L68">68</a>}</span>
+</div>
+</main>
+</body>
+</html>

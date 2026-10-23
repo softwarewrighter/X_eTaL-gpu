@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>work/xetal-extensions/extensions/clock/lib/Clock.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-accelerate.xtl.html">accelerate.xtl</a></li>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+<li><a href="extensions-gpu-lib-Gpu.xtlm.html">Gpu.xtlm</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-host-data.xtl.html">host-data.xtl</a></li>
+<li><a href="libs-Accel-demos-lookup.xtl.html">lookup.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-topk.xtl.html">topk.xtl</a></li>
+<li><a href="libs-Accel-demos-transpose.xtl.html">transpose.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+<li><a href="libs-Accel-demos-windows.xtl.html">windows.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li class="item"><a href="#l.n_ow"><span class="c-libfunc">ˡn̲ow</span></a></li>
+<li class="item"><a href="#l.i_so"><span class="c-libfunc">ˡi̲so</span></a></li>
+<li class="item"><a href="#l.i_soOf"><span class="c-libfunc">ˡi̲soOf</span></a></li>
+<li class="item"><a href="#l.m_illis"><span class="c-libfunc">ˡm̲illis</span></a></li>
+<li class="item"><a href="#l.t_ime"><span class="c-libfunc">ˡt̲ime</span></a></li>
+<li class="item"><a href="#l.package">ˡpackage</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">library</span>work/xetal-extensions/extensions/clock/lib/Clock.xtl</h1>
+<div class="doc">
+<p>Clock.xtl -- the facade of the clock extension: wall-clock and
+monotonic time, which X_eTaL does not have, for timestamps and timing.
+Import: &quot;ck:&quot; u_se&lt; &quot;Clock&quot;
+Run with xetal-x (xetal-x --ext DIR puts this directory on XETAL_PATH).
+Each signature line is written out by the binding macro (lib/Ffi.xtlm).</p>
+</div>
+<p class="meta"><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html">source</a> &middot; imports <code><span class="c-error">ffi:</span></code> <a href="work-xetal-extensions-lib-Ffi.xtlm.html">work/xetal-extensions/lib/Ffi.xtlm</a></p>
+<div class="item" id="l.n_ow">
+<h3><a href="#l.n_ow"><span class="c-libfunc">ˡn̲ow</span></a> <span class="type">: Unit -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html#L10">line 10</a></div>
+<div class="doc">
+<p>Seconds since 1970-01-01 UTC, with the fraction.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;n_ow : unit -&gt; float&quot;</span>          <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;clock/now&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡn̲ow</span> ← { @ →
+  <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:clock/now&quot;</span>
+}</pre></details>
+</div>
+<div class="item" id="l.i_so">
+<h3><a href="#l.i_so"><span class="c-libfunc">ˡi̲so</span></a> <span class="type">: Unit -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html#L12">line 12</a></div>
+<div class="doc">
+<p>The current time as ISO 8601 UTC text, to the millisecond.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;i_so : unit -&gt; text&quot;</span>           <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;clock/iso&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡi̲so</span> ← { @ →
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:clock/iso&quot;</span>
+}</pre></details>
+</div>
+<div class="item" id="l.i_soOf">
+<h3><a href="#l.i_soOf"><span class="c-libfunc">ˡi̲soOf</span></a> <span class="type">: Num a =&gt; a -&gt; Char</span></h3>
+<div class="meta">function &middot; <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html#L14">line 14</a></div>
+<div class="doc">
+<p>Unix seconds as ISO 8601 UTC text: ck:i_soOf 0 is 1970-01-01T00:00:00.000Z.</p>
+</div>
+<pre class="code"><span class="c-string">&quot;i_soOf : float -&gt; text&quot;</span>        <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;clock/iso_of&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡi̲soOf</span> ← { a →
+  pa ← (<a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#r_avel" class="c-builtin">r̲avel</a> <a href="builtins.html#f_loat" class="c-builtin">f̲loat</a> a) <a href="builtins.html#-5b-5dN_PUT" class="c-builtin">⎕N̲PUT</a> <span class="c-string">&quot;ext:clock/iso_of?float=&quot;</span> <a href="builtins.html#c_at" class="c-builtin">c̲at</a> <a href="builtins.html#f_ormat" class="c-builtin">f̲ormat</a> <a href="builtins.html#s_hape" class="c-builtin">s̲hape</a> a
+  <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:clock/iso_of&quot;</span>
+}</pre></details>
+</div>
+<div class="item" id="l.m_illis">
+<h3><a href="#l.m_illis"><span class="c-libfunc">ˡm̲illis</span></a> <span class="type">: Unit -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html#L16">line 16</a></div>
+<div class="doc">
+<p>Milliseconds on a monotonic clock (it never goes back).</p>
+</div>
+<pre class="code"><span class="c-string">&quot;m_illis : unit -&gt; float&quot;</span>       <a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a> <span class="c-string">&quot;clock/millis&quot;</span></pre>
+<details class="expansion"><summary><code><a href="work-xetal-extensions-lib-Ffi.xtlm.html#m.b_ind-3c" class="c-macro">ᶠᶠⁱb̲ind&lt;</a></code> expands to</summary><pre class="code"><span class="c-libfunc">ˡm̲illis</span> ← { @ →
+  <a href="builtins.html#f_irst" class="c-builtin">f̲irst</a> <a href="builtins.html#n_umbers" class="c-builtin">n̲umbers</a> <a href="builtins.html#-5b-5dN_GET" class="c-builtin">⎕N̲GET</a> <span class="c-string">&quot;ext:clock/millis&quot;</span>
+}</pre></details>
+<div class="uses">Used in: <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.t_ime"><span class="c-libfunc">ˡt̲ime</span></a></div>
+</div>
+<div class="item" id="l.t_ime">
+<h3><a href="#l.t_ime"><span class="c-libfunc">ˡt̲ime</span></a> <span class="type">: (Any a, Any b) =&gt; (a -&gt; b) -&gt; a -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html#L20">line 20</a></div>
+<div class="doc">
+<p>How many milliseconds f_ x takes: 'r_ange ck:t_ime 1000000 (written in
+X_eTaL over m_illis).</p>
+</div>
+<pre class="code"><span class="c-libfunc">ˡt̲ime</span> ← { <span class="c-builtin">f̲</span> x →
+  a ← <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.m_illis" class="c-libfunc">ˡm̲illis</a> @
+  r ← <span class="c-builtin">f̲</span> x
+  (<a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html#l.m_illis" class="c-libfunc">ˡm̲illis</a> @) <a href="builtins.html#-2d" class="c-symbol">−</a> a
+}</pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-offload.xtl.html#cpu">cpu</a>, <a href="extensions-gpu-demos-offload.xtl.html#gpu">gpu</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L23">extensions/gpu/demos/offload.xtl:23</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L24">extensions/gpu/demos/offload.xtl:24</a>, <a href="extensions-gpu-demos-offload.xtl.src.html#L25">extensions/gpu/demos/offload.xtl:25</a>, <a href="extensions-gpu-demos-offload.xtl.html#cpuE">cpuE</a>, <a href="extensions-gpu-demos-offload.xtl.html#gpuE">gpuE</a></div>
+</div>
+<div class="item" id="l.package">
+<h3><a href="#l.package">ˡpackage</a> <span class="type">: Char</span></h3>
+<div class="meta">value &middot; <a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.src.html#L27">line 27</a></div>
+<div class="doc">
+<p>The native package behind these functions.</p>
+</div>
+<pre class="code">ˡpackage ← <span class="c-string">&quot;clock&quot;</span></pre>
+</div>
+</main>
+</body>
+</html>
