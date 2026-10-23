@@ -80,7 +80,10 @@ Since 2026-10-16 a second backend of the same IR,
 [Mojo](components/mojo/README.md), runs the elementwise and reduction
 demos (saxpy, threshold, reduce-sum, pipeline, vector-add) on the M1
 Max through Metal with the evaluator's answers, `xetal-gpu run
-FILE.xtl --device mojo`; the structural operations follow (saga 12).
+FILE.xtl --device mojo`. On 2026-10-23 eleven demos pass on the
+RTX 5060 Ti, including axis reductions, matrix multiplication, transpose,
+the tiny network and top-k. The host interface preserves i64 Ints exactly;
+lookup, rotation and other structural operations remain to add.
 Mojo on NVIDIA goes through the CUDA driver, so the without-CUDA claim
 rests on the OpenCL backend, and every result names its backend.
 The lowering belongs to X_eTaL in the end (asks G1 and G2), and what
@@ -246,9 +249,11 @@ lowering cache costs more there: the whole-process columns compare
 hosts, not cards; the kernel columns compare the cards.
 
 **Through the Mojo backend** (`--device mojo`, the same IR, the
-elementwise and reduction demos only so far; saga 12): the five
-demos saxpy, threshold, reduce-sum, pipeline and vector-add give the
-evaluator's answers on both cards. On the M1 Max Mojo reaches the GPU
+first five demos checked on both cards): saxpy, threshold, reduce-sum,
+pipeline and vector-add give the evaluator's answers on both cards.
+On 2026-10-23 axis-reduce, host-data, matmul, tiny-net, topk and
+transpose also pass on the RTX, for eleven demos total; the new
+kernels await a Mac run. On the M1 Max Mojo reaches the GPU
 through Metal (a build about 2.6 s, cached after; a run about 3.5 ms
 including the device context); on the RTX 5060 Ti through the CUDA
 driver (cold builds 4.25 to 4.78 s, a first call 389 to 593 ms, a

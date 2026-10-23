@@ -63,6 +63,9 @@ fn agrees(want: &str, got: &str) -> Result<(), String> {
             if x == y {
                 continue;
             }
+            if x.parse::<i64>().is_ok() && y.parse::<i64>().is_ok() {
+                return Err(format!("line {}: integer `{x}` differs from `{y}`", k + 1));
+            }
             match (x.parse::<f64>(), y.parse::<f64>()) {
                 (Ok(p), Ok(q)) if (p - q).abs() <= 1e-5 * p.abs().max(1.0) => {}
                 _ => return Err(format!("line {}: `{a}` against `{b}`", k + 1)),
@@ -121,7 +124,15 @@ fn every_demo_is_pinned_as_mojo_or_refused_by_name() {
                 return Err("the build targets no GPU".into());
             }
             let (outputs, _) = library.run(&checked, &abi, &lowered.inputs).map_err(|e| e.0)?;
-            let got: String = outputs.iter().map(|a| format::show(a) + "\n").collect();
+            let mut device = outputs.iter();
+            let got: String = lowered
+                .printed
+                .iter()
+                .map(|item| match item {
+                    xetal_gpu_lower::Printed::Device(_) => format::show(device.next().expect("device output")) + "\n",
+                    xetal_gpu_lower::Printed::Host(text) => text.clone(),
+                })
+                .collect();
             let lib_dir = demo.parent().unwrap().parent().unwrap();
             let want = fs::read_to_string(lib_dir.join(format!("tests/demo-{name}.out"))).map_err(|e| format!("baseline: {e}"))?;
             agrees(&want, &got)

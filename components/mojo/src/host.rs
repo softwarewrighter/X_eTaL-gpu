@@ -4,6 +4,7 @@
 
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::ffi::c_void;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -105,7 +106,7 @@ pub fn build(mojo: &Path, source: &str, name: &str) -> Result<(PathBuf, Duration
 
 type InitFn = unsafe extern "C" fn() -> i32;
 type InfoFn = unsafe extern "C" fn(*mut u8, i64) -> i64;
-type RunFn = unsafe extern "C" fn(*const *const f64, *const *mut f64) -> i32;
+type RunFn = unsafe extern "C" fn(*const *const c_void, *const *mut c_void) -> i32;
 
 /// A built program, loaded.
 pub struct Library {
@@ -141,11 +142,10 @@ impl Library {
 
     /// Run the program on the arrays the ABI lists (the bound inputs by
     /// name, the constants from the program), giving the outputs as
-    /// arrays of the checked types. Every item crosses the ABI as an
-    /// f64 (an Int beyond 2^53 would lose digits: the typed ABI is the
-    /// next step), and the time is the call's.
+    /// arrays of the checked types. Host arrays cross as f64, i64 or
+    /// i32 Bool items, preserving Ints beyond 2^53. The time is the call's.
     pub fn run(&self, checked: &Checked, abi: &Abi, inputs: &HashMap<String, Array>) -> Result<(Vec<Array>, Duration)> {
-        let mut ins: Vec<Vec<f64>> = Vec::new();
+        let mut ins: Vec<HostArray> = Vec::new();
         for (id, name) in &abi.inputs {
             let items = match name {
                 Some(n) => {
@@ -154,23 +154,35 @@ impl Library {
                     if a.ty() != *ty {
                         return Err(Error(format!("input %{n} is {ty}, bound to {}", a.ty())));
                     }
-                    as_f64(&a.data)
+                    HostArray::from_data(&a.data)
                 }
                 None => match &checked.program.values[id.0].op {
                     xetal_gpu_xir::Op::Const(c) => match c {
-                        xetal_gpu_xir::Const::Int(v) => v.iter().map(|&x| x as f64).collect(),
-                        xetal_gpu_xir::Const::Float(v) => v.clone(),
-                        xetal_gpu_xir::Const::Bool(v) => v.iter().map(|&b| if b { 1.0 } else { 0.0 }).collect(),
+                        xetal_gpu_xir::Const::Int(v) => HostArray::Int(v.clone()),
+                        xetal_gpu_xir::Const::Float(v) => HostArray::Float(v.clone()),
+                        xetal_gpu_xir::Const::Bool(v) => HostArray::Bool(v.iter().map(|&b| i32::from(b)).collect()),
                     },
                     _ => unreachable!("the ABI's unnamed arrays are constants"),
                 },
             };
             ins.push(items);
         }
-        let mut outs: Vec<Vec<f64>> = abi.outputs.iter().map(|o| vec![0.0; checked.ty(*o).shape.len().max(1)]).collect();
+        let mut outs: Vec<HostArray> = abi
+            .outputs
+            .iter()
+            .map(|o| {
+                let ty = checked.ty(*o);
+                let n = ty.shape.len().max(1);
+                match ty.scalar {
+                    Scalar::F32 | Scalar::F64 => HostArray::Float(vec![0.0; n]),
+                    Scalar::I32 | Scalar::I64 => HostArray::Int(vec![0; n]),
+                    Scalar::Bool => HostArray::Bool(vec![0; n]),
+                }
+            })
+            .collect();
         let f: libloading::Symbol<RunFn> = self.sym(b"xir_run")?;
-        let in_ptrs: Vec<*const f64> = ins.iter().map(|v| v.as_ptr()).collect();
-        let out_ptrs: Vec<*mut f64> = outs.iter_mut().map(|v| v.as_mut_ptr()).collect();
+        let in_ptrs: Vec<*const c_void> = ins.iter().map(HostArray::ptr).collect();
+        let out_ptrs: Vec<*mut c_void> = outs.iter_mut().map(HostArray::mut_ptr).collect();
         let start = Instant::now();
         let rc = unsafe { f(in_ptrs.as_ptr(), out_ptrs.as_ptr()) };
         let took = start.elapsed();
@@ -181,10 +193,10 @@ impl Library {
         for (o, items) in abi.outputs.iter().zip(outs) {
             let ty = checked.ty(*o);
             let n = ty.shape.len();
-            let data = match ty.scalar {
-                Scalar::F32 | Scalar::F64 => Data::Float(items[..n].to_vec()),
-                Scalar::I32 | Scalar::I64 => Data::Int(items[..n].iter().map(|&x| x as i64).collect()),
-                Scalar::Bool => Data::Bool(items[..n].iter().map(|&x| x != 0.0).collect()),
+            let data = match items {
+                HostArray::Float(v) => Data::Float(v[..n].to_vec()),
+                HostArray::Int(v) => Data::Int(v[..n].to_vec()),
+                HostArray::Bool(v) => Data::Bool(v[..n].iter().map(|&x| x != 0).collect()),
             };
             arrays.push(Array::new(ty.scalar, Shape(ty.shape.0.clone()), data).map_err(|e| Error(format!("an output: {e}")))?);
         }
@@ -192,11 +204,37 @@ impl Library {
     }
 }
 
-fn as_f64(d: &Data) -> Vec<f64> {
-    match d {
-        Data::Int(v) => v.iter().map(|&x| x as f64).collect(),
-        Data::Float(v) => v.clone(),
-        Data::Bool(v) => v.iter().map(|&b| if b { 1.0 } else { 0.0 }).collect(),
+// The allocation's element type matches the generated library's
+// host pointer casts; no numeric conversion happens at the C ABI.
+enum HostArray {
+    Int(Vec<i64>),
+    Float(Vec<f64>),
+    Bool(Vec<i32>),
+}
+
+impl HostArray {
+    fn from_data(data: &Data) -> Self {
+        match data {
+            Data::Int(v) => Self::Int(v.clone()),
+            Data::Float(v) => Self::Float(v.clone()),
+            Data::Bool(v) => Self::Bool(v.iter().map(|&b| i32::from(b)).collect()),
+        }
+    }
+
+    fn ptr(&self) -> *const c_void {
+        match self {
+            Self::Int(v) => v.as_ptr().cast(),
+            Self::Float(v) => v.as_ptr().cast(),
+            Self::Bool(v) => v.as_ptr().cast(),
+        }
+    }
+
+    fn mut_ptr(&mut self) -> *mut c_void {
+        match self {
+            Self::Int(v) => v.as_mut_ptr().cast(),
+            Self::Float(v) => v.as_mut_ptr().cast(),
+            Self::Bool(v) => v.as_mut_ptr().cast(),
+        }
     }
 }
 

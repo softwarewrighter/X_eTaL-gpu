@@ -137,3 +137,29 @@ Binary binding reduced the world-model bind interval from 460 to
 15 ms. The refreshed-input session sweep still did not beat OpenBLAS
 at any tested batch size. These OpenCL measurements are separate from
 the Mojo timings above.
+
+## Expanded source coverage, October 23, 2026
+
+The backend now runs eleven Accel demos through the CUDA driver on this
+RTX 5060 Ti. In addition to the five measured above, axis-reduce,
+host-data, matmul, tiny-net, topk and transpose match their committed
+evaluator baselines. Float comparisons use 1e-5 tolerance; integer
+comparisons are exact. Host-data includes evaluator-produced input and
+output, merged with device output in source order.
+
+Axis folds, tables, slices, ravel, untiled inner products and transposes
+are generated from XIR. The host ABI now carries Ints as i64, Float as
+f64 and Bool as i32; no integer passes through a Float. Additional device
+regressions compare with the IR interpreter, including integers above
+2^53, i32 schedules, rank-3 strided folds, Bool tables, floored casts,
+empty slices and singleton reductions. The Mojo and X_eTaL pins and the
+NVIDIA driver are unchanged from the environment above. No timings for
+these six added demos were collected; the earlier table remains dated.
+
+```sh
+cd components
+cargo test -p xetal-gpu-mojo -- --nocapture
+```
+
+Only lookup and windows remain refused among the thirteen Accel demos.
+Mac verification of the added coverage is pending.

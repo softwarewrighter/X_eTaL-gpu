@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-10-23
+
+- 16:50 `feat` Expand the X_eTaL-to-Mojo backend to axis folds, tables, take/drop, ravel, untiled inner products and transposes so eleven source demos match evaluator baselines on the RTX 5060 Ti, including host-data, tiny-net and topk. Preserve i64 beyond 2^53 through typed host buffers; test exact integers, Bool tables, i32 schedules, strided axes, empty slices and singleton folds against the interpreter. Review and refresh generated Mojo snapshots and refusal reasons; evaluator baselines unchanged. Update component docs, README, RTX report, live site and plan; tiled products and remaining structure stay in the next step. Full just gate passes on the RTX.
+
 ## 2026-10-21
 
 - 18:05 `docs` README links today's blog post, the GPU deep dive (Rabbit hole: X_eTaL to the metal, 2026-10-21), under the array-language post in its documentation list.

@@ -1,7 +1,7 @@
 number = 27
 slug = "mojo-structure"
 status = "pending"
-description = "Saga gpu-mojo, step 3: matmul (tiled under the schedule's tile), transpose, l..."
+description = "Saga gpu-mojo, step 3: complete structural coverage with lookup, rotate, resh..."
 role = "production"
 context_files = []
 created_at = "2026-10-16T09:57:34"

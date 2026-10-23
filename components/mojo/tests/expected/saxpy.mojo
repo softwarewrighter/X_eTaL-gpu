@@ -58,12 +58,13 @@ def xir_device_info(buf: Pointer[UInt8, MutAnyOrigin], cap: Int64) abi("C") -> I
 
 @export("xir_run")
 def xir_run(
-    inputs: Pointer[Pointer[Float64, ImmutAnyOrigin], ImmutAnyOrigin],
-    outputs: Pointer[Pointer[Float64, MutAnyOrigin], ImmutAnyOrigin],
+    inputs: Pointer[Pointer[UInt8, ImmutAnyOrigin], ImmutAnyOrigin],
+    outputs: Pointer[Pointer[UInt8, MutAnyOrigin], ImmutAnyOrigin],
 ) abi("C") -> Int32:
     """Runs the program: inputs[k] as the ABI lists them (the program's
     inputs, then the uploaded constants), outputs[j] in output order, every
-    array as Float64 items on the host (converted to the device's width here).
+    array as Float64, Int64 or Int32 Bool items on the host, converted
+    to the scheduled device width here.
 
     Returns 0 when done, 1 when the device failed.
     """
@@ -72,10 +73,10 @@ def xir_run(
         var ctx = DeviceContext()
         var h_l = ctx.enqueue_create_host_buffer[DType.float32](8)
         for i in range(8):
-            h_l[i] = Float32(inputs[unsafe_offset=0][unsafe_offset=i])
+            h_l[i] = Float32(inputs[unsafe_offset=0].bitcast[Float64]()[unsafe_offset=i])
         var h_r_2 = ctx.enqueue_create_host_buffer[DType.float32](8)
         for i in range(8):
-            h_r_2[i] = Float32(inputs[unsafe_offset=1][unsafe_offset=i])
+            h_r_2[i] = Float32(inputs[unsafe_offset=1].bitcast[Float64]()[unsafe_offset=i])
         # device buffers, one per materialized value
         var b_l = ctx.enqueue_create_buffer[DType.float32](8)
         ctx.enqueue_copy(dst_buf=b_l, src_buf=h_l)
@@ -89,7 +90,7 @@ def xir_run(
         ctx.enqueue_copy(dst_buf=o_0, src_buf=b_add)
         ctx.synchronize()
         for i in range(8):
-            outputs[unsafe_offset=0][unsafe_offset=i] = Float64(o_0[i])
+            outputs[unsafe_offset=0].bitcast[Float64]()[unsafe_offset=i] = Float64(o_0[i])
         return 0
     except e:
         print("xir_run failed:", e)

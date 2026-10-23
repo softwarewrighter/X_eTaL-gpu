@@ -1,8 +1,2 @@
-axis-reduce: %addr: a reduction along axis 2 is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
-host-data: %addr: a reduction along axis 2 is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
 lookup: %sel: a lookup is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
-matmul: %mm: an inner product is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
-tiny-net: %take: a take or drop is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
-topk: %maxr: a reduction along axis 2 is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
-transpose: %t: a transpose is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
 windows: %rot: a rotation is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
