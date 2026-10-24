@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-10-23
 
+- 20:17 `docs` The Mojo backend's step 2 validated on the Apple M1 Max through Metal: the eleven demos and the three semantics tests of the Arch lane's 16:50 commit pass here too; `docs/m1max-mojo-results.md` (cold builds 1.0 to 1.7 s, runs 3 to 10 ms, the whole command 50 to 60 ms cached), the README's Mojo paragraph (eleven on both cards), the crate's README and the plan's row 2. The Mac lane's parallel implementation of the same step, written before the Arch lane's landed, was dropped in its favor (a superset; kept on the local branch backup/mojo-ints-shapes-mac, not pushed).
 - 16:51 `chore` Record completed Mojo Ints and shapes coverage after the full GPU gate; advance to the remaining structural operations and tiled matrix multiplication.
 
 - 16:50 `feat` Expand the X_eTaL-to-Mojo backend to axis folds, tables, take/drop, ravel, untiled inner products and transposes so eleven source demos match evaluator baselines on the RTX 5060 Ti, including host-data, tiny-net and topk. Preserve i64 beyond 2^53 through typed host buffers; test exact integers, Bool tables, i32 schedules, strided axes, empty slices and singleton folds against the interpreter. Review and refresh generated Mojo snapshots and refusal reasons; evaluator baselines unchanged. Update component docs, README, RTX report, live site and plan; tiled products and remaining structure stay in the next step. Full just gate passes on the RTX.

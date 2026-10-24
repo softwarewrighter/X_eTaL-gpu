@@ -100,9 +100,14 @@ Additional interpreter comparisons cover exact i64 values beyond 2^53
 through bound inputs and uploaded constants, Bool outputs and tables,
 floored casts, strided reductions on every axis of a rank-3 array,
 singleton reductions, later-axis slices, empty results, and i32 schedules.
-These are correctness checks; the October 16 timings above still describe
-the earlier five-demo implementation. Mac validation of the new kernels
-remains to run.
+These are correctness checks; the October 16 timings above describe
+the earlier five-demo implementation.
+
+On the Apple M1 Max (Metal, the same Mojo pin, 2026-10-23) the same
+eleven demos and the three semantics tests pass. A cold build takes
+1.0 to 1.2 s (topk 1.7 s), a run 3 to 5 ms (topk 8 to 10 ms), the
+whole command 50 to 60 ms with the library cached:
+[the M1 Max report](../../docs/m1max-mojo-results.md).
 
 ## An example to show
 

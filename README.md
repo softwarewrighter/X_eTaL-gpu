@@ -248,16 +248,18 @@ sits on a hard disk while the Mac's is on an SSD (the user,
 lowering cache costs more there: the whole-process columns compare
 hosts, not cards; the kernel columns compare the cards.
 
-**Through the Mojo backend** (`--device mojo`, the same IR, the
-first five demos checked on both cards): saxpy, threshold, reduce-sum,
-pipeline and vector-add give the evaluator's answers on both cards.
-On 2026-10-23 axis-reduce, host-data, matmul, tiny-net, topk and
-transpose also pass on the RTX, for eleven demos total; the new
-kernels await a Mac run. On the M1 Max Mojo reaches the GPU
-through Metal (a build about 2.6 s, cached after; a run about 3.5 ms
-including the device context); on the RTX 5060 Ti through the CUDA
-driver (cold builds 4.25 to 4.78 s, a first call 389 to 593 ms, a
-repeated call 0.050 to 0.094 ms in the same process:
+**Through the Mojo backend** (`--device mojo`, the same IR; saga
+12): eleven of the thirteen demos give the evaluator's answers on
+both cards since 2026-10-23: saxpy, threshold, reduce-sum, pipeline,
+vector-add, axis-reduce, host-data, matmul, tiny-net, topk and
+transpose (lookup and windows wait on step 3). On the M1 Max Mojo
+reaches the GPU through Metal: a cold build 1.0 to 1.7 s, cached
+after; a run 3 to 10 ms including the device context; the whole
+command 50 to 60 ms with the library cached
+([`docs/m1max-mojo-results.md`](docs/m1max-mojo-results.md)). On the
+RTX 5060 Ti it goes through the CUDA driver (cold builds 4.25 to
+4.78 s, a first call 389 to 593 ms, a repeated call 0.050 to 0.094 ms
+in the same process:
 [`docs/rtx5060-mojo-results.md`](docs/rtx5060-mojo-results.md)).
 The OpenCL results above use Apple's and NVIDIA's OpenCL drivers;
 the without-CUDA claim of this repository rests on them.
