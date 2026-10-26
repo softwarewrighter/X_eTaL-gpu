@@ -1,8 +1,9 @@
 number = 27
 slug = "mojo-structure"
-status = "in-progress"
+status = "completed"
 description = "Saga gpu-mojo, step 3: complete structural coverage with lookup, rotate, resh..."
 role = "production"
 context_files = []
 created_at = "2026-10-16T09:57:34"
-commits = []
+completed_at = "2026-10-26T08:06:16"
+commits = ["3bfd60f1f66eb3fbbce28030e76571331683d470"]
