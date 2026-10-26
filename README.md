@@ -77,13 +77,12 @@ statement the device cannot take (a sort, a text, a loop over calls)
 is evaluated by `xetal` and its value bound. The same workloads
 written through the macro `gp:a_ccel<` are in [`ml/`](ml/README.md).
 Since 2026-10-16 a second backend of the same IR,
-[Mojo](components/mojo/README.md), runs the elementwise and reduction
-demos (saxpy, threshold, reduce-sum, pipeline, vector-add) on the M1
-Max through Metal with the evaluator's answers, `xetal-gpu run
-FILE.xtl --device mojo`. On 2026-10-23 eleven demos pass on the
-RTX 5060 Ti, including axis reductions, matrix multiplication, transpose,
-the tiny network and top-k. The host interface preserves i64 Ints exactly;
-lookup, rotation and other structural operations remain to add.
+[Mojo](components/mojo/README.md), runs every one of the thirteen
+example programs from source on the M1 Max through Metal with the
+evaluator's answers (`xetal-gpu run FILE.xtl --device mojo`, since
+2026-10-26; every IR operation taken, inner products tiled when the
+schedule asks), and eleven of them on the RTX 5060 Ti so far. The
+host interface preserves i64 Ints exactly.
 Mojo on NVIDIA goes through the CUDA driver, so the without-CUDA claim
 rests on the OpenCL backend, and every result names its backend.
 The lowering belongs to X_eTaL in the end (asks G1 and G2), and what
@@ -249,10 +248,11 @@ lowering cache costs more there: the whole-process columns compare
 hosts, not cards; the kernel columns compare the cards.
 
 **Through the Mojo backend** (`--device mojo`, the same IR; saga
-12): eleven of the thirteen demos give the evaluator's answers on
-both cards since 2026-10-23: saxpy, threshold, reduce-sum, pipeline,
-vector-add, axis-reduce, host-data, matmul, tiny-net, topk and
-transpose (lookup and windows wait on step 3). On the M1 Max Mojo
+12): all thirteen demos give the evaluator's answers on the M1 Max
+since 2026-10-26, and eleven on the RTX 5060 Ti since 2026-10-23
+(saxpy, threshold, reduce-sum, pipeline, vector-add, axis-reduce,
+host-data, matmul, tiny-net, topk, transpose; lookup and windows
+are the Arch lane's next run). On the M1 Max Mojo
 reaches the GPU through Metal: a cold build 1.0 to 1.7 s, cached
 after; a run 3 to 10 ms including the device context; the whole
 command 50 to 60 ms with the library cached

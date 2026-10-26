@@ -145,6 +145,7 @@ impl Library {
     /// arrays of the checked types. Host arrays cross as f64, i64 or
     /// i32 Bool items, preserving Ints beyond 2^53. The time is the call's.
     pub fn run(&self, checked: &Checked, abi: &Abi, inputs: &HashMap<String, Array>) -> Result<(Vec<Array>, Duration)> {
+        check_positions(checked, inputs)?;
         let mut ins: Vec<HostArray> = Vec::new();
         for (id, name) in &abi.inputs {
             let items = match name {
@@ -257,4 +258,31 @@ pub fn execute(
     let info = library.device_info()?;
     let (outputs, ran) = library.run(checked, &abi, inputs)?;
     Ok((outputs, info, built, ran))
+}
+
+/// A lookup's positions, when they are a bound input, must be within
+/// 1..len of the axis they pick along: refused here with the
+/// evaluator's message, since the device clamps a stray one (it cannot
+/// refuse) and would give a wrong answer silently. Positions written in
+/// the program were checked by the checker; computed ones cannot be
+/// checked before they exist (ask G13 asks X_eTaL to type them).
+fn check_positions(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<()> {
+    let program = &checked.program;
+    for v in &program.values {
+        let xetal_gpu_xir::Op::Lookup { axis, idx, arg } = &v.op else {
+            continue;
+        };
+        let source = &program.values[idx.0];
+        if !matches!(source.op, xetal_gpu_xir::Op::Input) {
+            continue;
+        }
+        let Some(bound) = inputs.get(&source.name) else { continue };
+        let len = checked.ty(*arg).shape.0[axis - 1] as i64;
+        if let Data::Int(items) = &bound.data {
+            if let Some(bad) = items.iter().find(|p| **p < 1 || **p > len) {
+                return Err(Error(format!("%{}: lookup: index {bad} is outside 1..{len}", v.name)));
+            }
+        }
+    }
+    Ok(())
 }

@@ -1,2 +1,0 @@
-lookup: %sel: a lookup is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)
-windows: %rot: a rotation is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)

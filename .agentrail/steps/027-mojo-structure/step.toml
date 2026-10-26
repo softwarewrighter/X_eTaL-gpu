@@ -1,6 +1,6 @@
 number = 27
 slug = "mojo-structure"
-status = "pending"
+status = "in-progress"
 description = "Saga gpu-mojo, step 3: complete structural coverage with lookup, rotate, resh..."
 role = "production"
 context_files = []

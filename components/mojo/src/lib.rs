@@ -10,11 +10,12 @@
 //! and exports a C ABI that `host.rs` calls through `dlopen`. The
 //! generated file is meant to read like a Mojo programmer's.
 //!
-//! What this backend does not take yet (the plan's saga 12): shapes
-//! beyond one length per stage are fine. Axis folds, tables, slices,
-//! ravel, inner products and transposes use indexed kernels. Lookups,
-//! rotations, reshape, concat and the TopK IR operation are still
-//! refused by name; the OpenCL backend runs everything.
+//! Every operation of the IR is taken. Elementwise chains fuse; whole
+//! reductions are trees; everything whose result items read other
+//! positions (axis folds, tables, slices, ravel and reshape, inner
+//! products, transposes, lookups, rotations, concatenations, top-k) is
+//! an indexed kernel, one thread per result item (`indexed.rs`); a
+//! product under a schedule with a `tile` is staged in shared memory.
 
 pub mod host;
 mod indexed;
@@ -109,16 +110,14 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
             | Op::Drop { .. }
             | Op::Ravel { .. }
             | Op::Matmul { .. }
-            | Op::Transpose { .. } => {
+            | Op::Transpose { .. }
+            | Op::Lookup { .. }
+            | Op::Rotate { .. }
+            | Op::Reshape { .. }
+            | Op::Concat { .. }
+            | Op::TopK { .. } => {
                 flush(&mut steps, &mut current, &mut current_len);
                 steps.push(Step::Indexed { value: id });
-            }
-            other => {
-                return Err(Error(format!(
-                    "%{}: {} is not in the Mojo backend yet (saga gpu-mojo; the OpenCL backend runs it)",
-                    v.name,
-                    describe(other)
-                )))
             }
         }
     }
@@ -136,7 +135,12 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
             | Op::Drop { .. }
             | Op::Ravel { .. }
             | Op::Matmul { .. }
-            | Op::Transpose { .. } => {
+            | Op::Transpose { .. }
+            | Op::Lookup { .. }
+            | Op::Rotate { .. }
+            | Op::Reshape { .. }
+            | Op::Concat { .. }
+            | Op::TopK { .. } => {
                 materialized.insert(id);
             }
             Op::Const(_) if !checked.ty(id).shape.is_scalar() => {
@@ -189,6 +193,10 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
         }
     };
 
+    // A product is tiled when the schedule asks for tiles (plan A6) and
+    // its items are numbers (a Bool product is not in the subset).
+    let tiled = |id: ValueId| schedule.tile > 0 && matches!(program.values[id.0].op, Op::Matmul { .. }) && !is_bool(id);
+
     let mut s = String::new();
     let kernels = steps.iter().filter(|s| matches!(s, Step::Kernel { .. })).count();
     let reductions = steps.iter().filter(|s| matches!(s, Step::Reduce { .. })).count();
@@ -233,6 +241,10 @@ from max.gpu.sync import barrier
 
     for step in &steps {
         if let Step::Indexed { value } = step {
+            if tiled(*value) {
+                s.push_str(&indexed::tiled_matmul(checked, schedule, *value, schedule.tile));
+                continue;
+            }
             s.push_str(&indexed::kernel(checked, schedule, *value));
         }
     }
@@ -430,6 +442,27 @@ def xir_run(
                 );
                 stage_no += 1;
             }
+            Step::Indexed { value } if tiled(*value) => {
+                let v = &program.values[value.0];
+                let Op::Matmul { a, b } = &v.op else { unreachable!() };
+                let (rows, _, cols) = xetal_gpu_xir::interp::matmul_split(&checked.ty(*a).shape, &checked.ty(*b).shape);
+                let t = schedule.tile;
+                let mut args = vec![format!("b_{}", program.values[a.0].name)];
+                if b != a {
+                    args.push(format!("b_{}", program.values[b.0].name));
+                }
+                args.push(format!("b_{}", v.name));
+                let blocks = rows.max(1).div_ceil(t) * cols.max(1).div_ceil(t);
+                let _ = writeln!(
+                    s,
+                    "        # %{}: {rows} by {cols} in {t} by {t} tiles, a block of {} threads per tile\n        ctx.enqueue_function[tiled_{}]({}, grid_dim={blocks}, block_dim={})",
+                    v.name,
+                    t * t,
+                    v.name,
+                    args.join(", "),
+                    t * t
+                );
+            }
             Step::Indexed { value } => {
                 let v = &program.values[value.0];
                 let args: BTreeSet<_> = v.op.args().into_iter().collect();
@@ -508,22 +541,6 @@ def xir_run(
 "#,
     );
     Ok((s, abi))
-}
-
-fn describe(op: &Op) -> String {
-    match op {
-        Op::Reduce { axis: Some(k), .. } => format!("a reduction along axis {k}"),
-        Op::Matmul { .. } => "an inner product".into(),
-        Op::Take { .. } | Op::Drop { .. } => "a take or drop".into(),
-        Op::Ravel { .. } | Op::Reshape { .. } => "a reshape".into(),
-        Op::Table { .. } => "a table".into(),
-        Op::Transpose { .. } => "a transpose".into(),
-        Op::Rotate { .. } => "a rotation".into(),
-        Op::Lookup { .. } => "a lookup".into(),
-        Op::TopK { .. } => "top-k".into(),
-        Op::Concat { .. } => "a concatenation".into(),
-        _ => "this operation".into(),
-    }
 }
 
 /// The Mojo scalar type of a device element.
@@ -696,10 +713,26 @@ mod tests {
     }
 
     #[test]
-    fn what_is_not_taken_yet_is_refused_by_name() {
-        let p = text::parse("%x = input f64 [2 3]\n%i = const i64 [] 1\n%s = lookup %i %x\noutput %s\n").unwrap();
+    fn a_tiled_schedule_stages_products_in_shared_memory() {
+        let p = text::parse("%a = input f64 [5 7]\n%b = input f64 [7 3]\n%c = matmul %a %b\noutput %c\n").unwrap();
         let checked = check::check(p).unwrap();
-        let err = emit(&checked, &Schedule::default(), "t").unwrap_err();
-        assert!(err.0.contains("a lookup is not in the Mojo backend yet"), "{err}");
+        let (untiled, _) = emit(&checked, &Schedule::default(), "t").unwrap();
+        assert!(untiled.contains("def indexed_c("), "{untiled}");
+        let schedule = Schedule {
+            tile: 4,
+            ..Schedule::default()
+        };
+        let (src, _) = emit(&checked, &schedule, "t").unwrap();
+        assert!(src.contains("def tiled_c("), "{src}");
+        assert!(
+            src.contains("unsafe_stack_allocation[16, Float32, address_space=.SHARED]()"),
+            "{src}"
+        );
+        // 5 by 3 in 4 by 4 tiles: 2 by 1 blocks of 16; the 7 inner items in 2 steps, the last first.
+        assert!(
+            src.contains("enqueue_function[tiled_c](b_a, b_b, b_c, grid_dim=2, block_dim=16)"),
+            "{src}"
+        );
+        assert!(src.contains("var step = 1"), "{src}");
     }
 }

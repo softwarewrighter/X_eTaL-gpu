@@ -113,7 +113,24 @@ directory.
 Completed 2026-10-21 on the RTX 5060 Ti: see
 [the handoff](rtx5060-opencl-handoff.md) and its linked evidence.
 
-## 6. Push
+## 6. The Mojo backend's structural operations (2026-10-26)
+
+After pulling the 2026-10-26 commit (Mojo backend, step 3):
+
+```sh
+cd components && cargo test -p xetal-gpu-mojo -- --nocapture; cd ..
+for d in lookup windows; do just run-mojo libs/Accel/demos/$d.xtl; done
+just run-mojo libs/Accel/demos/matmul.xtl --tile 16
+```
+
+The demos test should print `ok:` for all thirteen demos, and the
+semantics test `ok: concat`, `topk`, `reshape`, `rotate`, `lookup`,
+`products`, `products_t4` and the stray-position refusal. Add lookup
+and windows to `docs/rtx5060-mojo-results.md` with their times, note
+the tiled product, and say in the README's Mojo paragraph that all
+thirteen agree on the RTX through the CUDA driver.
+
+## 7. Push
 
 Commit with a `CHANGES.md` line per commit, as before, and push to
 `main` (rebase first; the Mac lane commits there too).

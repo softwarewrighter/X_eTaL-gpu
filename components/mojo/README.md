@@ -66,11 +66,25 @@ backend, and every result names its backend.
   retain every bit when the schedule selects i64. A build is cached
   under `work/mojo-cache/` by the source's hash and the compiler, so a
   program builds once (about 2.6 s on the M1 Max) and loads after.
-- **Not yet:** lookup, rotate, reshape, the TopK IR operation and
-  concat are refused by name, and the OpenCL backend runs them.
-  The Accel top-k demo already works because its source lowers to
-  axis reductions, tables and masks. The refusals are pinned in
-  `tests/expected/refused.txt` so the remaining coverage is explicit.
+- **The gathers and top-k** (2026-10-26): a lookup reads its position from
+  the positions' buffer (from 1, clamped on the device, since a device
+  cannot refuse; a bound input's stray position is refused by the host
+  first with the evaluator's message), a rotation one copy per amount
+  with each shift reduced to 0..len at emit time, a reshape cycles the
+  argument's items, a concatenation picks its side per item (a single
+  value joins as one item), and the TopK operation finds its line's
+  k-th largest distinct value in each thread (the largest below the
+  last, k - 1 times; the least when the line has fewer) and marks the
+  items at or above it.
+- **Tiles.** Under a schedule with `tile = T` (plan A6) an inner
+  product is `tiled_<name>`: a block of T * T threads per result tile,
+  a tile of each argument staged in shared memory per step along the
+  inner axis, the steps from the last to the first and the products in
+  a tile from the last to the first, so the fold is still the
+  evaluator's. `tile = 0` keeps one thread per item.
+- **Nothing refused.** Every operation of the IR is taken now;
+  `tests/expected/refused.txt` is empty and stays pinned so a new IR
+  operation the emitter lacks shows there.
 
 ## Checked
 
@@ -104,7 +118,14 @@ These are correctness checks; the October 16 timings above describe
 the earlier five-demo implementation.
 
 On the Apple M1 Max (Metal, the same Mojo pin, 2026-10-23) the same
-eleven demos and the three semantics tests pass. A cold build takes
+eleven demos and the three semantics tests pass; since 2026-10-26 all
+thirteen do (lookup and windows added), with a fourth device test of
+the structural operations against the interpreter (concat with a
+single value and along a later axis, the TopK operation with ties and
+short lines, reshape cycling and filling, rotations by negative and
+oversized amounts, lookups with bound positions and a stray one
+refused, products of 5 by 7 and 7 by 3 untiled and in 4 by 4 tiles,
+Ints exact). The product demos agree under `--tile 16` too. A cold build takes
 1.0 to 1.2 s (topk 1.7 s), a run 3 to 5 ms (topk 8 to 10 ms), the
 whole command 50 to 60 ms with the library cached:
 [the M1 Max report](../../docs/m1max-mojo-results.md).
