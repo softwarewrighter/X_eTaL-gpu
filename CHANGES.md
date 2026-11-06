@@ -10,9 +10,14 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-11-06
+
+- 06:32 `plan` Plan an original X_eTaL ray tracer shared by CPU and GPU, uncompressed TIFF output, rotating X_eTaL logo, correctness checks and measured performance; queue six implementation steps without replacing existing work.
+
 ## 2026-10-26
 
 - 08:02 `feat` Mojo backend, step 3 (saga gpu-mojo, mojo-structure): lookup, rotate, reshape, concat and the TopK operation as indexed kernels (positions clamped on the device, a bound input's stray position refused by the host with the evaluator's message; shifts reduced at emit time; a single value joining as one item; each thread finding its line's k-th largest distinct value), and inner products under a schedule's `tile` staged in shared memory with the evaluator's right fold kept. Every IR operation is taken; `refused.txt` is empty. All thirteen demos agree with the evaluator on the Apple M1 Max through Metal (lookup and windows new; the product demos also under `--tile 16`), and a device test checks concat, top-k, reshape, rotate, lookup and tiled products against the interpreter. `docs/m1max-mojo-results.md`, the crate's README, the README, the plan, the landing page; `docs/arch-rerun.md` item 6 asks the Arch lane for lookup and windows on the RTX.
+
 
 ## 2026-10-23
 

@@ -42,7 +42,7 @@ python3 "$root/scripts/bench-session.py" --check
 # American spellings only (the checker checks itself first).
 "$root/scripts/check-spelling.py" --self-test
 "$root/scripts/check-spelling.py"
-md=(README.md CHANGES.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md docs/tuple-plan.md docs/binary-arrays.md docs/gpu-sessions.md docs/ml-results.md docs/arch-rerun.md extensions/gpu/README.md components/mojo/README.md ml/README.md)
+md=(README.md CHANGES.md docs/ray-tracing-plan.md docs/plan.md docs/xetal-asks.md docs/macros-and-extensions.md docs/tuple-plan.md docs/binary-arrays.md docs/gpu-sessions.md docs/ml-results.md docs/arch-rerun.md extensions/gpu/README.md components/mojo/README.md ml/README.md)
 # Includes the RTX Mojo report, docs/rtx5060-mojo-results.md.
 for f in docs/rtx5060-*.md docs/m1max-*.md docs/linux-*.md docs/gpu-sessions.md; do [ -e "$f" ] && md+=("$f"); done
 for f in libs/*/README.md libs/*/docs/README.md components/*/README.md; do [ -e "$f" ] && md+=("$f"); done

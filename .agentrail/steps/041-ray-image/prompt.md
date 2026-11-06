@@ -1,0 +1,1 @@
+Deliver uncompressed RGB TIFF from CPU and GPU rendering of the same X_eTaL source, following docs/ray-tracing-plan.md. Shared X_eTaL display conversion; host writer only encodes returned pixels. Validate tags and pixel round-trip independently, preserve raw Float comparisons, add just recipes and ignore generated output.

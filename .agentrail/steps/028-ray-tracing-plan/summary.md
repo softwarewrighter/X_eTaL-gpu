@@ -1,0 +1,1 @@
+Ray-tracing plan and six implementation steps delivered in a41bf96; reordered after upstream completed Mojo structural coverage as requested.

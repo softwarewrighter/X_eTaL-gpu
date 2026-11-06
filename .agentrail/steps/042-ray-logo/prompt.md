@@ -1,0 +1,1 @@
+Build original extruded X and _eTaL triangle scene data; X stays fixed and _eTaL rotates as a rigid vane about its vertical axis. Follow docs/ray-tracing-plan.md. X_eTaL computes transforms, shadows and one reflection bounce; host does no rendering. Compare CPU/GPU raw images at several angles and document a still preview.

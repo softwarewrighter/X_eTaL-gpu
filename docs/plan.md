@@ -168,8 +168,12 @@ cost is about 0.2 ms a call on the RTX 5060 Ti and 1.3 ms on the M1
 Max); the world model, at about 40 operations per byte, cannot win
 and is not chased. Every example is an ML use case (inference,
 retrieval, training, memory, experts) on a GPU without CUDA; graphics,
-physics and pure-math demonstrations (n-body, Mandelbrot) are not
-wanted (the user, 2026-10-12: any card runs graphics already).
+physics and pure-math demonstrations (n-body, Mandelbrot) were not
+wanted (the user, 2026-10-12: any card runs graphics already). The user
+added an explicit exception on 2026-11-06: an original ray tracer written
+in X_eTaL, with the same code on CPU and GPU, uncompressed image output
+and a rotating logo. See [ray-tracing-plan.md](ray-tracing-plan.md);
+the ray-prefixed implementation steps are queued after existing work.
 
 ## Asks from other repositories
 

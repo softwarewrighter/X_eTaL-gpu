@@ -1,0 +1,1 @@
+Render a seamless revolution of the stationary X and rotating _eTaL vane as uncompressed TIFF frames using the X_eTaL GPU renderer. Follow docs/ray-tracing-plan.md; manifest and reproducible just recipe, no duplicated endpoint, sampled CPU/GPU frame comparisons, optional video derivative. Update docs and publish if displayed content changes.

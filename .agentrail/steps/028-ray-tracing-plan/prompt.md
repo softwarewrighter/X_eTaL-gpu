@@ -1,0 +1,1 @@
+Document the user-requested original X_eTaL CPU/GPU ray tracer in docs/ray-tracing-plan.md and queue implementation, uncompressed image output, logo animation and fair benchmark steps. No Blender or external rendering engine; POV-Ray is a capabilities reference only. Run just gate and commit the plan and saga metadata.

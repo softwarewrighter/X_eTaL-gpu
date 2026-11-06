@@ -1,0 +1,1 @@
+Lower the same RayTrace X_eTaL source to XIR CPU and OpenCL GPU. Follow docs/ray-tracing-plan.md; implement bounded pixel/triangle batching, deterministic nearest-hit ties and numerical safeguards. Validate analytical cases and small raw images on interpreter and RTX 5060 Ti against the evaluator; add general primitive support only with tests.
