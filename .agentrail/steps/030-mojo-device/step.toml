@@ -1,8 +1,9 @@
 number = 30
 slug = "mojo-device"
-status = "in-progress"
+status = "completed"
 description = "Saga gpu-mojo, step 4: Mojo as a device of the tool and of the Gpu extension ..."
 role = "production"
 context_files = []
 created_at = "2026-10-16T09:57:34"
-commits = []
+completed_at = "2026-11-06T07:43:55"
+commits = ["72d9acc39c75e605f1d87bd70f2cd997b63391d0"]

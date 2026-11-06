@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 07:43 `chore` Record completed Mojo device integration after the full RTX gate; next is model/backend results and a Mac timing rerun.
+
 - 07:12 `feat` Integrate Mojo device discovery and selection into the CLI, Gpu facade and accelerate macro; retain libraries across repeats, report per-kernel device intervals separately from build/wall time, and check all 13 source demos on CPU, OpenCL and Mojo with default/tiled schedules. Add backend-switch, rebind, invalidation, CLI timing and macro regressions; review refreshed generated-source snapshots and new macro baselines; evaluator baselines unchanged. Document per-call Mojo uploads and profiling overhead; update the live site.
 
 - 06:52 `chore` Record completed library ownership planning after the full RTX gate; upstream rebase and saga reconciliation complete, next is Mojo device integration.
