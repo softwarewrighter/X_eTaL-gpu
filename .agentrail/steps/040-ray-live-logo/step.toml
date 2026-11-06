@@ -1,6 +1,6 @@
 number = 40
 slug = "ray-live-logo"
-status = "pending"
+status = "in-progress"
 description = "Deliver the first of three required live ray demos: stationary extruded X wit..."
 role = "production"
 context_files = []
