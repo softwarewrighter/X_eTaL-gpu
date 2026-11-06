@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 06:41 `chore` Reorder ray planning after upstream Mojo completion, preserve saga snapshots, and record library-ownership follow-up before rebasing onto current main.
+
 - 06:38 `chore` Record completed ray-tracing planning and the upstream saga-numbering conflict blocking push; full GPU gate passed.
 
 - 06:32 `plan` Plan an original X_eTaL ray tracer shared by CPU and GPU, uncompressed TIFF output, rotating X_eTaL logo, correctness checks and measured performance; queue six implementation steps without replacing existing work.
