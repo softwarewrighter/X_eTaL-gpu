@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 08:06 `chore` Record completed ray library requests after the full GPU gate; RL1-RL4 await library-owner triage, next local step is Mojo results.
+
 - 08:02 `plan` Specify approved scene/extrusion macro library asks RL1-RL4, audited reuse, numeric array contracts, diagnostics, CPU tests and milestone dependencies; update ray plan and queued implementation prompts without modifying sibling repositories or adding language features.
 
 - 07:43 `chore` Record completed Mojo device integration after the full RTX gate; next is model/backend results and a Mac timing rerun.
