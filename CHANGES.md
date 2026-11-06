@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 11:03 `build` Pin committed X_eTaL-libraries 7bd8f0a for RL2 Extrusion and RL3 Scene at the visible-preview step boundary; all seven existing ray CPU baselines pass unchanged.
+
 - 10:46 `chore` Record completed ray boolean lowering prerequisite and validated GPU/CPU handoff; remaining ray-source work preserves runtime guards.
 
 - 10:45 `feat` Lower typed boolean n_ot, & and | with strict truth-table, scalar extension, type/shape and changed-input tests; verify composed masks on RTX OpenCL and Mojo. Record committed RL2 and in-progress RL3, retain renderer guards and document the next local refusal.

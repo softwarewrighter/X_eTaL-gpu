@@ -1,8 +1,0 @@
-number = 38
-slug = "ray-image"
-status = "pending"
-description = "Deliver uncompressed RGB TIFF from CPU and GPU rendering of the same X_eTaL s..."
-role = "production"
-context_files = []
-created_at = "2026-11-06T06:33:48"
-commits = []
