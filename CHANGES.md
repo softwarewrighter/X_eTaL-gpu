@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 11:29 `chore` Record completed visible CPU logo preview with validated uncompressed TIFF/PNG outputs; resume GPU guard and bounded-sweep lowering.
+
 - 11:29 `feat` Add a reproducible X_eTaL Scene/RayTrace CPU logo render command with raw RGB, uncompressed TIFF via libtiff, PNG and provenance metadata; render and decode 64x16 and 256x64 stills. Validate host encoding and eleven committed library baselines, lint the scene and record remaining GPU guard work.
 
 - 11:03 `build` Pin committed X_eTaL-libraries 7bd8f0a for RL2 Extrusion and RL3 Scene at the visible-preview step boundary; all seven existing ray CPU baselines pass unchanged.
