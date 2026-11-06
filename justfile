@@ -19,6 +19,14 @@ xetal-libraries:
 ray-check-cpu:
     scripts/ray-check-cpu.sh
 
+# Render the original logo with the CPU evaluator; write uncompressed TIFF and PNG
+ray-render-cpu *args:
+    python3 scripts/ray-render-cpu.py {{args}}
+
+# Validate host pixel encoding without running a renderer
+ray-test-image:
+    python3 scripts/test-ray-image.py
+
 # Pin a newer X_eTaL: a committed ref of ../X_eTaL (default HEAD) into XETAL_COMMIT, built; then test and commit it on its own
 xetal-pin ref="HEAD":
     scripts/xetal-pin.sh "$1"

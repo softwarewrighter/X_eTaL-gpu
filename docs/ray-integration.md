@@ -2,9 +2,9 @@
 
 ## Committed dependencies
 
-XETAL_LIBRARIES_COMMIT pins X_eTaL-libraries c968326, which includes
-Vector3 (RL1, implementation 202ed3e) and opaque RayTrace (RL4,
-implementation 128e557). scripts/xetal-libraries.sh clones a committed
+XETAL_LIBRARIES_COMMIT pins X_eTaL-libraries 7bd8f0a, which includes
+Vector3 (RL1, 202ed3e), Extrusion (RL2, f28e7ca), Scene (RL3, 6e58863)
+and opaque RayTrace (RL4, 128e557). scripts/xetal-libraries.sh clones a committed
 repository into work/xetal-libraries and refuses to replace a dirty clone.
 It never imports the sibling working tree. For an initial local clone,
 set XETAL_LIBRARIES_SOURCE to ../X_eTaL-libraries; the source still comes
@@ -27,7 +27,7 @@ absolute so any evaluator subprocess resolves the same libraries.
 
 ## CPU evidence, 2026-11-06
 
-Seven committed examples give their upstream outputs exactly:
+Eleven committed examples give their upstream outputs exactly:
 
 | Example | Output lines |
 | ------- | ------------ |
@@ -38,6 +38,10 @@ Seven committed examples give their upstream outputs exactly:
 | RayTrace lighting | 12 |
 | RayTrace pixels | 7 |
 | RayTrace diagnostic demo | 36 |
+| Extrusion glyphs | 25 |
+| Scene arrays | 16 |
+| Scene animation | 11 |
+| Scene defaults | 5 |
 
 The diagnostic exercises a two-triangle, two-material scene with point
 lighting, shadows, a partly reflective material and display conversion.
@@ -54,6 +58,54 @@ three samples per pixel and Compression=None. A PNG preview is alongside
 it. Neither artifact is tracked, and this is a diagnostic tile rather
 than the final logo/glass scene. A permanent image writer and reproducible
 render command belong to the queued ray-image implementation.
+
+## Visible CPU logo
+
+```sh
+just ray-render-cpu
+just ray-render-cpu --width 256 --height 64 --output work/ray-integration/logo-cpu-256
+just ray-render-cpu --angle 0.0 --output work/ray-integration/logo-zero-cpu
+just ray-test-image
+```
+
+The render command requires Python 3 and libtiff's ppm2tiff tool.
+It checks for the encoder before starting an expensive render.
+
+examples/ray/logo.xtl declares the scene through the general Scene macro,
+rotates only the vane group around its pivot, and renders with RayTrace.
+It adapts the upstream MIT Scene logo demo without duplicating any
+geometry or rendering algorithm in the host code. The fixed X is silver;
+the _eTaL vane is copper. The camera looks toward the extruded letters.
+The low-resolution preview has no antialiasing and is an initial scene,
+not the final animation or glass composition.
+
+The default 64 by 16 image took 40.02 seconds on this host's CPU evaluator.
+The 256 by 64 still took 673.97 seconds (about 11 minutes), producing
+logo-cpu-256.tif and logo-cpu-256.png. Both image sizes were visually
+inspected; the larger TIFF also decoded successfully with libtiff.
+The generated logo-cpu.tif has uncompressed RGB8 pixels; tiffinfo -D
+successfully decoded it and reported Compression=None. logo-cpu.png is
+a convenient compressed preview. Both are under work/ray-integration/.
+The command saves its actual generated .xtl, raw RGB .out and a .json
+record naming the CPU backend, dimensions, angle, pins and render time.
+
+scripts/ray-render-cpu.py only runs the evaluator, checks RGB output,
+quantizes display values to 8 bits and writes a PPM adapter file.
+Installed libtiff ppm2tiff -c none encodes the TIFF; its permissive
+license is provided by the libtiff package (LICENSE.md on this host).
+This avoids carrying a general TIFF encoder here. The PNG preview uses
+Python's standard library. TIFF pixels are never compressed. The host does not
+trace rays or shade surfaces. Unit checks cover known TIFF tags/payload,
+PNG rows/CRCs and rejection of invalid pixel counts/nonfinite/range data.
+The gate also checks the eleven pinned library examples and lints the
+local scene source. Output files are ignored build artifacts.
+
+The first visible CPU render is available now. At the start of this work,
+the planning estimate was 20-40 minutes for a reproducible CPU preview and
+roughly 2-4 focused work sessions for the first verified GPU image. The
+latter remains uncertain until validation guards and bounded sweeps lower
+completely. No GPU timing or speedup is inferred from these CPU images.
+Glass rendering additionally needs the pending RL5-RL7 library work.
 
 ## GPU eligibility evidence
 
@@ -98,10 +150,9 @@ All three renderer outputs still fall back, and the unrelated scalar
 remains the only device output. The boolean improvement is not evidence
 of a GPU-rendered image. No validation checks were removed.
 
-RL2 extrusion and original glyph meshes landed upstream at f28e7ca,
-with completion handoff f08171e. RL3 scene macros are in progress.
-The current dependency pin stays c968326 during this compiler step;
-RL2 adoption belongs at a subsequent step boundary.
+RL2 extrusion/glyphs (f28e7ca) and RL3 scene macros (6e58863) are now
+adopted at 7bd8f0a in the visible-preview step. The earlier boolean
+compiler step retained c968326 until this explicit adoption boundary.
 
 The next local work is generic lowering support for boolean/shape
 validation and runtime guard behavior. Preserve the library's finite,

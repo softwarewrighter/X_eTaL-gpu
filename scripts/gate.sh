@@ -17,6 +17,8 @@ cd "$root"
 "$root/scripts/test-ext.sh"
 "$root/scripts/selftest-libs.sh"
 "$root/scripts/test-libs.sh"
+python3 "$root/scripts/test-ray-image.py"
+"$root/scripts/ray-check-cpu.sh"
 if [ -f "$root/components/Cargo.toml" ]; then
   (cd "$root/components" && cargo fmt --all --check) || { echo "FAIL: cargo fmt (run: cd components && cargo fmt --all)"; exit 1; }
   (cd "$root/components" && cargo clippy -q --all-targets -- -D warnings) || { echo "FAIL: cargo clippy"; exit 1; }

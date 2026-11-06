@@ -14,7 +14,9 @@ PY
 export XETAL_PATH
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-for spec in Vector3:tests:basics Vector3:demos:pivot RayTrace:tests:camera RayTrace:tests:intersections RayTrace:tests:lighting RayTrace:tests:pixels RayTrace:demos:diagnostic; do
+n=0
+for spec in Vector3:tests:basics Vector3:demos:pivot RayTrace:tests:camera RayTrace:tests:intersections RayTrace:tests:lighting RayTrace:tests:pixels RayTrace:demos:diagnostic Extrusion:tests:glyphs Scene:tests:arrays Scene:tests:animation Scene:tests:default; do
+    n=$((n + 1))
     IFS=: read -r lib kind name <<<"$spec"
     stem="$name"
     [ "$kind" != demos ] || stem="demo-$name"
@@ -22,4 +24,4 @@ for spec in Vector3:tests:basics Vector3:demos:pivot RayTrace:tests:camera RayTr
     result="$(scripts/compare-out.py "$libs/libs/$lib/tests/$stem.out" "$tmp/got.out" 0)"
     echo "ray-check-cpu: $lib/$name: $result"
 done
-echo "ray-check-cpu: 7 committed examples pass with X_eTaL $(cut -c1-7 XETAL_COMMIT) and libraries $(cut -c1-7 XETAL_LIBRARIES_COMMIT)"
+echo "ray-check-cpu: $n committed examples pass with X_eTaL $(cut -c1-7 XETAL_COMMIT) and libraries $(cut -c1-7 XETAL_LIBRARIES_COMMIT)"

@@ -13,11 +13,13 @@ scripts/xetal-extensions.sh >/dev/null   # Ffi.xtlm and Clock.xtl, which the fac
 scripts/xetal-ml.sh >/dev/null           # X_eTaL-ML's libraries, which ml/*.xtl import
 libs="$(scripts/libs.py path)"
 ml="$(ls -d "$root"/work/xetal-ml/libs/*/src | paste -sd: -)"
-export XETAL_PATH="$libs:$root/extensions/gpu/lib:$root/work/xetal-extensions/lib:$root/work/xetal-extensions/extensions/clock/lib:$ml"
+rayroot="$(scripts/xetal-libraries.sh)"
+ray="$(ls -d "$rayroot"/libs/*/src | paste -sd: -)"
+export XETAL_PATH="$ray:$libs:$root/extensions/gpu/lib:$root/work/xetal-extensions/lib:$root/work/xetal-extensions/extensions/clock/lib:$ml"
 deny=(-D correctness -D suspicious -D complexity -D style -D deprecated)
 fail=0; n=0
 for f in libs/*/src/*.xtl libs/*/src/*.xtlm libs/*/tests/*.xtl libs/*/demos/*.xtl \
-         extensions/gpu/lib/*.xtl extensions/gpu/lib/*.xtlm extensions/gpu/tests/*.xtl extensions/gpu/demos/*.xtl ml/*.xtl; do
+         extensions/gpu/lib/*.xtl extensions/gpu/lib/*.xtlm extensions/gpu/tests/*.xtl extensions/gpu/demos/*.xtl ml/*.xtl examples/ray/*.xtl; do
   [ -e "$f" ] || continue
   n=$((n + 1))
   allow=()

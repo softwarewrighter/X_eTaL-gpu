@@ -73,13 +73,12 @@ with explicit dependencies and rerun baselines before adoption.
 
 ### Adoption snapshot, 2026-11-06
 
-RL1 is completed upstream in 202ed3e (handoff 4cd8725), and RL4 in
-128e557 (handoff c968326). XETAL_LIBRARIES_COMMIT pins c968326, with
-CPU compatibility and GPU eligibility evidence in
-[ray-integration.md](ray-integration.md). RL2 is completed in f28e7ca
-(handoff f08171e); RL3 is in progress in the inspected peer saga. RL2
-is available for adoption at a later step boundary; the current pin
-remains c968326. The original requested statuses
+RL1 is completed upstream in 202ed3e, RL2 in f28e7ca, RL3 in 6e58863
+and RL4 in 128e557. XETAL_LIBRARIES_COMMIT now pins their committed
+handoff 7bd8f0a. Eleven CPU baselines pass unchanged, including glyph,
+scene-array and fixed-X/pivot animation checks. A local CPU logo image
+uses the Scene macro and RayTrace directly; see
+[ray-integration.md](ray-integration.md). The original requested statuses
 below are historical; upstream completion does not imply GPU eligibility.
 Boolean maps now lower; the remaining validation gap is local GPU work, not a new
 library or language ask. RL5-RL7 are accepted in the peer working plan
@@ -88,7 +87,8 @@ but remain pending; RL8/RL9 remain deferred.
 ### Request summary and deadlines
 
 Deadlines are dependency milestones, not calendar promises. Ask status
-is open/requested here for every row; an upstream commit is pending.
+in the original table is historical; the adoption snapshot above records
+completed deliveries.
 
 | ID | Request | Owner | Needed by | Dependencies |
 | -- | ------- | ----- | --------- | ------------ |

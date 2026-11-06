@@ -28,8 +28,9 @@ and [older license](https://www.povray.org/povlegal-3.6.html).
 RL1 and RL4 have committed deliveries at X_eTaL-libraries c968326.
 The committed CPU diagnostic and six other examples match their baselines
 under X_eTaL abdd371; a 64 by 64 uncompressed TIFF preview was produced.
-RL2 extrusion/glyphs have also landed at f28e7ca (not yet pinned here),
-and RL3 scene macros are in progress. Boolean maps now lower, but the full
+RL2 extrusion/glyphs (f28e7ca) and RL3 scene macros (6e58863) are now
+pinned at handoff 7bd8f0a. A reproducible CPU logo TIFF/PNG is available
+with just ray-render-cpu. Boolean maps now lower, but the full
 renderer still needs validation lowering. See [ray-integration.md](ray-integration.md)
 for evidence and reproducible CPU checks. Local adoption/source/device/
 image work is prioritized before remaining Mojo/ML steps; it does not
