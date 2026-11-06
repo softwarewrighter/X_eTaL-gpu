@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 10:46 `chore` Record completed ray boolean lowering prerequisite and validated GPU/CPU handoff; remaining ray-source work preserves runtime guards.
+
 - 10:45 `feat` Lower typed boolean n_ot, & and | with strict truth-table, scalar extension, type/shape and changed-input tests; verify composed masks on RTX OpenCL and Mojo. Record committed RL2 and in-progress RL3, retain renderer guards and document the next local refusal.
 
 - 10:09 `chore` Record completed ray evaluator compatibility and library adoption; next is local validation/guard lowering for the actual renderer.

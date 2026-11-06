@@ -1,8 +1,9 @@
 number = 35
 slug = "ray-booleans"
-status = "in-progress"
+status = "completed"
 description = "Prerequisite discovered during ray-source: lower n_ot, & and | to existing ty..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T10:35:05"
-commits = []
+completed_at = "2026-11-06T10:46:06"
+commits = ["64942b29c6b9e9291c46555bc852d2493d6a4071"]
