@@ -81,8 +81,10 @@ uses the Scene macro and RayTrace directly; see
 [ray-integration.md](ray-integration.md). The original requested statuses
 below are historical; upstream completion does not imply GPU eligibility.
 Boolean maps now lower; the remaining validation gap is local GPU work, not a new
-library or language ask. RL5-RL7 are accepted in the peer working plan
-but remain pending; RL8/RL9 remain deferred.
+library or language ask. RL6 geometry/v2 scene work is now in progress
+in the peer saga, without a committed delivery yet. RL5 glass and RL7
+sampling remain pending; RL8/RL9 remain deferred. No upstream
+acknowledgment or committed fix for RL2a was found in this check.
 
 ### Request summary and deadlines
 
@@ -196,6 +198,51 @@ triangles, bounds x=0..2, y=0..1, z=-0.25..0.25 and volume 1. Test normals,
 caps, edge pairing, a concave X contour and each supported glyph. Pin
 expansion output, compare it with direct function construction and test
 all refusal cases. No renderer/device calls appear in the expansion.
+
+### RL2a: readable lowercase a glyph correction
+
+Status: requested follow-up, 2026-11-06. Owner: X_eTaL-libraries,
+Extrusion. Needed before accepting the logo appearance and animation;
+independent of local GPU compiler work. No new language feature or font
+engine is requested.
+
+The user identified an unreadable a in the 256 by 64 CPU logo preview.
+At pinned 7bd8f0a, Extrusion's g_lyph "a" returns the original 13-point
+contour. Its upper/lower notches and diagonal left edge give the rendered
+letter a shape resembling a 2 rather than a recognizable lowercase a.
+The library documentation explicitly calls its counters open notches;
+this is an asset/readability correction, not evidence of a GPU failure.
+The preview uses the CPU evaluator and the general library renderer.
+
+Reproduce with this repo's just ray-render-cpu --width 256 --height 64,
+or the committed Scene logo demo. The local source is
+examples/ray/logo.xtl and the result is
+work/ray-integration/logo-cpu-256.png. Minimal library entry points are:
+
+```xetal
+"ex:" u_se< "Extrusion"
+ex:g_lyph "a"
+0.2 ex:l_etters "a"
+0.2 ex:l_etters "X_eTaL"
+```
+
+Replace the a outline with a clearly readable original block lowercase a.
+Prefer a focused glyph-data correction retaining the simple-contour API,
+advance and baseline conventions; a narrow open counter is acceptable
+if the result reads clearly. Avoid broad hole/font infrastructure merely
+to repair one glyph. If the existing representation cannot deliver that,
+document the smallest compatible library extension before implementing.
+Check the e at the same time: its current strokes also read like a small
+capital E; the requested spelling is X_eTaL.
+
+Acceptance: review an isolated front-view a silhouette before shading,
+then the full word at zero and a modest vane rotation. Include a known
+silhouette/raster regression in addition to polygon validity, winding,
+extrusion and numeric baselines: those checks currently pass while the
+letter is visually unclear. Keep original MIT provenance. Commit and
+hand off the correction, then this repo will adopt it at a step boundary
+and regenerate PNG/TIFF previews. Do not repair the exported pixels or
+carry a different glyph implementation in the GPU repo.
 
 ### RL3: scene macro and transform groups
 

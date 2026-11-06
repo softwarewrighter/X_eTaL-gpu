@@ -189,6 +189,8 @@ the committed library pin, CPU diagnostic and local lowering blockers.
 RL2 extrusion/glyphs and RL3 Scene have landed and are pinned at 7bd8f0a.
 The visible-preview prerequisite delivers a CPU logo TIFF/PNG command,
 with eleven pinned CPU checks, while ray-source continues toward GPU guards.
+User visual review found the lowercase a unreadable; RL2a requests an
+upstream glyph correction and silhouette/word checks before logo acceptance.
 A ray-booleans prerequisite adds typed boolean maps and changed-input
 checks on both GPU backends before the remaining ray-source validation work.
 Language compatibility and ray adoption/source/device/image steps now

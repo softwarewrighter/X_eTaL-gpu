@@ -1,0 +1,8 @@
+number = 37
+slug = "ray-glyph-correction"
+status = "in-progress"
+description = "Record the user-observed unreadable lowercase a in the CPU logo as a focused ..."
+role = "meta"
+context_files = []
+created_at = "2026-11-06T11:37:15"
+commits = []

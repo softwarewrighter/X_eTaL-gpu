@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 11:42 `docs` Record user visual review of the unreadable lowercase a, trace it to the committed Extrusion outline, and request focused RL2a glyph correction with silhouette/word acceptance checks; record RL6 now in progress, retain honest preview status and GPU work order.
+
 - 11:29 `chore` Record completed visible CPU logo preview with validated uncompressed TIFF/PNG outputs; resume GPU guard and bounded-sweep lowering.
 
 - 11:29 `feat` Add a reproducible X_eTaL Scene/RayTrace CPU logo render command with raw RGB, uncompressed TIFF via libtiff, PNG and provenance metadata; render and decode 64x16 and 256x64 stills. Validate host encoding and eleven committed library baselines, lint the scene and record remaining GPU guard work.

@@ -76,6 +76,10 @@ rotates only the vane group around its pivot, and renders with RayTrace.
 It adapts the upstream MIT Scene logo demo without duplicating any
 geometry or rendering algorithm in the host code. The fixed X is silver;
 the _eTaL vane is copper. The camera looks toward the extruded letters.
+The lowercase a is visually unclear in the delivered library outline
+(user review); RL2a in xetal-libraries-ask.md requests a focused glyph
+correction and visual acceptance checks. Existing previews retain that
+known issue until a committed upstream fix is adopted.
 The low-resolution preview has no antialiasing and is an initial scene,
 not the final animation or glass composition.
 

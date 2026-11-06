@@ -355,7 +355,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   publishes it, `just check-live` checks it)
 - `just ray-render-cpu` writes an initial CPU logo as uncompressed TIFF
   and a PNG preview under `work/ray-integration/`; use `--width 256
-  --height 64` for a larger still. GPU renderer validation is still pending.
+  --height 64` for a larger still. GPU renderer validation is still pending. The lowercase a needs the
+  upstream glyph correction recorded as RL2a in the library asks.
 - [Ray integration status](docs/ray-integration.md) -- committed library
   adoption, CPU diagnostic evidence, tested GPU boolean maps and remaining
   renderer validation gaps
