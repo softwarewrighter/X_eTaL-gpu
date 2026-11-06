@@ -828,6 +828,17 @@ impl Translator {
     fn monadic(&mut self, p: &Prim, x: V) -> Result<V> {
         match p.name.as_str() {
             "u_se<" => Ok(V::Unit),
+            "n_ot" => {
+                let id = self.node(x, "x")?;
+                Ok(V::Node(self.push(
+                    "not",
+                    None,
+                    Op::Map {
+                        op: MapOp::Not,
+                        args: vec![id],
+                    },
+                )?))
+            }
             "p_i" => Ok(V::Static(Array::floats(Shape::scalar(), vec![std::f64::consts::PI]), false)),
             "n_eg" | "a_bs" | "e_xp" | "l_og" | "c_os" | "s_in" | "s_qrt" => {
                 let op = match p.name.as_str() {
@@ -1042,7 +1053,7 @@ impl Translator {
     fn dyadic(&mut self, p: &Prim, l: V, r: V) -> Result<V> {
         let axis = p.axes.first().map(|a| *a as usize);
         match p.name.as_str() {
-            "+" | "-" | "*" | "/" | "m_ax" | "m_in" | "d_iv" | "m_od" | "=" | "!=" | "<" | "<=" | ">" | ">=" => {
+            "+" | "-" | "*" | "/" | "m_ax" | "m_in" | "d_iv" | "m_od" | "=" | "!=" | "<" | "<=" | ">" | ">=" | "&" | "|" => {
                 let op = match p.name.as_str() {
                     "+" => MapOp::Add,
                     "-" => MapOp::Sub,
@@ -1057,6 +1068,8 @@ impl Translator {
                     "<" => MapOp::Lt,
                     "<=" => MapOp::Le,
                     ">" => MapOp::Gt,
+                    "&" => MapOp::And,
+                    "|" => MapOp::Or,
                     _ => MapOp::Ge,
                 };
                 // A Bool counts as 0 or 1 in arithmetic, as X_eTaL has it (a mask times a value).
@@ -1500,6 +1513,8 @@ fn is_dyadic(name: &str) -> bool {
             | "<="
             | ">"
             | ">="
+            | "&"
+            | "|"
             | "r_eshape"
             | "c_at"
             | "t_ake"

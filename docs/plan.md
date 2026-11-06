@@ -186,6 +186,9 @@ effects. Four glass-prefixed steps cover composition, optics, camera and
 final CPU/GPU rendering; no new language feature is planned.
 Integration has begun: [ray-integration.md](ray-integration.md) records
 the committed library pin, CPU diagnostic and local lowering blockers.
+RL2 extrusion/glyphs have landed upstream (f28e7ca); RL3 is in progress.
+A ray-booleans prerequisite adds typed boolean maps and changed-input
+checks on both GPU backends before the remaining ray-source validation work.
 Language compatibility and ray adoption/source/device/image steps now
 precede the remaining Mojo/ML steps; the macro work does not block them.
 

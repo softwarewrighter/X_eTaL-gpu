@@ -50,11 +50,14 @@ A primitive applied to arguments:
   as constants: arithmetic and comparisons with scalar extension (a
   literal adapts to the type it meets, so `x m_ax 0` on Floats is
   `max` with `0.0`; `/` gives a Float, so Ints are made Floats
-  first), `e_xp`, `l_og`, `n_eg`, `a_bs`, `f_loat`, `f_loor`, `r_/`
+  first), typed Bool `n_ot`, `&`, `|`, `e_xp`, `l_og`, `n_eg`, `a_bs`, `f_loat`, `f_loor`, `r_/`
   with and without an axis (all axes is the whole), `'+ '* i_nner`,
   `t_able` with `l_eft`, `r_ight` or an arithmetic function, `t_ake`
   and `d_rop` along any axis, `r_avel`, `r_eshape`, `o_-`, `o_\`
   and `o_\_jk`, `t_ranspose`, `s_elect` along any axis.
+
+Boolean maps currently require Bool arrays. The evaluator also accepts
+numeric 0/1; lowering those needs value validation and remains refused.
 
 A library function is a closure inlined at each call; `let` and
 `eval` statements run in order, every `eval` an output. `p_ower` with

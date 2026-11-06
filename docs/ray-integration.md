@@ -64,9 +64,9 @@ through the source lowering returns:
 the program prints nothing the device could compute
 ```
 
-An audit copy with one extra unrelated scalar output lets the lowering
+The initial audit copy with one extra unrelated scalar output lets the lowering
 report each renderer refusal instead of stopping on an empty device
-program. All three renderer outputs fall back to the evaluator with:
+program. Initially all three renderer outputs fell back to the evaluator with:
 
 ```text
 n_ot is outside the subset the device runs
@@ -76,11 +76,40 @@ The only XIR output in that audit is the unrelated scalar. This is not
 GPU-rendering evidence. Merely invoking --device opencl:0 or counting
 kernels would give a misleading success criterion here.
 
+### Boolean lowering progress, 2026-11-06
+
+The compiler now translates typed Bool n_ot, & and | using existing XIR
+maps. Numeric 0/1 inputs accepted by the evaluator remain outside this
+new typed-Bool subset: accepting general numbers would require runtime
+validation of their values. Strict function tests cover all truth-table pairs, scalar extension,
+changed bound inputs and rejection of incorrect types/shapes. Their truth
+tables agree with the pinned evaluator. A composed comparison/mask
+expression with two different input batches agrees exactly between XIR,
+OpenCL and Mojo on this host's RTX 5060 Ti. This adds no language feature,
+rendering algorithm or library API.
+
+Re-running the diagnostic audit now moves the refusal to:
+
+```text
+a guard on a value the device computes is outside the subset (the condition must be known now)
+```
+
+All three renderer outputs still fall back, and the unrelated scalar
+remains the only device output. The boolean improvement is not evidence
+of a GPU-rendered image. No validation checks were removed.
+
+RL2 extrusion and original glyph meshes landed upstream at f28e7ca,
+with completion handoff f08171e. RL3 scene macros are in progress.
+The current dependency pin stays c968326 during this compiler step;
+RL2 adoption belongs at a subsequent step boundary.
+
 The next local work is generic lowering support for boolean/shape
 validation and runtime guard behavior. Preserve the library's finite,
 shape and domain checks; do not strip guards to make a renderer appear
-eligible. Boolean operators and m_atch appear in the library validation
-paths. Its primitive sweep is bounded p_ower; its light sweep is bounded
+eligible. Boolean reductions and m_atch still need validation-path support;
+shape-only guards should be resolved statically, while data-dependent
+failures must remain runtime checks on both backends. Its primitive sweep
+is bounded p_ower; its light sweep is bounded
 tail recursion. Their complete eligibility must be tested after the
 first refusal is addressed, not assumed from this initial audit.
 

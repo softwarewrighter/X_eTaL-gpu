@@ -76,10 +76,12 @@ with explicit dependencies and rerun baselines before adoption.
 RL1 is completed upstream in 202ed3e (handoff 4cd8725), and RL4 in
 128e557 (handoff c968326). XETAL_LIBRARIES_COMMIT pins c968326, with
 CPU compatibility and GPU eligibility evidence in
-[ray-integration.md](ray-integration.md). RL2 is in progress and RL3
-queued in the last inspected peer saga. The original requested statuses
+[ray-integration.md](ray-integration.md). RL2 is completed in f28e7ca
+(handoff f08171e); RL3 is in progress in the inspected peer saga. RL2
+is available for adoption at a later step boundary; the current pin
+remains c968326. The original requested statuses
 below are historical; upstream completion does not imply GPU eligibility.
-The concrete n_ot/validation lowering gap is local GPU work, not a new
+Boolean maps now lower; the remaining validation gap is local GPU work, not a new
 library or language ask. RL5-RL7 are accepted in the peer working plan
 but remain pending; RL8/RL9 remain deferred.
 
