@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 12:10 `chore` Record validated shape/matching/reduction lowering completion; next is runtime validation barriers and bounded sweep eligibility.
+
 - 12:09 `feat` Lower static shape validation with preserved panic messages, whole-array matching and Bool all/any reductions including empty-axis identities; verify axes and changed-input CPU/OpenCL/Mojo parity. Retain data-dependent guard refusal and document remaining runtime and sweep work.
 
 - 11:42 `chore` Record completed glyph-review follow-up and checked upstream glass queue; resume GPU renderer validation work.
