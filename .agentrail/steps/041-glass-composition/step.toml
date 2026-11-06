@@ -1,6 +1,6 @@
 number = 41
 slug = "glass-composition"
-status = "pending"
+status = "in-progress"
 description = "Adopt committed RL6 geometry/Scene v2 (2c08dfd/e172afe) and RL5 Glass transpo..."
 role = "production"
 context_files = []
