@@ -11,7 +11,9 @@
 ## bound (once per set of shapes), runs it on opencl:0 with the
 ## arguments uploaded, and reads the result back. KINDS says how each
 ## argument is taken, "float" or "int" per parameter ("" for all
-## Floats); an Int array must be bound as int to be looked up by. The
+## Floats); an Int array must be bound as int to be looked up by. Prefix
+## KINDS with "mojo " (or use "mojo" for all Floats) to run on Mojo;
+## otherwise the macro runs on opencl:0. The
 ## function is one or two named arrays to one array, written on one
 ## line without quotes; its libraries are the ones the calling file
 ## imports (the expansion names the file, so the runner reads its u_se<
@@ -45,6 +47,18 @@ h:b_inds := { a b ->
   "2 gp:b_ind " c_at b c_at " gp:a_fter " c_at one
 }
 
+## Optional Mojo backend prefix on the kinds (otherwise opencl:0).
+h:m_ojo := { kinds -> (kinds m_atch "mojo") | (5 t_ake kinds) m_atch "mojo " }
+h:k_inds := { kinds ->
+  kinds m_atch "mojo" ? ""
+  h:m_ojo kinds ? 5 d_rop kinds
+  kinds
+}
+h:d_evice := { kinds ->
+  h:m_ojo kinds ? "-2"
+  "0"
+}
+
 ### The macro
 
 ## KINDS gp:a_ccel< "{ x w -> body }": see the file's header. A
@@ -63,6 +77,6 @@ m:a_ccel< := { kinds f ->
   n_ot (1 h:w_ord w) m_atch "{" ? "bad-macro-argument right" []R_EJECT "the function must be written { x -> ... } or { x w -> ... }"
   p1 := 2 h:w_ord w
   p2 := h:s_econd w
-  spec := ([]F_ILE @) c_at "|" c_at kinds
-  "{ " c_at (p1 h:h_ead p2) c_at " -> gp:o_utput 1 gp:a_fter gp:r_un 0 gp:a_fter " c_at (p1 h:b_inds p2) c_at (h:q_uote f) c_at " gp:l_ower " c_at (h:q_uote spec) c_at " }"
+  spec := ([]F_ILE @) c_at "|" c_at h:k_inds kinds
+  "{ " c_at (p1 h:h_ead p2) c_at " -> gp:o_utput 1 gp:a_fter gp:r_un " c_at (h:d_evice kinds) c_at " gp:a_fter " c_at (p1 h:b_inds p2) c_at (h:q_uote f) c_at " gp:l_ower " c_at (h:q_uote spec) c_at " }"
 }

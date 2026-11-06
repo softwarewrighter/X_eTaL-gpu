@@ -13,8 +13,10 @@ command -v reg-rs >/dev/null || { echo "test-ext: reg-rs not found on PATH" >&2;
 "$root/scripts/gpu-ext.sh" >/dev/null
 d="$root/extensions/gpu/tests"
 has_device=1
-found="$("$root/target/release/xetal-gpu" devices 2>/dev/null || true)"
+has_mojo=1
+found="$("$root/target/release/xetal-gpu" devices)"
 grep -q '^opencl:' <<<"$found" || has_device=0
+grep -q '^mojo ' <<<"$found" || has_mojo=0
 xx="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$root/scripts/xx" "$d")"
 wanted=("types|$xx type ../lib/Gpu.xtl|")
 for p in "$d"/*.xtl; do
@@ -27,7 +29,13 @@ cd "$d"
 fail=0; skipped=0
 for w in "${wanted[@]}"; do
   IFS='|' read -r t cmd prog <<<"$w"
-  if [ "$has_device" = 0 ] && [[ "$t" == *-device || "$t" == demo-* ]] && [[ "$t" != expand-* ]]; then skipped=$((skipped + 1)); continue; fi
+  if [[ "$t" != expand-* ]]; then
+    if [[ "$t" == *-mojo-device ]]; then
+      if [ "$has_mojo" = 0 ]; then echo "skipped: $t (no Mojo GPU)"; skipped=$((skipped + 1)); continue; fi
+    elif [ "$has_device" = 0 ] && [[ "$t" == *-device || "$t" == demo-* ]]; then
+      skipped=$((skipped + 1)); continue
+    fi
+  fi
   if [ ! -f "$t.rgt" ]; then
     if [ "${XETAL_BLESS:-}" = 1 ]; then rm -f "$t".tdb*; reg-rs create -t "$t" -c "$cmd" >/dev/null; echo "created: gpu/$t"
     else echo "FAIL: gpu/$t: no baseline $t.rgt (XETAL_BLESS=1 to create)"; fail=1; continue; fi
@@ -38,7 +46,7 @@ for w in "${wanted[@]}"; do
     echo "FAIL: gpu/$t: a check failed:"; grep '^FAIL' "$t.out"; fail=1
   fi
 done
-[ "$skipped" = 0 ] || echo "test-ext: no OpenCL device here; $skipped device test(s) skipped"
+[ "$skipped" = 0 ] || echo "test-ext: $skipped test(s) skipped for unavailable devices"
 # The demos print timings, so they have no baselines: with XETAL_DEMOS=1
 # each must run to the end with no FAIL line (the offload demo takes
 # about 40 s, most of it the evaluator's 512 by 512 product).

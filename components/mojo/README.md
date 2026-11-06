@@ -14,6 +14,28 @@ xetal-gpu run FILE.xtl --device mojo [--time]      # lower, emit, build, run on 
 xetal-gpu kernel FILE.xtl --backend mojo           # the Mojo source it would build
 ```
 
+`xetal-gpu devices` lists `mojo` with its API and GPU name when the
+compiler is installed and its default GPU opens. With no compiler, Mojo
+checks skip explicitly; an installed compiler that fails discovery reports
+an error. `scripts/check-equiv.sh` checks all source demos against the
+evaluator on CPU, OpenCL and Mojo, untiled and with tile size 8.
+
+The Gpu facade selects Mojo with `gp:r_un -2` (`-1` is CPU, nonnegative
+numbers are OpenCL indices). The same accelerate macro accepts
+`"mojo float float" gp:a_ccel< "{ x w -> ... }"`, or `"mojo"` for all
+Float inputs. The original kinds without a backend prefix use OpenCL 0.
+`gp:k_ernel` returns the selected backend's source.
+
+`--time` reports the sum of device intervals around individual kernel
+launches using the pinned `DeviceContext.execution_time` API, in addition
+to build, call and total times. Each kernel is compiled before its timer;
+allocations, uploads and downloads stay outside the device intervals.
+The timer synchronizes each launch and adds profiling overhead, so these
+intervals are not an uninstrumented throughput measurement. The wall
+time includes the context, transfers and execution. `--repeat` keeps the
+library loaded; Mojo still allocates buffers and uploads inputs every
+call, including `gp:r_erun -2`. OpenCL retains its resident-buffer behavior.
+
 ## The toolchain
 
 `scripts/mojo.sh` (`just mojo`) installs the MAX nightly pinned in
@@ -51,13 +73,13 @@ backend, and every result names its backend.
 - **Axes and array structure.** Axis reductions use one thread per result
   and fold a possibly strided line from the right, as the evaluator does.
   Tables, take/drop along any axis, ravel and arbitrary transposes use
-  indexed reads. Inner products use one thread per output with a right
-  fold over products. These are straightforward kernels; tiled matrix
-  multiplication is still pending. Different array lengths split fused
+  indexed reads. Untiled inner products use one thread per output with a
+  right fold over products; tiled products are described below.
+  Different array lengths split fused
   stages, with intermediate buffers carrying values between them.
 - **The ABI.** The generated file exports `xir_init` (the Mojo
   runtime, 1 when the build targets a GPU), `xir_device_info`
-  (`api=metal;name=Apple M1 Max`) and `xir_run(inputs, outputs)`: the
+  (`api=metal;name=Apple M1 Max`) and `xir_run(inputs, outputs, kernels_ms)`: the
   program's inputs in order, then the constants the host uploads
   (every constant with more than one written item, so a weight matrix
   is never source text), host pointers to `f64` Float, `i64` Int, and
@@ -129,6 +151,13 @@ Ints exact). The product demos agree under `--tile 16` too. A cold build takes
 1.0 to 1.2 s (topk 1.7 s), a run 3 to 5 ms (topk 8 to 10 ms), the
 whole command 50 to 60 ms with the library cached:
 [the M1 Max report](../../docs/m1max-mojo-results.md).
+
+On the RTX 5060 Ti, 2026-11-06, all thirteen source demos pass through
+both OpenCL and Mojo with the default schedule and tile size 8. The
+facade/macro and CLI regressions check Mojo selection, typed lookup,
+shape changes, repeated calls, timing, rebinding, schedule changes and
+switching among CPU, OpenCL and Mojo. Current timing instrumentation has
+not yet been rerun on the Mac; the October Mac results predate it.
 
 ## An example to show
 

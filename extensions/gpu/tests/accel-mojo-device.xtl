@@ -1,0 +1,13 @@
+#!/usr/bin/env xetal
+# Shared source through the Mojo macro, with a shape change and typed lookup.
+"gp:" u_se< "Gpu"
+"ac:" u_se< "Accel"
+u:t_wice := "mojo" gp:a_ccel< "{ x -> x + x }"
+x := 1.0 2.0 3.0
+(x + x) gp:n_ear u:t_wice x
+y := 2 2 r_eshape 1.0 2.0 3.0 4.0
+(y + y) gp:n_ear u:t_wice y
+u:e_mbed := "mojo float int" gp:a_ccel< "{ t ids -> t ac:e_mbed ids }"
+t := 3 2 r_eshape 1.0 2.0 3.0 4.0 5.0 6.0
+ids := 3 1 2
+(t ac:e_mbed ids) gp:n_ear t u:e_mbed ids

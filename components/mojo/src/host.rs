@@ -106,7 +106,7 @@ pub fn build(mojo: &Path, source: &str, name: &str) -> Result<(PathBuf, Duration
 
 type InitFn = unsafe extern "C" fn() -> i32;
 type InfoFn = unsafe extern "C" fn(*mut u8, i64) -> i64;
-type RunFn = unsafe extern "C" fn(*const *const c_void, *const *mut c_void) -> i32;
+type RunFn = unsafe extern "C" fn(*const *const c_void, *const *mut c_void, *mut f64) -> i32;
 
 /// A built program, loaded.
 pub struct Library {
@@ -145,6 +145,11 @@ impl Library {
     /// arrays of the checked types. Host arrays cross as f64, i64 or
     /// i32 Bool items, preserving Ints beyond 2^53. The time is the call's.
     pub fn run(&self, checked: &Checked, abi: &Abi, inputs: &HashMap<String, Array>) -> Result<(Vec<Array>, Duration)> {
+        self.run_timed(checked, abi, inputs).map(|(out, time)| (out, time.wall))
+    }
+
+    /// Wall time of the call and the sum of per-kernel device intervals.
+    pub fn run_timed(&self, checked: &Checked, abi: &Abi, inputs: &HashMap<String, Array>) -> Result<(Vec<Array>, Timings)> {
         check_positions(checked, inputs)?;
         let mut ins: Vec<HostArray> = Vec::new();
         for (id, name) in &abi.inputs {
@@ -185,7 +190,8 @@ impl Library {
         let in_ptrs: Vec<*const c_void> = ins.iter().map(HostArray::ptr).collect();
         let out_ptrs: Vec<*mut c_void> = outs.iter_mut().map(HostArray::mut_ptr).collect();
         let start = Instant::now();
-        let rc = unsafe { f(in_ptrs.as_ptr(), out_ptrs.as_ptr()) };
+        let mut kernels_ms = 0.0;
+        let rc = unsafe { f(in_ptrs.as_ptr(), out_ptrs.as_ptr(), &mut kernels_ms) };
         let took = start.elapsed();
         if rc != 0 {
             return Err(Error(format!("xir_run returned {rc} (the device failed; its message is above)")));
@@ -201,7 +207,7 @@ impl Library {
             };
             arrays.push(Array::new(ty.scalar, Shape(ty.shape.0.clone()), data).map_err(|e| Error(format!("an output: {e}")))?);
         }
-        Ok((arrays, took))
+        Ok((arrays, Timings { wall: took, kernels_ms }))
     }
 }
 
@@ -239,25 +245,70 @@ impl HostArray {
     }
 }
 
-/// Emit, build, load and run a checked program in one go: the outputs,
-/// the device's description, the build's and the run's times.
+/// Timings of one call. Kernel intervals exclude compilation and copies;
+/// wall time includes context creation, allocations, transfers and execution.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Timings {
+    pub wall: Duration,
+    pub kernels_ms: f64,
+}
+
+/// A compiled library kept loaded across calls. Device buffers are currently
+/// allocated per call; reusing this object does not make inputs resident.
+pub struct Prepared {
+    checked: Checked,
+    abi: Abi,
+    library: Library,
+    pub info: String,
+    pub built: Duration,
+}
+
+impl Prepared {
+    pub fn new(checked: &Checked, schedule: &xetal_gpu_opencl::Schedule, name: &str) -> Result<Self> {
+        let mojo = mojo_path()
+            .ok_or_else(|| Error("no Mojo compiler: scripts/mojo.sh installs the pinned one as bin/mojo (or set XETAL_GPU_MOJO)".into()))?;
+        let (source, abi) = crate::emit(checked, schedule, name)?;
+        let (path, built) = build(&mojo, &source, name)?;
+        let library = Library::load(&path)?;
+        if library.init()? == 0 {
+            return Err(Error("the Mojo build targets no GPU (has_accelerator is false)".into()));
+        }
+        let info = library.device_info()?;
+        Ok(Self {
+            checked: checked.clone(),
+            abi,
+            library,
+            info,
+            built,
+        })
+    }
+
+    pub fn run_timed(&self, inputs: &HashMap<String, Array>) -> Result<(Vec<Array>, Timings)> {
+        self.library.run_timed(&self.checked, &self.abi, inputs)
+    }
+}
+
+/// Discover the default Mojo GPU with the same generated ABI as execution.
+/// No compiler means no backend; an installed but unusable compiler is an error.
+pub fn device_info() -> Result<Option<String>> {
+    if mojo_path().is_none() {
+        return Ok(None);
+    }
+    let program = xetal_gpu_xir::text::parse("%probe = const i64 [] 0\noutput %probe\n").map_err(|e| Error(e.to_string()))?;
+    let checked = xetal_gpu_xir::check(program).map_err(|e| Error(e.to_string()))?;
+    Prepared::new(&checked, &xetal_gpu_opencl::Schedule::default(), "device_probe").map(|p| Some(p.info))
+}
+
+/// Emit, build, load and run in one call, retaining the original wall-time API.
 pub fn execute(
     checked: &Checked,
     schedule: &xetal_gpu_opencl::Schedule,
     name: &str,
     inputs: &HashMap<String, Array>,
 ) -> Result<(Vec<Array>, String, Duration, Duration)> {
-    let mojo = mojo_path()
-        .ok_or_else(|| Error("no Mojo compiler: scripts/mojo.sh installs the pinned one as bin/mojo (or set XETAL_GPU_MOJO)".into()))?;
-    let (source, abi) = crate::emit(checked, schedule, name)?;
-    let (lib, built) = build(&mojo, &source, name)?;
-    let library = Library::load(&lib)?;
-    if library.init()? == 0 {
-        return Err(Error("the Mojo build targets no GPU (has_accelerator is false)".into()));
-    }
-    let info = library.device_info()?;
-    let (outputs, ran) = library.run(checked, &abi, inputs)?;
-    Ok((outputs, info, built, ran))
+    let prepared = Prepared::new(checked, schedule, name)?;
+    let (outputs, time) = prepared.run_timed(inputs)?;
+    Ok((outputs, prepared.info, prepared.built, time.wall))
 }
 
 /// A lookup's positions, when they are a bound input, must be within

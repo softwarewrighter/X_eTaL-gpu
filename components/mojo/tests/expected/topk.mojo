@@ -837,6 +837,7 @@ def xir_device_info(buf: Pointer[UInt8, MutAnyOrigin], cap: Int64) abi("C") -> I
 def xir_run(
     inputs: Pointer[Pointer[UInt8, ImmutAnyOrigin], ImmutAnyOrigin],
     outputs: Pointer[Pointer[UInt8, MutAnyOrigin], ImmutAnyOrigin],
+    kernels_ms: Pointer[Float64, MutAnyOrigin],
 ) abi("C") -> Int32:
     """Runs the program: inputs[k] as the ABI lists them (the program's
     inputs, then the uploaded constants), outputs[j] in output order, every
@@ -846,6 +847,7 @@ def xir_run(
     Returns 0 when done, 1 when the device failed.
     """
     initialize_runtime()
+    kernels_ms[unsafe_offset=0] = 0.0
     try:
         var ctx = DeviceContext()
         var h_m = ctx.enqueue_create_host_buffer[DType.float32](12)
@@ -1013,82 +1015,253 @@ def xir_run(
         ctx.enqueue_copy(dst_buf=b_b_17, src_buf=h_b_17)
         var b_tb_17 = ctx.enqueue_create_buffer[DType.float32](20)
         var b_mul_14 = ctx.enqueue_create_buffer[DType.float32](20)
-        ctx.enqueue_function[indexed_maxr](b_m, b_maxr, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb](b_maxr, b_b, b_tb, grid_dim=1, block_dim=TPB)
+        var compiled0 = ctx.compile_function[indexed_maxr]()
+        def launch0(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled0, b_m, b_maxr, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch0, 1)) / 1e6
+        var compiled1 = ctx.compile_function[indexed_tb]()
+        def launch1(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled1, b_maxr, b_b, b_tb, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch1, 1)) / 1e6
         # stage 0: 12 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage0](b_m, b_tb, b_f, b_mul, Int32(12), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_2](b_a, b_b_2, b_tb_2, grid_dim=1, block_dim=TPB)
+        var compiled2 = ctx.compile_function[stage0]()
+        def launch2(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled2, b_m, b_tb, b_f, b_mul, Int32(12), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch2, 1)) / 1e6
+        var compiled3 = ctx.compile_function[indexed_tb_2]()
+        def launch3(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled3, b_a, b_b_2, b_tb_2, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch3, 1)) / 1e6
         # stage 1: 12 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage1](b_f, b_mul, b_tb_2, b_add, Int32(12), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_minr](b_add, b_minr, grid_dim=1, block_dim=TPB)
+        var compiled4 = ctx.compile_function[stage1]()
+        def launch4(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled4, b_f, b_mul, b_tb_2, b_add, Int32(12), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch4, 1)) / 1e6
+        var compiled5 = ctx.compile_function[indexed_minr]()
+        def launch5(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled5, b_add, b_minr, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch5, 1)) / 1e6
         # stage 2: 3 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage2](b_minr, b_fl, Int32(3), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_minr_2](b_m, b_minr_2, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_2](b_m, b_maxr_2, grid_dim=1, block_dim=TPB)
+        var compiled6 = ctx.compile_function[stage2]()
+        def launch6(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled6, b_minr, b_fl, Int32(3), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch6, 1)) / 1e6
+        var compiled7 = ctx.compile_function[indexed_minr_2]()
+        def launch7(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled7, b_m, b_minr_2, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch7, 1)) / 1e6
+        var compiled8 = ctx.compile_function[indexed_maxr_2]()
+        def launch8(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled8, b_m, b_maxr_2, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch8, 1)) / 1e6
         # stage 3: 3 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage3](b_minr_2, b_maxr_2, b_add_2, Int32(3), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_3](b_add_2, b_b_3, b_tb_3, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_3](b_m, b_maxr_3, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_4](b_maxr_3, b_b_4, b_tb_4, grid_dim=1, block_dim=TPB)
+        var compiled9 = ctx.compile_function[stage3]()
+        def launch9(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled9, b_minr_2, b_maxr_2, b_add_2, Int32(3), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch9, 1)) / 1e6
+        var compiled10 = ctx.compile_function[indexed_tb_3]()
+        def launch10(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled10, b_add_2, b_b_3, b_tb_3, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch10, 1)) / 1e6
+        var compiled11 = ctx.compile_function[indexed_maxr_3]()
+        def launch11(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled11, b_m, b_maxr_3, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch11, 1)) / 1e6
+        var compiled12 = ctx.compile_function[indexed_tb_4]()
+        def launch12(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled12, b_maxr_3, b_b_4, b_tb_4, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch12, 1)) / 1e6
         # stage 4: 12 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage4](b_m, b_tb_3, b_tb_4, b_sub_3, Int32(12), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_4](b_sub_3, b_maxr_4, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_5](b_maxr_4, b_b_5, b_tb_5, grid_dim=1, block_dim=TPB)
+        var compiled13 = ctx.compile_function[stage4]()
+        def launch13(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled13, b_m, b_tb_3, b_tb_4, b_sub_3, Int32(12), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch13, 1)) / 1e6
+        var compiled14 = ctx.compile_function[indexed_maxr_4]()
+        def launch14(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled14, b_sub_3, b_maxr_4, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch14, 1)) / 1e6
+        var compiled15 = ctx.compile_function[indexed_tb_5]()
+        def launch15(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled15, b_maxr_4, b_b_5, b_tb_5, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch15, 1)) / 1e6
         # stage 5: 12 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage5](b_m, b_tb_3, b_sub_3, b_tb_5, b_f_4, Int32(12), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_minr_3](b_m, b_minr_3, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_5](b_m, b_maxr_5, grid_dim=1, block_dim=TPB)
+        var compiled16 = ctx.compile_function[stage5]()
+        def launch16(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled16, b_m, b_tb_3, b_sub_3, b_tb_5, b_f_4, Int32(12), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch16, 1)) / 1e6
+        var compiled17 = ctx.compile_function[indexed_minr_3]()
+        def launch17(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled17, b_m, b_minr_3, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch17, 1)) / 1e6
+        var compiled18 = ctx.compile_function[indexed_maxr_5]()
+        def launch18(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled18, b_m, b_maxr_5, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch18, 1)) / 1e6
         # stage 6: 3 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage6](b_minr_3, b_maxr_5, b_add_3, Int32(3), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_6](b_add_3, b_b_6, b_tb_6, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_6](b_m, b_maxr_6, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_7](b_maxr_6, b_b_7, b_tb_7, grid_dim=1, block_dim=TPB)
+        var compiled19 = ctx.compile_function[stage6]()
+        def launch19(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled19, b_minr_3, b_maxr_5, b_add_3, Int32(3), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch19, 1)) / 1e6
+        var compiled20 = ctx.compile_function[indexed_tb_6]()
+        def launch20(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled20, b_add_3, b_b_6, b_tb_6, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch20, 1)) / 1e6
+        var compiled21 = ctx.compile_function[indexed_maxr_6]()
+        def launch21(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled21, b_m, b_maxr_6, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch21, 1)) / 1e6
+        var compiled22 = ctx.compile_function[indexed_tb_7]()
+        def launch22(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled22, b_maxr_6, b_b_7, b_tb_7, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch22, 1)) / 1e6
         # stage 7: 12 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage7](b_m, b_tb_6, b_tb_7, b_f_6, Int32(12), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_7](b_s, b_maxr_7, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_8](b_maxr_7, b_b_8, b_tb_8, grid_dim=1, block_dim=TPB)
+        var compiled23 = ctx.compile_function[stage7]()
+        def launch23(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled23, b_m, b_tb_6, b_tb_7, b_f_6, Int32(12), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch23, 1)) / 1e6
+        var compiled24 = ctx.compile_function[indexed_maxr_7]()
+        def launch24(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled24, b_s, b_maxr_7, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch24, 1)) / 1e6
+        var compiled25 = ctx.compile_function[indexed_tb_8]()
+        def launch25(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled25, b_maxr_7, b_b_8, b_tb_8, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch25, 1)) / 1e6
         # stage 8: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage8](b_s, b_tb_8, b_f_7, b_mul_6, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_9](b_a_2, b_b_9, b_tb_9, grid_dim=1, block_dim=TPB)
+        var compiled26 = ctx.compile_function[stage8]()
+        def launch26(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled26, b_s, b_tb_8, b_f_7, b_mul_6, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch26, 1)) / 1e6
+        var compiled27 = ctx.compile_function[indexed_tb_9]()
+        def launch27(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled27, b_a_2, b_b_9, b_tb_9, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch27, 1)) / 1e6
         # stage 9: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage9](b_f_7, b_mul_6, b_tb_9, b_add_4, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_minr_4](b_add_4, b_minr_4, grid_dim=1, block_dim=TPB)
+        var compiled28 = ctx.compile_function[stage9]()
+        def launch28(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled28, b_f_7, b_mul_6, b_tb_9, b_add_4, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch28, 1)) / 1e6
+        var compiled29 = ctx.compile_function[indexed_minr_4]()
+        def launch29(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled29, b_add_4, b_minr_4, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch29, 1)) / 1e6
         # stage 10: 4 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage10](b_minr_4, b_fl_2, Int32(4), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_minr_5](b_s, b_minr_5, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_8](b_s, b_maxr_8, grid_dim=1, block_dim=TPB)
+        var compiled30 = ctx.compile_function[stage10]()
+        def launch30(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled30, b_minr_4, b_fl_2, Int32(4), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch30, 1)) / 1e6
+        var compiled31 = ctx.compile_function[indexed_minr_5]()
+        def launch31(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled31, b_s, b_minr_5, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch31, 1)) / 1e6
+        var compiled32 = ctx.compile_function[indexed_maxr_8]()
+        def launch32(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled32, b_s, b_maxr_8, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch32, 1)) / 1e6
         # stage 11: 4 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage11](b_minr_5, b_maxr_8, b_add_5, Int32(4), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_10](b_add_5, b_b_10, b_tb_10, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_9](b_s, b_maxr_9, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_11](b_maxr_9, b_b_11, b_tb_11, grid_dim=1, block_dim=TPB)
+        var compiled33 = ctx.compile_function[stage11]()
+        def launch33(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled33, b_minr_5, b_maxr_8, b_add_5, Int32(4), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch33, 1)) / 1e6
+        var compiled34 = ctx.compile_function[indexed_tb_10]()
+        def launch34(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled34, b_add_5, b_b_10, b_tb_10, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch34, 1)) / 1e6
+        var compiled35 = ctx.compile_function[indexed_maxr_9]()
+        def launch35(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled35, b_s, b_maxr_9, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch35, 1)) / 1e6
+        var compiled36 = ctx.compile_function[indexed_tb_11]()
+        def launch36(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled36, b_maxr_9, b_b_11, b_tb_11, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch36, 1)) / 1e6
         # stage 12: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage12](b_s, b_tb_10, b_tb_11, b_sub_11, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_10](b_sub_11, b_maxr_10, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_12](b_maxr_10, b_b_12, b_tb_12, grid_dim=1, block_dim=TPB)
+        var compiled37 = ctx.compile_function[stage12]()
+        def launch37(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled37, b_s, b_tb_10, b_tb_11, b_sub_11, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch37, 1)) / 1e6
+        var compiled38 = ctx.compile_function[indexed_maxr_10]()
+        def launch38(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled38, b_sub_11, b_maxr_10, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch38, 1)) / 1e6
+        var compiled39 = ctx.compile_function[indexed_tb_12]()
+        def launch39(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled39, b_maxr_10, b_b_12, b_tb_12, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch39, 1)) / 1e6
         # stage 13: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage13](b_tb_10, b_sub_11, b_tb_12, b_sub_12, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_11](b_sub_12, b_maxr_11, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_13](b_maxr_11, b_b_13, b_tb_13, grid_dim=1, block_dim=TPB)
+        var compiled40 = ctx.compile_function[stage13]()
+        def launch40(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled40, b_tb_10, b_sub_11, b_tb_12, b_sub_12, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch40, 1)) / 1e6
+        var compiled41 = ctx.compile_function[indexed_maxr_11]()
+        def launch41(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled41, b_sub_12, b_maxr_11, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch41, 1)) / 1e6
+        var compiled42 = ctx.compile_function[indexed_tb_13]()
+        def launch42(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled42, b_maxr_11, b_b_13, b_tb_13, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch42, 1)) / 1e6
         # stage 14: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage14](b_s, b_tb_10, b_sub_12, b_tb_13, b_f_11, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_minr_6](b_s, b_minr_6, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_12](b_s, b_maxr_12, grid_dim=1, block_dim=TPB)
+        var compiled43 = ctx.compile_function[stage14]()
+        def launch43(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled43, b_s, b_tb_10, b_sub_12, b_tb_13, b_f_11, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch43, 1)) / 1e6
+        var compiled44 = ctx.compile_function[indexed_minr_6]()
+        def launch44(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled44, b_s, b_minr_6, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch44, 1)) / 1e6
+        var compiled45 = ctx.compile_function[indexed_maxr_12]()
+        def launch45(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled45, b_s, b_maxr_12, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch45, 1)) / 1e6
         # stage 15: 4 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage15](b_minr_6, b_maxr_12, b_add_6, Int32(4), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_14](b_add_6, b_b_14, b_tb_14, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_13](b_s, b_maxr_13, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_15](b_maxr_13, b_b_15, b_tb_15, grid_dim=1, block_dim=TPB)
+        var compiled46 = ctx.compile_function[stage15]()
+        def launch46(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled46, b_minr_6, b_maxr_12, b_add_6, Int32(4), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch46, 1)) / 1e6
+        var compiled47 = ctx.compile_function[indexed_tb_14]()
+        def launch47(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled47, b_add_6, b_b_14, b_tb_14, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch47, 1)) / 1e6
+        var compiled48 = ctx.compile_function[indexed_maxr_13]()
+        def launch48(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled48, b_s, b_maxr_13, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch48, 1)) / 1e6
+        var compiled49 = ctx.compile_function[indexed_tb_15]()
+        def launch49(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled49, b_maxr_13, b_b_15, b_tb_15, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch49, 1)) / 1e6
         # stage 16: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage16](b_s, b_tb_14, b_tb_15, b_sub_16, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_14](b_sub_16, b_maxr_14, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_16](b_maxr_14, b_b_16, b_tb_16, grid_dim=1, block_dim=TPB)
+        var compiled50 = ctx.compile_function[stage16]()
+        def launch50(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled50, b_s, b_tb_14, b_tb_15, b_sub_16, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch50, 1)) / 1e6
+        var compiled51 = ctx.compile_function[indexed_maxr_14]()
+        def launch51(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled51, b_sub_16, b_maxr_14, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch51, 1)) / 1e6
+        var compiled52 = ctx.compile_function[indexed_tb_16]()
+        def launch52(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled52, b_maxr_14, b_b_16, b_tb_16, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch52, 1)) / 1e6
         # stage 17: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage17](b_tb_14, b_sub_16, b_tb_16, b_sub_17, Int32(20), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_maxr_15](b_sub_17, b_maxr_15, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_tb_17](b_maxr_15, b_b_17, b_tb_17, grid_dim=1, block_dim=TPB)
+        var compiled53 = ctx.compile_function[stage17]()
+        def launch53(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled53, b_tb_14, b_sub_16, b_tb_16, b_sub_17, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch53, 1)) / 1e6
+        var compiled54 = ctx.compile_function[indexed_maxr_15]()
+        def launch54(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled54, b_sub_17, b_maxr_15, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch54, 1)) / 1e6
+        var compiled55 = ctx.compile_function[indexed_tb_17]()
+        def launch55(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled55, b_maxr_15, b_b_17, b_tb_17, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch55, 1)) / 1e6
         # stage 18: 20 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage18](b_s, b_tb_14, b_sub_17, b_tb_17, b_mul_14, Int32(20), grid_dim=1, block_dim=TPB)
+        var compiled56 = ctx.compile_function[stage18]()
+        def launch56(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled56, b_s, b_tb_14, b_sub_17, b_tb_17, b_mul_14, Int32(20), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch56, 1)) / 1e6
         # the outputs, back to the host
         var o_0 = ctx.enqueue_create_host_buffer[DType.int64](3)
         ctx.enqueue_copy(dst_buf=o_0, src_buf=b_fl)

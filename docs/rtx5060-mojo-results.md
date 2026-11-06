@@ -163,3 +163,29 @@ cargo test -p xetal-gpu-mojo -- --nocapture
 
 Only lookup and windows remain refused among the thirteen Accel demos.
 Mac verification of the added coverage is pending.
+
+
+## Device integration, 2026-11-06
+
+All thirteen Accel source demos pass against evaluator baselines on CPU,
+OpenCL and Mojo on the RTX 5060 Ti, with the default schedule and tile
+size 8. This includes lookup and windows. `scripts/check-equiv.sh` now
+runs both backends when present. The tool and Gpu facade discover Mojo
+with `api=cuda;name=NVIDIA GeForce RTX 5060 Ti`; the facade selects it
+with `gp:r_un -2`, and the accelerate macro accepts a mojo prefix on
+its kinds. CLI and extension tests cover repeated execution, device
+timing, rebinding, schedule changes and backend changes.
+
+Timing now sums device intervals for individual precompiled kernels via
+the pinned DeviceContext execution_time API; setup, allocation and copies
+are outside these intervals. Each timer synchronizes its launch, adding
+profiling overhead. Build and whole-call times remain separate. A cached
+SAXPY check with two repeats reported kernel intervals of 0.019 and
+0.007 ms, and call times of 396.107 and 0.059 ms. These are single
+validation samples, not a benchmark or throughput claim. The earlier
+tables describe the previous implementation. Repeated calls keep the
+library loaded but still allocate and upload every input each call.
+
+Reproduce with `just run-mojo libs/Accel/demos/saxpy.xtl --repeat 2`
+and `scripts/check-equiv.sh`. The current timing
+instrumentation still needs validation on the Mac.

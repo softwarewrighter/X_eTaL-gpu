@@ -22,6 +22,13 @@ just gpu-ext        # build the library beside xetal-x
 
 ## Native functions
 
+Mojo is also selectable: `gp:r_un -2` runs the loaded source/XIR program
+through the pinned Mojo compiler and its default GPU. `-1` selects the
+CPU interpreter; nonnegative values select OpenCL indices. `gp:d_evices @`
+lists both backends, and `gp:k_ernel @` gives the selected backend's
+source. `gp:r_erun -2` retains the compiled library but allocates and
+uploads buffers on every call. OpenCL repeats retain their buffers.
+
 ABI V1 functions take at most two arguments and give one result, so
 the extension keeps a session per thread: load a program, bind its
 inputs one by one, run it, read its outputs one by one.
@@ -126,6 +133,20 @@ The kinds say how each argument is taken (`"float"` or `"int"` per
 parameter; `""` for all Floats); an Int array a function looks up by
 (`ac:e_mbed`) is bound as `int`. The function is one or two named
 arrays to one array, on one line, without quotes.
+
+Prefix the kinds with `mojo` to select that backend without changing
+the function body:
+
+```
+u:t_wice := "mojo" gp:a_ccel< "{ x -> x + x }"
+u:e_mbed := "mojo float int" gp:a_ccel< "{ t ids -> t ac:e_mbed ids }"
+```
+
+The checked `tests/accel-mojo-device.xtl` runs both forms. The expansion
+calls `gp:r_un -2` and passes
+the remaining kinds to the existing source loader. Without the prefix,
+the original macro still selects OpenCL 0. The tests pin both expansions
+and compare both backends with evaluator results.
 `tests/accel-macro-device.xtl` runs a dense layer at two shapes
 (the second relowers, a repeat reuses), an embedding lookup with an
 int argument, and softmax of attention scores, each `ok` against the

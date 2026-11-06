@@ -303,3 +303,71 @@ fn a_function_from_source_is_lowered_for_its_arguments() {
     assert!(format!("{e:?}").contains("tuple pattern"), "{e:?}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn mojo_session_rebind_schedule_and_backend_switches() {
+    if xetal_gpu_mojo::host::mojo_path().is_none() {
+        eprintln!("skipped: Mojo extension device test (no toolchain)");
+        return;
+    }
+    // Source-to-XIR followed by load must not retain a stale source function.
+    call(
+        "lower",
+        &[
+            Value::Text("{ x -> x + x }".into()),
+            Value::Text(String::new()),
+        ],
+    )
+    .unwrap();
+    call("load", &[Value::Text(MATVEC.into())]).unwrap();
+    call(
+        "bind",
+        &[Value::Int(1), floats(&[2, 3], &[1., 2., 3., 4., 5., 6.])],
+    )
+    .unwrap();
+    call("bind", &[Value::Int(2), floats(&[3], &[1., 0., 2.])]).unwrap();
+    call("run", &[Value::Int(-2)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(23.));
+    let Value::Text(source) = call("kernel", &[]).unwrap() else {
+        panic!("source")
+    };
+    assert!(source.contains("def xir_run("));
+    let Value::Text(explain) = call("explain", &[]).unwrap() else {
+        panic!("explain")
+    };
+    assert!(explain.starts_with("backend: mojo"));
+    call("bind", &[Value::Int(2), floats(&[3], &[0., 1., 0.])]).unwrap();
+    call("rerun", &[Value::Int(-2)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(7.));
+    call("schedule", &[Value::Text("tile = 2\n".into())]).unwrap();
+    call("rerun", &[Value::Int(-2)]).unwrap();
+    let Value::Text(source) = call("kernel", &[]).unwrap() else {
+        panic!("source")
+    };
+    assert!(source.contains("def tiled_"));
+    for device in [-1, -2] {
+        call("rerun", &[Value::Int(device)]).unwrap();
+        assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(7.));
+    }
+    if !xetal_gpu_runtime::devices().unwrap().is_empty() {
+        for device in [0, -2] {
+            call("rerun", &[Value::Int(device)]).unwrap();
+            assert_eq!(call("output", &[Value::Int(2)]).unwrap(), Value::Float(7.));
+        }
+    }
+    assert!(call("run", &[Value::Int(i64::MAX)]).is_err());
+    assert!(call("output", &[Value::Int(1)]).is_err());
+    assert!(call("explain", &[]).is_err());
+    assert!(call("kernel", &[]).is_err());
+    call(
+        "load",
+        &[Value::Text("%v = const i64 [] 91\noutput %v\n".into())],
+    )
+    .unwrap();
+    call("rerun", &[Value::Int(-2)]).unwrap();
+    assert_eq!(call("output", &[Value::Int(1)]).unwrap(), Value::Int(91));
+    assert!(call("run", &[Value::Int(-3)])
+        .unwrap_err()
+        .message()
+        .contains("-2 (Mojo)"));
+}

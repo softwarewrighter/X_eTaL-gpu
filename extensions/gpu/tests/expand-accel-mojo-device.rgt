@@ -1,0 +1,2 @@
+command = "../../../scripts/xx expand accel-mojo-device.xtl"
+exit_code = 0

@@ -1,4 +1,4 @@
-//! gpu: XIR programs run on OpenCL devices, or on the reference
+//! gpu: XIR programs run on OpenCL or Mojo devices, or on the reference
 //! interpreter, from X_eTaL code through X_eTaL-extensions' ABI V1.
 //!
 //! ABI V1 functions take at most two arguments and give one result,
@@ -41,6 +41,9 @@ struct Session {
     last_plan: Option<Plan>,
     prepared: Option<(usize, Prepared)>,
     dirty: HashSet<String>,
+    mojo: Option<xetal_gpu_mojo::host::Prepared>,
+    last_kernel: Option<String>,
+    mojo_selected: bool,
 }
 
 thread_local! {
@@ -63,14 +66,11 @@ fn whole(v: &Value, what: &str) -> Result<i64, OwnedError> {
     Ok(x as i64)
 }
 
-/// The OpenCL devices, one line each, as `xetal-gpu devices` lists them.
+/// OpenCL devices and the default Mojo GPU, as `xetal-gpu devices` lists them.
 #[allow(clippy::unnecessary_wraps)]
 fn devices(_: &[Value]) -> Result<Value, OwnedError> {
     let found = list_devices().map_err(failure)?;
-    if found.is_empty() {
-        return Ok(Value::Text("no OpenCL device found".into()));
-    }
-    let lines: Vec<String> = found
+    let mut lines: Vec<String> = found
         .iter()
         .map(|d| {
             format!(
@@ -86,6 +86,12 @@ fn devices(_: &[Value]) -> Result<Value, OwnedError> {
             )
         })
         .collect();
+    if let Some(info) = xetal_gpu_mojo::host::device_info().map_err(failure)? {
+        lines.push(format!("mojo  {info}"));
+    }
+    if lines.is_empty() {
+        lines.push("no OpenCL or Mojo device found".into());
+    }
     Ok(Value::Text(lines.join("\n")))
 }
 
@@ -99,10 +105,13 @@ fn load(args: &[Value]) -> Result<Value, OwnedError> {
     SESSION.with(|s| {
         let mut s = s.borrow_mut();
         s.program = Some(checked);
+        s.source = None;
         s.inputs.clear();
         s.outputs.clear();
         s.last_plan = None;
         s.prepared = None;
+        s.mojo = None;
+        s.last_kernel = None;
         s.dirty.clear();
     });
     Ok(Value::Int(i64::try_from(n).unwrap_or(i64::MAX)))
@@ -185,6 +194,8 @@ fn lower(args: &[Value]) -> Result<Value, OwnedError> {
         s.outputs.clear();
         s.last_plan = None;
         s.prepared = None;
+        s.mojo = None;
+        s.last_kernel = None;
         s.dirty.clear();
     });
     Ok(Value::Int(i64::try_from(n).unwrap_or(i64::MAX)))
@@ -315,6 +326,8 @@ fn schedule(args: &[Value]) -> Result<Value, OwnedError> {
         let mut s = s.borrow_mut();
         if s.schedule != sch {
             s.prepared = None;
+            s.mojo = None;
+            s.last_kernel = None;
             s.last_plan = None;
         }
         s.schedule = sch;
@@ -323,12 +336,12 @@ fn schedule(args: &[Value]) -> Result<Value, OwnedError> {
 }
 
 /// Run the loaded program on opencl:d, or on the reference interpreter
-/// for d = -1. The number of outputs.
+/// for d = -1, or Mojo for d = -2. The number of outputs.
 fn run(args: &[Value]) -> Result<Value, OwnedError> {
     run_impl(args, false)
 }
 
-/// Reuse the last device's kernels and buffers; upload only rebound inputs.
+/// Reuse OpenCL buffers or the loaded Mojo library (Mojo uploads every call).
 /// Program, schedule or device changes cause a new preparation.
 fn rerun(args: &[Value]) -> Result<Value, OwnedError> {
     run_impl(args, true)
@@ -336,6 +349,11 @@ fn rerun(args: &[Value]) -> Result<Value, OwnedError> {
 
 fn run_impl(args: &[Value], reuse: bool) -> Result<Value, OwnedError> {
     let d = whole(&args[0], "a device")?;
+    if d < -2 {
+        return Err(OwnedError::invalid_argument(
+            "a device is -2 (Mojo), -1 (CPU), or a nonnegative OpenCL index",
+        ));
+    }
     SESSION.with(|cell| {
         let mut borrow = cell.borrow_mut();
         let s = &mut *borrow;
@@ -366,6 +384,8 @@ fn run_impl(args: &[Value], reuse: bool) -> Result<Value, OwnedError> {
                 s.program = Some(checked);
                 s.last_plan = None;
                 s.prepared = None;
+                s.mojo = None;
+                s.last_kernel = None;
             }
         }
         let checked = s
@@ -379,10 +399,32 @@ fn run_impl(args: &[Value], reuse: bool) -> Result<Value, OwnedError> {
         } else {
             plan(checked, &s.schedule)
         };
-        let outputs = if d < 0 {
+        // A failed backend switch must not expose stale outputs or metadata.
+        s.outputs.clear();
+        s.last_plan = None;
+        s.last_kernel = None;
+        s.mojo_selected = false;
+        let outputs = if d == -2 {
             s.prepared = None;
+            if !reuse || s.mojo.is_none() {
+                s.mojo = Some(
+                    xetal_gpu_mojo::host::Prepared::new(checked, &s.schedule, "extension")
+                        .map_err(failure)?,
+                );
+            }
+            s.mojo
+                .as_ref()
+                .expect("Mojo prepared")
+                .run_timed(&s.inputs)
+                .map_err(failure)?
+                .0
+        } else if d == -1 {
+            s.prepared = None;
+            s.mojo = None;
+            s.last_kernel = None;
             interpret(checked, &s.inputs).map_err(failure)?
         } else {
+            s.mojo = None;
             let index = usize::try_from(d).map_err(failure)?;
             if !reuse || s.prepared.as_ref().map(|(i, _)| *i) != Some(index) {
                 let (prepared, _) =
@@ -403,6 +445,14 @@ fn run_impl(args: &[Value], reuse: bool) -> Result<Value, OwnedError> {
                 .0
         };
         let n = outputs.len();
+        s.last_kernel = Some(if d == -2 {
+            xetal_gpu_mojo::emit(checked, &s.schedule, "extension")
+                .map_err(failure)?
+                .0
+        } else {
+            p.source.clone()
+        });
+        s.mojo_selected = d == -2;
         s.outputs = outputs;
         s.last_plan = Some(p);
         s.dirty.clear();
@@ -452,7 +502,14 @@ fn explain(_: &[Value]) -> Result<Value, OwnedError> {
     SESSION.with(|s| {
         let s = s.borrow();
         match (&s.program, &s.last_plan) {
-            (Some(c), Some(p)) => Ok(Value::Text(explain_plan(c, p))),
+            (Some(c), Some(p)) => {
+                if s.mojo_selected {
+                    let info = &s.mojo.as_ref().expect("Mojo prepared").info;
+                    Ok(Value::Text(format!("backend: mojo ({info}); compiled library reused, buffers uploaded per call\n{}", xetal_gpu_mojo::emit(c, &s.schedule, "extension").map_err(failure)?.0.lines().take(3).collect::<Vec<_>>().join("\n"))))
+                } else {
+                    Ok(Value::Text(explain_plan(c, p)))
+                }
+            },
             _ => Err(OwnedError::invalid_argument(
                 "nothing has run yet (gp:r_un first)",
             )),
@@ -460,10 +517,10 @@ fn explain(_: &[Value]) -> Result<Value, OwnedError> {
     })
 }
 
-/// The last run's OpenCL C (`xetal-gpu kernel`).
+/// The last run's OpenCL C or Mojo source (`xetal-gpu kernel`).
 fn kernel(_: &[Value]) -> Result<Value, OwnedError> {
-    SESSION.with(|s| match &s.borrow().last_plan {
-        Some(p) => Ok(Value::Text(p.source.clone())),
+    SESSION.with(|s| match &s.borrow().last_kernel {
+        Some(source) => Ok(Value::Text(source.clone())),
         None => Err(OwnedError::invalid_argument(
             "nothing has run yet (gp:r_un first)",
         )),
@@ -485,16 +542,16 @@ xetal_ext_sdk::xetal_extension! {
     name: "gpu",
     version: env!("CARGO_PKG_VERSION"),
     functions: {
-        devices: 0, "Unit -> Char", "The OpenCL devices, one line each (opencl:N).";
+        devices: 0, "Unit -> Char", "OpenCL devices (opencl:N) and the default Mojo GPU.";
         load: 1, "Char -> Int", "Load an XIR program (its text); the number of inputs.";
         lower: 2, "Char -> Char -> Int", "Load a function from its X_eTaL text (and 'FILE|KINDS': the file it is written in, the arguments' kinds); lowered when bound; the number of parameters.";
         bind: 2, "Num a => Int -> a -> Int", "Bind input n (from 1) to an array of its shape.";
         bind_file: 2, "Int -> Char -> Int", "Bind input n from a checked XTLARR01 binary array file.";
         schedule: 1, "Char -> Int", "The schedule for later runs (a schedules/*.toml text; empty for the defaults).";
-        run: 1, "Int -> Int", "Run on opencl:d (-1: the reference interpreter); the number of outputs.";
-        rerun: 1, "Int -> Int", "Rerun with resident inputs and kernels; upload only rebound inputs.";
+        run: 1, "Int -> Int", "Run on opencl:d (-1: CPU interpreter, -2: Mojo); the number of outputs.";
+        rerun: 1, "Int -> Int", "Rerun; OpenCL reuses buffers, Mojo reuses its library and uploads every call.";
         output: 1, "Num a => Int -> a", "Output i (from 1) of the last run.";
         explain: 0, "Unit -> Char", "The last run's plan in words.";
-        kernel: 0, "Unit -> Char", "The last run's OpenCL C.";
+        kernel: 0, "Unit -> Char", "The last run's OpenCL C or Mojo source.";
     }
 }

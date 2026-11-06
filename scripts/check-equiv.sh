@@ -6,7 +6,8 @@
 # libs/<Name>/tests/demo-<stem>.out):
 #   - on the reference interpreter (--device cpu): exactly;
 #   - on each OpenCL device found (when the runtime exists and a
-#     device is present): Floats within 1e-5, Ints exactly.
+#     device is present), and Mojo when installed: Floats within 1e-5,
+#     Ints exactly.
 #   scripts/check-equiv.sh [SCHEDULE_FILE [FLOAT_TOLERANCE]]
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,8 +21,11 @@ tolerance="${2:-1e-5}"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 # The OpenCL devices present (none is not a failure: it is said).
 devices=()
-while IFS= read -r d; do [ -n "$d" ] && devices+=("$d"); done < <("$gpu" devices | grep -o '^opencl:[0-9]*' || true)
+found="$("$gpu" devices)"
+while IFS= read -r d; do [ -n "$d" ] && devices+=("$d"); done < <(grep -o '^opencl:[0-9]*' <<<"$found" || true)
 [ ${#devices[@]} -gt 0 ] || echo "check-equiv: no OpenCL device here; the GPU side is skipped"
+if grep -q '^mojo ' <<<"$found"; then devices+=(mojo)
+else echo "check-equiv: no Mojo backend here; Mojo runs skipped"; fi
 XETAL_PATH="$(scripts/libs.py path)"; export XETAL_PATH
 for xtl in libs/*/demos/*.xtl; do
   name="$(basename "$xtl" .xtl)"; lib="$(basename "$(dirname "$(dirname "$xtl")")")"
@@ -43,5 +47,5 @@ for xtl in libs/*/demos/*.xtl; do
     else echo "FAIL: $lib/$name on $label: $out"; fail=1; fi
   done; done
 done
-echo "check-equiv: $n demo$([ $n = 1 ] || echo s) lowered from source, on cpu and ${#devices[@]} OpenCL device$([ ${#devices[@]} = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
+echo "check-equiv: $n demo$([ $n = 1 ] || echo s) lowered from source, on cpu and ${#devices[@]} GPU backend/device$([ ${#devices[@]} = 1 ] || echo s)$([ $fail = 0 ] && echo ', all agree with the evaluator' || echo ', FAILURES')"
 exit $fail

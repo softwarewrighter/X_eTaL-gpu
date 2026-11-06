@@ -74,6 +74,7 @@ def xir_device_info(buf: Pointer[UInt8, MutAnyOrigin], cap: Int64) abi("C") -> I
 def xir_run(
     inputs: Pointer[Pointer[UInt8, ImmutAnyOrigin], ImmutAnyOrigin],
     outputs: Pointer[Pointer[UInt8, MutAnyOrigin], ImmutAnyOrigin],
+    kernels_ms: Pointer[Float64, MutAnyOrigin],
 ) abi("C") -> Int32:
     """Runs the program: inputs[k] as the ABI lists them (the program's
     inputs, then the uploaded constants), outputs[j] in output order, every
@@ -83,6 +84,7 @@ def xir_run(
     Returns 0 when done, 1 when the device failed.
     """
     initialize_runtime()
+    kernels_ms[unsafe_offset=0] = 0.0
     try:
         var ctx = DeviceContext()
         var h_l = ctx.enqueue_create_host_buffer[DType.float32](8)
@@ -102,7 +104,10 @@ def xir_run(
         var b_max_2 = ctx.enqueue_create_buffer[DType.int64](8)
         var b_mul_2 = ctx.enqueue_create_buffer[DType.int64](8)
         # stage 0: 8 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage0](b_l, b_l_2, b_sub, b_mul, b_max, b_max_2, b_mul_2, Int32(8), grid_dim=1, block_dim=TPB)
+        var compiled0 = ctx.compile_function[stage0]()
+        def launch0(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled0, b_l, b_l_2, b_sub, b_mul, b_max, b_max_2, b_mul_2, Int32(8), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch0, 1)) / 1e6
         # the outputs, back to the host
         var o_0 = ctx.enqueue_create_host_buffer[DType.float32](8)
         ctx.enqueue_copy(dst_buf=o_0, src_buf=b_sub)

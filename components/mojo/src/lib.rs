@@ -354,6 +354,7 @@ def xir_device_info(buf: Pointer[UInt8, MutAnyOrigin], cap: Int64) abi("C") -> I
 def xir_run(
     inputs: Pointer[Pointer[UInt8, ImmutAnyOrigin], ImmutAnyOrigin],
     outputs: Pointer[Pointer[UInt8, MutAnyOrigin], ImmutAnyOrigin],
+    kernels_ms: Pointer[Float64, MutAnyOrigin],
 ) abi("C") -> Int32:
     """Runs the program: inputs[k] as the ABI lists them (the program's
     inputs, then the uploaded constants), outputs[j] in output order, every
@@ -540,7 +541,29 @@ def xir_run(
         return 1
 "#,
     );
-    Ok((s, abi))
+    // Compile each kernel before recording its device interval. Inputs,
+    // allocations and output copies remain outside these intervals.
+    let mut timed = String::new();
+    let mut launch = 0;
+    for line in s.lines() {
+        if let Some(call) = line.strip_prefix("        ctx.enqueue_function[") {
+            let (kernel, args) = call.split_once("](").expect("generated launch");
+            let _ = writeln!(timed, "        var compiled{launch} = ctx.compile_function[{kernel}]()");
+            let _ = writeln!(timed, "        def launch{launch}(ctx: DeviceContext) raises {{imm}}:");
+            let _ = writeln!(timed, "            ctx.enqueue_function(compiled{launch}, {args}");
+            let _ = writeln!(
+                timed,
+                "        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch{launch}, 1)) / 1e6"
+            );
+            launch += 1;
+        } else {
+            let _ = writeln!(timed, "{line}");
+            if line == "    initialize_runtime()" && timed.contains("def xir_run(") {
+                let _ = writeln!(timed, "    kernels_ms[unsafe_offset=0] = 0.0");
+            }
+        }
+    }
+    Ok((timed, abi))
 }
 
 /// The Mojo scalar type of a device element.
@@ -696,7 +719,12 @@ mod tests {
         let (src, abi) = emit(&checked, &Schedule::default(), "t").unwrap();
         assert!(src.contains("var v_y = v_x * Float32(2.0)"));
         assert!(src.contains("def reduce_add_float32("));
-        assert!(src.contains("enqueue_function[stage0](b_x, b_y, Int32(8), grid_dim=1, block_dim=TPB)"));
+        assert!(src.contains("enqueue_function(compiled0, b_x, b_y, Int32(8), grid_dim=1, block_dim=TPB)"));
+        let upload = src.find("ctx.enqueue_copy(dst_buf=b_x").unwrap();
+        let compile = src.find("ctx.compile_function[stage0]()").unwrap();
+        let timer = src.find("ctx.execution_time(launch0, 1)").unwrap();
+        let download = src.find("# the outputs, back to the host").unwrap();
+        assert!(upload < compile && compile < timer && timer < download);
         assert_eq!(abi.inputs, vec![(ValueId(0), Some("x".into()))]);
         assert_eq!(abi.outputs, vec![ValueId(3)]);
     }
@@ -730,7 +758,7 @@ mod tests {
         );
         // 5 by 3 in 4 by 4 tiles: 2 by 1 blocks of 16; the 7 inner items in 2 steps, the last first.
         assert!(
-            src.contains("enqueue_function[tiled_c](b_a, b_b, b_c, grid_dim=2, block_dim=16)"),
+            src.contains("enqueue_function(compiled0, b_a, b_b, b_c, grid_dim=2, block_dim=16)"),
             "{src}"
         );
         assert!(src.contains("var step = 1"), "{src}");

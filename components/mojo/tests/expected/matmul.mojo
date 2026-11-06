@@ -117,6 +117,7 @@ def xir_device_info(buf: Pointer[UInt8, MutAnyOrigin], cap: Int64) abi("C") -> I
 def xir_run(
     inputs: Pointer[Pointer[UInt8, ImmutAnyOrigin], ImmutAnyOrigin],
     outputs: Pointer[Pointer[UInt8, MutAnyOrigin], ImmutAnyOrigin],
+    kernels_ms: Pointer[Float64, MutAnyOrigin],
 ) abi("C") -> Int32:
     """Runs the program: inputs[k] as the ABI lists them (the program's
     inputs, then the uploaded constants), outputs[j] in output order, every
@@ -126,6 +127,7 @@ def xir_run(
     Returns 0 when done, 1 when the device failed.
     """
     initialize_runtime()
+    kernels_ms[unsafe_offset=0] = 0.0
     try:
         var ctx = DeviceContext()
         var h_a = ctx.enqueue_create_host_buffer[DType.int64](12)
@@ -165,12 +167,27 @@ def xir_run(
         ctx.enqueue_copy(dst_buf=b_l_2, src_buf=h_l_2)
         var b_div_2 = ctx.enqueue_create_buffer[DType.float32](12)
         var b_mm_4 = ctx.enqueue_create_buffer[DType.float32](9)
-        ctx.enqueue_function[indexed_mm](b_a, b_b, b_mm, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_mm_2](b_a, b_b_2, b_mm_2, grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_mm_3](b_a, b_a_2, b_mm_3, grid_dim=1, block_dim=TPB)
+        var compiled0 = ctx.compile_function[indexed_mm]()
+        def launch0(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled0, b_a, b_b, b_mm, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch0, 1)) / 1e6
+        var compiled1 = ctx.compile_function[indexed_mm_2]()
+        def launch1(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled1, b_a, b_b_2, b_mm_2, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch1, 1)) / 1e6
+        var compiled2 = ctx.compile_function[indexed_mm_3]()
+        def launch2(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled2, b_a, b_a_2, b_mm_3, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch2, 1)) / 1e6
         # stage 0: 12 element(s), 1 block(s) of TPB
-        ctx.enqueue_function[stage0](b_l, b_l_2, b_div, b_div_2, Int32(12), grid_dim=1, block_dim=TPB)
-        ctx.enqueue_function[indexed_mm_4](b_div, b_div_2, b_mm_4, grid_dim=1, block_dim=TPB)
+        var compiled3 = ctx.compile_function[stage0]()
+        def launch3(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled3, b_l, b_l_2, b_div, b_div_2, Int32(12), grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch3, 1)) / 1e6
+        var compiled4 = ctx.compile_function[indexed_mm_4]()
+        def launch4(ctx: DeviceContext) raises {imm}:
+            ctx.enqueue_function(compiled4, b_div, b_div_2, b_mm_4, grid_dim=1, block_dim=TPB)
+        kernels_ms[unsafe_offset=0] += Float64(ctx.execution_time(launch4, 1)) / 1e6
         # the outputs, back to the host
         var o_0 = ctx.enqueue_create_host_buffer[DType.int64](6)
         ctx.enqueue_copy(dst_buf=o_0, src_buf=b_mm)

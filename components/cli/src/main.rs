@@ -25,7 +25,7 @@ usage: xetal-gpu COMMAND FILE [OPTIONS]
   (its libraries beside it and on XETAL_PATH; the twins' oracle is the evaluator)
   lower FILE.xtl                 the XIR program the X_eTaL source lowers to
   check FILE.xir                 parse and check: every value with its type
-  devices                        the OpenCL devices found (opencl:N)
+  devices                        OpenCL devices (opencl:N) and the default Mojo GPU
   run FILE.xir [--device cpu|opencl:N|mojo] [SCHEDULE]   run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   items, text file or XTLARR01 binary array
       [--time]                       on a device, where the time went, to standard error
@@ -98,6 +98,11 @@ fn dispatch(args: &[String]) -> Result<()> {
                     d.global_mem_bytes / (1024 * 1024),
                     if d.fp64 { "fp64" } else { "no fp64" }
                 );
+            }
+            match xetal_gpu_mojo::host::device_info() {
+                Ok(Some(info)) => println!("mojo  {info}"),
+                Ok(None) => eprintln!("mojo unavailable: no compiler (just mojo installs it)"),
+                Err(e) => return Err(Error(format!("mojo discovery: {e}"))),
             }
             Ok(())
         }
@@ -309,20 +314,22 @@ fn dispatch(args: &[String]) -> Result<()> {
                 }
                 outputs
             } else if device == "mojo" {
-                // The Mojo backend: emit, build (cached by the source), load, run.
                 let name = program_name(args.get(1));
+                let first = std::time::Instant::now();
+                let prepared = xetal_gpu_mojo::host::Prepared::new(&checked, &schedule, &name).map_err(|e| Error(e.0))?;
                 let mut outputs = Vec::new();
                 for n in 1..=repeat {
                     let start = std::time::Instant::now();
-                    let (out, info, built, ran) =
-                        xetal_gpu_mojo::host::execute(&checked, &schedule, &name, &inputs).map_err(|e| Error(e.0))?;
+                    let (out, time) = prepared.run_timed(&inputs).map_err(|e| Error(e.0))?;
                     outputs = out;
                     if timed {
                         eprintln!(
-                            "repeat {n} mojo time ({info}): build {:.3} ms, run {:.3} ms (the device context, uploads, kernels and downloads), total {:.3} ms",
-                            built.as_secs_f64() * 1000.0,
-                            ran.as_secs_f64() * 1000.0,
-                            start.elapsed().as_secs_f64() * 1000.0
+                            "repeat {n} mojo time ({}): build {:.3} ms, kernels {:.3} ms (device intervals), run {:.3} ms (context, uploads, kernels and downloads), total {:.3} ms",
+                            prepared.info,
+                            if n == 1 { prepared.built.as_secs_f64() * 1000.0 } else { 0.0 },
+                            time.kernels_ms,
+                            time.wall.as_secs_f64() * 1000.0,
+                            if n == 1 { first.elapsed() } else { start.elapsed() }.as_secs_f64() * 1000.0
                         );
                     }
                 }

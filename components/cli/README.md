@@ -9,8 +9,8 @@ also supported. See [binary arrays](../../docs/binary-arrays.md).
 
 ```
 xetal-gpu check FILE.xir                 parse and check: every value with its type and shape
-xetal-gpu devices                        the OpenCL devices found (opencl:N)
-xetal-gpu run FILE.xir [--device cpu|opencl:N] [SCHEDULE]   run; each output printed as xetal prints it
+xetal-gpu devices                        OpenCL devices (opencl:N) and the default Mojo GPU
+xetal-gpu run FILE.xir [--device cpu|opencl:N|mojo] [SCHEDULE]   run; each output printed as xetal prints it
     [--bind NAME=1,2,3 | --bind NAME=@FILE]...     an input's items (a file: whitespace-separated)
     [--repeat N] [--refresh NAME]...          reuse a session; optionally reupload named inputs each repeat
     [--time]                                 on a device: where the time went (setup, upload, kernels as the device timed them, launches, download), to standard error
@@ -30,6 +30,13 @@ device cannot take is evaluated by the pinned `xetal` and bound as
 an input (`lower` says so on standard error), or printed in its
 place; `explain FILE.xtl` ends with the X_eTaL line each kernel came
 from.
+
+`--device mojo` uses the same source and schedule through the Mojo
+backend. Its `--time` separates build, per-kernel device intervals, call
+and total time; repeated calls keep the library loaded but upload every
+input and allocate buffers each time. The per-launch timers synchronize
+and add profiling overhead. OpenCL repeats retain device buffers and
+upload only refreshed inputs. See [Mojo](../mojo/README.md).
 
 ```
 $ xetal-gpu check libs/Accel/demos/reduce-sum.xir
