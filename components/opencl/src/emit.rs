@@ -8,7 +8,7 @@ use xetal_gpu_xir::interp::Slice;
 use xetal_gpu_xir::ir::{is_identity, permutation, transpose_layout};
 use xetal_gpu_xir::{Checked, Const, MapOp, Op, ReduceOp, Scalar, Shape, TableOp, Ty, ValueId};
 
-use crate::{Arg, Buffer, BufferId, Elem, Init, KernelInfo, Launch, Plan, PositionCheck, Schedule};
+use crate::{Arg, Buffer, BufferId, Elem, GuardCheck, Init, KernelInfo, Launch, Plan, PositionCheck, Schedule};
 
 /// Where a value lives while the plan is built.
 #[derive(Debug, Clone)]
@@ -30,6 +30,7 @@ struct Builder<'a> {
     source: String,
     places: HashMap<ValueId, Place>,
     position_checks: Vec<PositionCheck>,
+    guard_checks: Vec<GuardCheck>,
     /// Which values read each value.
     users: HashMap<ValueId, Vec<ValueId>>,
     /// The elementwise values gathered for the next kernel, and its shape.
@@ -59,6 +60,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         source: String::new(),
         places: HashMap::new(),
         position_checks: Vec::new(),
+        guard_checks: Vec::new(),
         users,
         group: Vec::new(),
         group_shape: None,
@@ -84,6 +86,30 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                     let buf = b.buffer(Some(id), b.schedule.elem(ty.scalar), ty.shape.len(), Init::Const(init));
                     b.places.insert(id, Place::Buffer(buf));
                 }
+            }
+            Op::Guard { cond, message } => {
+                b.flush(&outputs);
+                let buf = match b.places[cond].clone() {
+                    Place::Buffer(buf) => buf,
+                    Place::Literal(_) => {
+                        let mut source = *cond;
+                        let c = loop {
+                            match &program.value(source).op {
+                                Op::Const(c) => break c.clone(),
+                                Op::Ravel { arg } | Op::Transpose { arg, .. } | Op::Reshape { arg, .. } => source = *arg,
+                                _ => unreachable!("a literal condition is a constant"),
+                            }
+                        };
+                        b.buffer(Some(*cond), Elem::I32, 1, Init::Const(c))
+                    }
+                    Place::Register(_) => unreachable!("guard flush materializes its condition"),
+                };
+                b.places.insert(id, Place::Buffer(buf));
+                b.guard_checks.push(GuardCheck {
+                    before_launch: b.launches.len(),
+                    buffer: buf,
+                    message: message.clone(),
+                });
             }
             Op::Map { .. } | Op::Select { .. } | Op::Cast { .. } => {
                 if b.group_shape.as_ref() != Some(&ty.shape) {
@@ -198,6 +224,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         launches: b.launches,
         outputs,
         position_checks: b.position_checks,
+        guard_checks: b.guard_checks,
     }
 }
 

@@ -54,6 +54,8 @@ pub struct Abi {
 
 #[derive(Debug, Clone)]
 enum Step {
+    /// Read a device-computed Bool and fail before later work is enqueued.
+    Guard { value: ValueId },
     /// One fused elementwise kernel over values of one length.
     Kernel { values: Vec<ValueId>, len: usize },
     /// A whole-array reduction: the passes' lengths, from the source's to 1.
@@ -85,6 +87,10 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
         let ty = checked.ty(id);
         match &v.op {
             Op::Input | Op::Const(_) => {}
+            Op::Guard { .. } => {
+                flush(&mut steps, &mut current, &mut current_len);
+                steps.push(Step::Guard { value: id });
+            }
             Op::Map { .. } | Op::Select { .. } | Op::Cast { .. } => {
                 let len = ty.shape.len();
                 if current_len != Some(len) {
@@ -129,6 +135,7 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
         let id = ValueId(i);
         match &v.op {
             Op::Input
+            | Op::Guard { .. }
             | Op::Reduce { .. }
             | Op::Table { .. }
             | Op::Take { .. }
@@ -150,7 +157,7 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
         }
         if steps
             .iter()
-            .any(|s| matches!(s, Step::Indexed { value } | Step::Reduce { value, .. } if *value == id))
+            .any(|s| matches!(s, Step::Guard { value } | Step::Indexed { value } | Step::Reduce { value, .. } if *value == id))
         {
             materialized.extend(v.op.args());
         }
@@ -408,7 +415,7 @@ def xir_run(
                         s,
                         "        b_{}.enqueue_fill({})",
                         v.name,
-                        literal(&if c.is_empty() { c.empty_fill() } else { c.clone() }, elem(id), is_bool(id))
+                        literal(&if c.is_empty() { c.empty_fill() } else { c.clone() }, elem(id), false)
                     );
                 }
             }
@@ -418,6 +425,15 @@ def xir_run(
     let mut stage_no = 0;
     for step in &steps {
         match step {
+            Step::Guard { value } => {
+                let Op::Guard { cond, .. } = &program.values[value.0].op else {
+                    unreachable!()
+                };
+                let v = &program.values[value.0].name;
+                let c = &program.values[cond.0].name;
+                let code = value.0 + 1000;
+                let _ = writeln!(s, "        var guard_{v} = ctx.enqueue_create_host_buffer[DType.int32](1)\n        ctx.enqueue_copy(dst_buf=guard_{v}, src_buf=b_{c})\n        ctx.synchronize()\n        if guard_{v}[0] != 0:\n            return {code}\n        b_{v}.enqueue_fill(0)");
+            }
             Step::Kernel { values, len } => {
                 let inside: BTreeSet<ValueId> = values.iter().copied().collect();
                 let mut reads: BTreeSet<ValueId> = BTreeSet::new();
@@ -541,6 +557,14 @@ def xir_run(
         return 1
 "#,
     );
+    // Guard/constant-only programs may contain no compiled GPU kernel, so
+    // has_accelerator reports the build target rather than runtime availability.
+    if kernels == 0 && reductions == 0 && indexed_count == 0 {
+        s = s.replace(
+            "    comptime if has_accelerator():\n        return 1\n    else:\n        return 0",
+            "    try:\n        var ctx = DeviceContext()\n        ctx.synchronize()\n        return 1\n    except e:\n        return 0",
+        );
+    }
     // Compile each kernel before recording its device interval. Inputs,
     // allocations and output copies remain outside these intervals.
     let mut timed = String::new();

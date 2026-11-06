@@ -466,6 +466,7 @@ fn describe(program: &Program, op: &Op) -> String {
         Op::Input => "input".to_string(),
         Op::Const(c) => format!("const ({} item{})", c.len(), if c.len() == 1 { "" } else { "s" }),
         Op::Map { op, args } => format!("map {op} {}", args.iter().map(|a| name(*a)).collect::<Vec<_>>().join(" ")),
+        Op::Guard { cond, message } => format!("guard {} {message:?}", name(*cond)),
         Op::Select { cond, a, b } => format!("select {} {} {}", name(*cond), name(*a), name(*b)),
         Op::Reduce { op, arg, axis: None } => format!("reduce {op} {}", name(*arg)),
         Op::Reduce { op, arg, axis: Some(a) } => format!("reduce {op} axis={a} {}", name(*arg)),

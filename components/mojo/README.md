@@ -174,3 +174,9 @@ The last command reports the device and build/run times. The same source
 also runs through OpenCL; no backend choice appears in the model itself.
 Compilation is cached after the first build. These small examples show
 correct translation and execution, not a speed advantage over the CPU.
+
+Runtime guard stages synchronize a scalar device Bool before subsequent
+kernels. A distinct return code maps back to the original message on the
+host. Unused/constant guards remain active. Constant/guard-only programs
+probe DeviceContext at runtime because they may compile no GPU kernel;
+materialized Bool constants use Int32 buffer values.

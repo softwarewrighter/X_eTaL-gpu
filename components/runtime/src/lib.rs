@@ -536,7 +536,24 @@ impl Prepared {
         let phase = Instant::now();
         let mut events = Vec::with_capacity(plan.launches.len());
         // Launches, in order, on the in-order queue.
-        for l in &plan.launches {
+        let mut guards = plan.guard_checks.iter().peekable();
+        for index in 0..=plan.launches.len() {
+            while guards.peek().is_some_and(|g| g.before_launch == index) {
+                let guard = guards.next().unwrap();
+                let DevBuf::I32(buffer) = &bufs[guard.buffer.0] else {
+                    unreachable!("guard Bool is i32");
+                };
+                let mut flag = [0i32];
+                unsafe {
+                    queue.enqueue_read_buffer(buffer, CL_BLOCKING, 0, &mut flag, &[]).map_err(cl)?;
+                }
+                if flag[0] != 0 {
+                    return Err(Error(guard.message.clone()));
+                }
+            }
+            let Some(l) = plan.launches.get(index) else {
+                break;
+            };
             let kernel = &kernels[&l.kernel];
             let mut ex = ExecuteKernel::new(kernel);
             unsafe {

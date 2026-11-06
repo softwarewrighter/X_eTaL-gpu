@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 12:40 `feat` Add ordered runtime guards across XIR/OpenCL/Mojo, checked numeric boolean conversion, and correct f_irst axis/prototype shapes. The actual 4x4 RayTrace diagnostic matches CPU exactly and RTX OpenCL within 1e-5, with exact triangle IDs; add pristine-source integration recipe and CPU/GPU failure/rebinding tests. Record committed RL2a and prioritize three live demo entries, logo first.
+
 - 12:10 `chore` Record validated shape/matching/reduction lowering completion; next is runtime validation barriers and bounded sweep eligibility.
 
 - 12:09 `feat` Lower static shape validation with preserved panic messages, whole-array matching and Bool all/any reductions including empty-axis identities; verify axes and changed-input CPU/OpenCL/Mojo parity. Retain data-dependent guard refusal and document remaining runtime and sweep work.

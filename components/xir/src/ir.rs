@@ -361,6 +361,9 @@ pub enum Op {
     Map { op: MapOp, args: Vec<ValueId> },
     /// `cond ? a : b`, item by item (each may be rank 0).
     Select { cond: ValueId, a: ValueId, b: ValueId },
+    /// Fail in program order when a scalar Bool is true; otherwise return false.
+    /// This check executes even if its result is unused.
+    Guard { cond: ValueId, message: String },
     /// A whole array folded to one number (`axis: None`), or folded
     /// along one axis (1 is the first), which that axis leaves.
     Reduce { op: ReduceOp, arg: ValueId, axis: Option<usize> },
@@ -418,6 +421,7 @@ impl Op {
             Op::Input | Op::Const(_) => Vec::new(),
             Op::Map { args, .. } => args.clone(),
             Op::Select { cond, a, b } => vec![*cond, *a, *b],
+            Op::Guard { cond, .. } => vec![*cond],
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],
             Op::Matmul { a, b } | Op::Table { a, b, .. } => vec![*a, *b],
             Op::Lookup { idx, arg, .. } => vec![*idx, *arg],

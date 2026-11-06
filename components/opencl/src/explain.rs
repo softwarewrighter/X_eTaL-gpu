@@ -12,6 +12,14 @@ pub fn explain(checked: &Checked, plan: &Plan) -> String {
     let name = |id| format!("%{}", program.value(id).name);
     let mut out = String::new();
     out.push_str(&format!("schedule: {}\n", plan.schedule));
+    for guard in &plan.guard_checks {
+        out.push_str(&format!(
+            "guard before launch {}: {} => fail {:?}\n",
+            guard.before_launch,
+            plan.buffer(guard.buffer).name,
+            guard.message
+        ));
+    }
     out.push_str("buffers:\n");
     for b in &plan.buffers {
         let what = match &b.init {

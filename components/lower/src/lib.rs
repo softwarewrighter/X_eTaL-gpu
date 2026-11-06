@@ -730,21 +730,40 @@ impl Translator {
                 self.eval(body, &inner)
             }
             Kind::Set { name, .. } => err(format!("{name}!: a variable that changes is outside the subset")),
-            Kind::If { cond, then, other } => match self.eval(cond, env)? {
-                V::Static(a, _) if a.shape.is_scalar() => {
-                    let truth = match &a.data {
-                        Data::Bool(v) => v[0],
-                        Data::Int(v) => v[0] != 0,
-                        Data::Float(v) => v[0] != 0.0,
-                    };
-                    if truth {
-                        self.eval(then, env)
-                    } else {
+            Kind::If { cond, then, other } => {
+                let condition = self.eval(cond, env)?;
+                match self.made_bool(condition)? {
+                    V::Static(a, _) if a.shape.is_scalar() => {
+                        let truth = match &a.data {
+                            Data::Bool(v) => v[0],
+                            Data::Int(v) => v[0] != 0,
+                            Data::Float(v) => v[0] != 0.0,
+                        };
+                        if truth {
+                            self.eval(then, env)
+                        } else {
+                            self.eval(other, env)
+                        }
+                    }
+                    V::Node(cond) => {
+                        let message_expr = match &then.kind {
+                            Kind::App(f, message) if matches!(&f.kind, Kind::Prim(name) if name == "[]P_ANIC") => Some(&**message),
+                            _ => None,
+                        };
+                        let Some(message_expr) = message_expr else {
+                            return err(
+                                "a device guard requires a static-message panic branch (general dynamic branches are outside the subset)",
+                            );
+                        };
+                        let V::Str(message) = self.eval(message_expr, env)? else {
+                            return err("a device guard requires a static panic message");
+                        };
+                        self.push("guard", None, Op::Guard { cond, message })?;
                         self.eval(other, env)
                     }
+                    _ => err("a guard requires a scalar Bool condition"),
                 }
-                _ => err("a guard on a value the device computes is outside the subset (the condition must be known now)"),
-            },
+            }
             Kind::NoMatch => err("no guard matched"),
         }
     }
@@ -833,6 +852,7 @@ impl Translator {
                 _ => err("[]P_ANIC requires a static message"),
             },
             "n_ot" => {
+                let x = self.made_bool(x)?;
                 if let V::Static(a, true) = &x {
                     return Ok(V::Static(
                         self.fold("not", vec![a.clone()], |ids| Op::Map { op: MapOp::Not, args: ids })?,
@@ -940,22 +960,63 @@ impl Translator {
                     true,
                 ))
             }
-            "f_irst" => match x {
-                V::Static(a, shapey) => {
-                    let one = self.fold("first", vec![a], |ids| Op::Take {
-                        n: 1,
-                        axis: 1,
-                        arg: ids[0],
-                    })?;
-                    scalar_of(one, shapey)
+            "f_irst" => {
+                let shape = self.shape_of(&x)?;
+                let axis = match p.axes.as_slice() {
+                    [] => 1,
+                    [a] => *a as usize,
+                    _ => return err("f_irst currently supports one axis"),
+                };
+                if shape.is_scalar() && axis == 1 {
+                    return Ok(x);
                 }
-                V::Node(id) => {
-                    let t = self.push("first", None, Op::Take { n: 1, axis: 1, arg: id })?;
-                    let r = self.push("firstv", None, Op::Ravel { arg: t })?;
-                    Ok(V::Node(r))
+                if axis == 0 || axis > shape.rank() {
+                    return err("f_irst axis is outside the array rank");
                 }
-                other => err(format!("f_irst of a {}", other.what())),
-            },
+                let mut dims = shape.0.clone();
+                dims.remove(axis - 1);
+                let result_shape = Shape(dims);
+                if shape.0[axis - 1] == 0 {
+                    let scalar = match &x {
+                        V::Static(a, _) => a.scalar,
+                        V::Node(id) => self.ty(*id).scalar,
+                        _ => unreachable!(),
+                    };
+                    let n = result_shape.len();
+                    let data = if scalar == Scalar::Bool {
+                        Data::Bool(vec![false; n])
+                    } else if scalar.is_int() {
+                        Data::Int(vec![0; n])
+                    } else {
+                        Data::Float(vec![0.0; n])
+                    };
+                    return Ok(V::Static(Array::new(scalar, result_shape, data)?, false));
+                }
+                match x {
+                    V::Static(a, shapey) => {
+                        let one = self.fold("first", vec![a], |ids| Op::Take { n: 1, axis, arg: ids[0] })?;
+                        Ok(V::Static(
+                            self.fold("firstv", vec![one], |ids| Op::Reshape {
+                                shape: result_shape.clone(),
+                                arg: ids[0],
+                            })?,
+                            shapey,
+                        ))
+                    }
+                    V::Node(id) => {
+                        let t = self.push("first", None, Op::Take { n: 1, axis, arg: id })?;
+                        Ok(V::Node(self.push(
+                            "firstv",
+                            None,
+                            Op::Reshape {
+                                shape: result_shape.clone(),
+                                arg: t,
+                            },
+                        )?))
+                    }
+                    other => err(format!("f_irst of a {}", other.what())),
+                }
+            }
             "r_ange" | "o_ffsets" => {
                 let n = self.int_of(&x, &p.name)?;
                 let from = if p.name == "r_ange" { 1 } else { 0 };
@@ -1124,6 +1185,11 @@ impl Translator {
                     "&" => MapOp::And,
                     "|" => MapOp::Or,
                     _ => MapOp::Ge,
+                };
+                let (l, r) = if matches!(op.kind(), xetal_gpu_xir::ir::MapKind::Logic) {
+                    (self.made_bool(l)?, self.made_bool(r)?)
+                } else {
+                    (l, r)
                 };
                 // A Bool counts as 0 or 1 in arithmetic, as X_eTaL has it (a mask times a value).
                 let (l, r) = if !matches!(op.kind(), xetal_gpu_xir::ir::MapKind::EqCompare | xetal_gpu_xir::ir::MapKind::Logic) {
@@ -1449,8 +1515,92 @@ impl Translator {
         Ok((a, b))
     }
 
+    /// X_eTaL accepts Bool or numeric 0/1; validate before converting numbers.
+    fn made_bool(&mut self, value: V) -> Result<V> {
+        const MESSAGE: &str = "expected a Bool (or 1 / 0)";
+        match value {
+            V::Static(a, shapey) => {
+                let data = match a.data {
+                    Data::Bool(_) => return Ok(V::Static(a, shapey)),
+                    Data::Int(v) => {
+                        if v.iter().any(|x| *x != 0 && *x != 1) {
+                            return err(MESSAGE);
+                        }
+                        Data::Bool(v.into_iter().map(|x| x == 1).collect())
+                    }
+                    Data::Float(v) => {
+                        if v.iter().any(|x| *x != 0.0 && *x != 1.0) {
+                            return err(MESSAGE);
+                        }
+                        Data::Bool(v.into_iter().map(|x| x == 1.0).collect())
+                    }
+                };
+                Ok(V::Static(Array::new(Scalar::Bool, a.shape, data)?, shapey))
+            }
+            V::Node(id) if self.ty(id).scalar == Scalar::Bool => Ok(V::Node(id)),
+            V::Node(id) => {
+                let scalar = self.ty(id).scalar;
+                let number = |n| {
+                    if scalar.is_float() {
+                        Array::new(scalar, Shape::scalar(), Data::Float(vec![n as f64]))
+                    } else {
+                        Array::new(scalar, Shape::scalar(), Data::Int(vec![n]))
+                    }
+                };
+                let zero = self.constant(number(0)?, Some("zero"));
+                let one = self.constant(number(1)?, Some("one"));
+                let z = self.push(
+                    "iszero",
+                    None,
+                    Op::Map {
+                        op: MapOp::Eq,
+                        args: vec![id, zero],
+                    },
+                )?;
+                let o = self.push(
+                    "isone",
+                    None,
+                    Op::Map {
+                        op: MapOp::Eq,
+                        args: vec![id, one],
+                    },
+                )?;
+                let valid = self.push(
+                    "validbool",
+                    None,
+                    Op::Map {
+                        op: MapOp::Or,
+                        args: vec![z, o],
+                    },
+                )?;
+                let flat = self.push("boolitems", None, Op::Ravel { arg: valid })?;
+                let all = self.logical_reduce(V::Node(flat), &[], true)?;
+                let all = self.node(all, "allbool")?;
+                let bad = self.push(
+                    "badbool",
+                    None,
+                    Op::Map {
+                        op: MapOp::Not,
+                        args: vec![all],
+                    },
+                )?;
+                self.push(
+                    "guard",
+                    None,
+                    Op::Guard {
+                        cond: bad,
+                        message: MESSAGE.into(),
+                    },
+                )?;
+                Ok(V::Node(o))
+            }
+            other => err(format!("expected Bool, got a {}", other.what())),
+        }
+    }
+
     /// Bool all/any, preserving axes and the empty identities without new IR ops.
     fn logical_reduce(&mut self, x: V, axes: &[u8], all: bool) -> Result<V> {
+        let x = self.made_bool(x)?;
         let scalar = match &x {
             V::Static(a, _) => a.scalar,
             V::Node(id) => self.ty(*id).scalar,
@@ -1605,11 +1755,6 @@ impl Translator {
             Ok((id, false))
         }
     }
-}
-
-/// A one-item array as a single value.
-fn scalar_of(a: Array, shapey: bool) -> Result<V> {
-    Array::new(a.scalar, Shape::scalar(), a.data).map(|a| V::Static(a, shapey))
 }
 
 fn takes_functions(name: &str) -> bool {

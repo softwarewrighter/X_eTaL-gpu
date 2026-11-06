@@ -72,13 +72,18 @@ fn boolean_scalar_extends_over_a_mask() {
 }
 
 #[test]
-fn logic_keeps_type_and_shape_checks() {
+fn logic_keeps_numeric_value_and_shape_checks() {
     let ty = Ty {
         scalar: Scalar::I64,
         shape: Shape(vec![4]),
     };
     for source in ["{ x -> n_ot x }", "{ x -> x & x }", "{ x -> x | x }"] {
-        assert!(xetal_gpu_lower::lower_function(source, &[("x".into(), ty.clone())], Path::new("."), "").is_err());
+        let lowered = xetal_gpu_lower::lower_function(source, &[("x".into(), ty.clone())], Path::new("."), "").unwrap();
+        let checked = check(lowered.program).unwrap();
+        let valid = HashMap::from([("x".into(), Array::ints(Shape(vec![4]), vec![0, 1, 0, 1]))]);
+        assert!(interp::run(&checked, &valid).is_ok());
+        let invalid = HashMap::from([("x".into(), Array::ints(Shape(vec![4]), vec![0, 1, 2, 1]))]);
+        assert!(interp::run(&checked, &invalid).unwrap_err().0.contains("expected a Bool"));
     }
     let params = [
         (

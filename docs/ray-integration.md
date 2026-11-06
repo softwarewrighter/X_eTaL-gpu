@@ -76,10 +76,11 @@ rotates only the vane group around its pivot, and renders with RayTrace.
 It adapts the upstream MIT Scene logo demo without duplicating any
 geometry or rendering algorithm in the host code. The fixed X is silver;
 the _eTaL vane is copper. The camera looks toward the extruded letters.
-The lowercase a is visually unclear in the delivered library outline
-(user review); RL2a in xetal-libraries-ask.md requests a focused glyph
-correction and visual acceptance checks. Existing previews retain that
-known issue until a committed upstream fix is adopted.
+The lowercase a is visually unclear in the currently pinned outline.
+RL2a is fixed upstream at 811cadd (handoff e7140be), including e and
+visual glyph tests, but this compiler step keeps pin 7bd8f0a stable.
+Existing logo previews retain the old glyphs until the live-logo step
+adopts the committed correction and renders new frames.
 The low-resolution preview has no antialiasing and is an initial scene,
 not the final animation or glass composition.
 
@@ -111,9 +112,60 @@ latter remains uncertain until validation guards and bounded sweeps lower
 completely. No GPU timing or speedup is inferred from these CPU images.
 Glass rendering additionally needs the pending RL5-RL7 library work.
 
-## GPU eligibility evidence
+## Current GPU evidence, 2026-11-06
 
-The committed RayTrace diagnostic is not accelerated yet. Running it
+The tiny two-triangle RayTrace diagnostic now lowers all three renderer
+outputs without evaluator fallback. The pristine-source command below has now passed using the committed
+4 by 4 diagnostic directly. An earlier audit used that diagnostic plus
+an unrelated scalar; its scalar output was removed from generated XIR
+before an independent execution check. The actual renderer outputs
+are triangle IDs, linear RGB and display sRGB. XIR CPU execution matches
+all 36 evaluator baseline lines exactly. RTX 5060 Ti OpenCL matches all
+16 triangle IDs exactly and all color values within tolerance 1e-5.
+There is no host rendering path when executing this XIR.
+
+This is the first real GPU ray-tracing result, not a GPU logo or glass
+render and not a measured speedup. Generated evidence is under
+work/ray-integration/: guard-audit.xir/err, diagnostic-device.xir,
+diagnostic-xir-cpu.out and diagnostic-opencl.out. The OpenCL pixels also
+encode as diagnostic-opencl.tif (uncompressed RGB8) and a PNG preview;
+tiffinfo -D decodes the 4 by 4 TIFF. Their small size is intentional.
+
+```sh
+just ray-check-device                 # pristine pinned source, CPU and OpenCL
+just ray-check-device mojo            # optional full Mojo renderer comparison
+```
+
+The command passed on CPU and RTX OpenCL. It separately lowers the
+pristine library diagnostic, requires
+all three outputs and no fallback messages, and compares against its
+committed evaluator output. Cold lowering and backend builds can be slow;
+this is a separate integration command, not part of every gate run.
+
+Ordered scalar validation is now an XIR operation. It executes even if
+its result is unused. OpenCL and Mojo compute conditions on the GPU,
+read one Bool back, and stop before queuing dependent work on failure.
+Guard execution, constant guards, message round trips, repeated runs,
+failure followed by valid rebinding, and numeric 0/1 boolean conversion
+have CPU/OpenCL/Mojo tests. Numeric values other than 0/1 fail rather
+than silently becoming true. General dynamic branches remain refused.
+
+The diagnostic exposed f_irst shape bugs: removing a selected axis must
+return a scalar for a vector, a row for a matrix, or a column for _2.
+The lowering now preserves those shapes and the empty-axis prototype.
+The bounded triangle sweep and bounded light recursion both lower in
+this diagnostic. Strict changed-scene/ray-input renderer tests and
+larger-image/backend validation remain in ray-source/ray-device.
+
+The audit generated roughly 23,770 XIR lines and 1,585 guards. This is
+substantial compilation and synchronization overhead for a tiny image;
+large glyph scenes must not be assumed practical yet. Profile and improve
+general lowering/validation scheduling while retaining semantics before
+claiming a useful GPU speedup or scaling to the full logo.
+
+## Earlier GPU eligibility audits
+
+Before runtime guards landed, the committed diagnostic was not accelerated. Running it
 through the source lowering returns:
 
 ```text
@@ -174,17 +226,17 @@ This avoids silently changing large-Int equality by casting to Float.
 Bool '& r_/ and '| r_/ now lower using existing numeric reductions and
 comparisons. They keep the default first axis, explicit axes and all-axis
 semantics. Empty axes use true for all and false for any. Numeric 0/1
-inputs remain refused pending value validation. Known matrix cases and
+inputs were refused at that point; runtime validation now supports them. Known matrix cases and
 empty identities agree with the pinned evaluator; tests include NaN
 matching, exact failure messages and changing bound inputs. All/any and
 whole-array matching agree exactly on XIR, RTX OpenCL and Mojo.
 
-The full RayTrace audit still refuses all three actual renderer outputs
+That operator-only RayTrace audit still refused all three renderer outputs
 at a data-dependent guard; its only device output is the extra unrelated
-scalar. No guard was removed. Runtime guard execution is the next local
-compiler task, followed by an audit of the bounded primitive/light sweeps.
+scalar. No guard was removed. Runtime guard execution and the sweep audit were the next compiler work;
+the current result above records their diagnostic coverage.
 
-The next local work is runtime guard behavior. Preserve the library's finite,
+At that earlier point, the next local work was runtime guard behavior. Preserve the library's finite,
 shape and domain checks; do not strip guards to make a renderer appear
 eligible. Shape-only guards now resolve statically, while data-dependent
 failures must become runtime checks on both backends. Its primitive sweep

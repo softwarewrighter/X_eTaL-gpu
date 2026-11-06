@@ -30,8 +30,10 @@ The committed CPU diagnostic and six other examples match their baselines
 under X_eTaL abdd371; a 64 by 64 uncompressed TIFF preview was produced.
 RL2 extrusion/glyphs (f28e7ca) and RL3 scene macros (6e58863) are now
 pinned at handoff 7bd8f0a. A reproducible CPU logo TIFF/PNG is available
-with just ray-render-cpu. Boolean maps now lower, but the full
-renderer still needs validation lowering. See [ray-integration.md](ray-integration.md)
+with just ray-render-cpu. The tiny 4x4 diagnostic now agrees on XIR CPU and RTX OpenCL, including
+its guards, shadows and one reflection. Larger scenes and changed render
+inputs still need integration/performance validation. The readable a/e
+fix is committed upstream at 811cadd and will be adopted next. See [ray-integration.md](ray-integration.md)
 for evidence and reproducible CPU checks. Local adoption/source/device/
 image work is prioritized before remaining Mojo/ML steps; it does not
 wait for the extrusion or scene macros.

@@ -62,13 +62,13 @@ lowering; a failing static panic retains its message. m_atch compares
 equal-type arrays (Bool/Int normalization is supported) and static strings;
 Float/Int cross-type matching remains outside the subset.
 
-Boolean maps and all/any reductions currently require Bool arrays. The evaluator also accepts
-numeric 0/1; lowering those needs value validation and remains refused.
+Boolean maps and all/any reductions accept Bool or numeric 0/1 arrays.
+Numeric inputs are checked before conversion; other values fail at runtime.
 
 A library function is a closure inlined at each call; `let` and
 `eval` statements run in order, every `eval` an output. `p_ower` with
 a static count unrolls. What is outside the subset is refused with a
-reason naming the X_eTaL construct: a guard on a device value, a
+reason naming the X_eTaL construct: a general dynamic branch, a
 variable that changes, `w_here` (a shape the data decides), `s_\`,
 `^`, `c_at` of device arrays (X_eTaL-ML's ask GA7 asks for the last
 three), `i_nner` with other functions than `+` and `*`.
@@ -148,3 +148,10 @@ A statement inside a function that is outside the subset still fails
 the whole function (only top-level statements fall back to the
 evaluator). A reshape whose shape comes from data (not from a
 shape) is refused: shapes are folded statically, data is not.
+
+Scalar Bool guards whose failure branch is a static-message panic lower
+to ordered runtime checks; general dynamic branches remain refused.
+Numeric 0/1 boolean inputs are validated before conversion, including
+all/any reductions. f_irst removes its selected axis (default 1), so a
+vector returns a scalar and f_irst_2 of a matrix returns its first column.
+Empty axes return the evaluator prototype rather than an invalid take.

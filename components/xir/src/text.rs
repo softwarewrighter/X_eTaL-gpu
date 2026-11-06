@@ -166,6 +166,10 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             }
             Ok((None, Op::Map { op, args }))
         }
+        "guard" => {
+            if rest.len() != 2 { return err("guard takes a condition and hex message: guard %cond x..."); }
+            Ok((None, Op::Guard { cond: reference(program, rest[0])?, message: decode_message(rest[1])? }))
+        }
         "select" => {
             if rest.len() != 3 {
                 return err("select takes three values: select %cond %a %b");
@@ -473,6 +477,7 @@ pub fn print(program: &Program) -> String {
                 out.push_str(&format!("map {op}"));
                 args.iter().for_each(|a| out.push_str(&format!(" {}", name(*a))));
             }
+            Op::Guard { cond, message } => out.push_str(&format!("guard {} {}", name(*cond), encode_message(message))),
             Op::Select { cond, a, b } => out.push_str(&format!("select {} {} {}", name(*cond), name(*a), name(*b))),
             Op::Reduce { op, arg, axis } => match axis {
                 Some(a) => out.push_str(&format!("reduce {op} axis={a} {}", name(*arg))),
@@ -518,6 +523,29 @@ pub fn print(program: &Program) -> String {
         out.push_str(&format!("output {}\n", name(*o)));
     }
     out
+}
+
+/// A single text token for arbitrary UTF-8 guard messages, including empty ones.
+pub fn encode_message(message: &str) -> String {
+    let mut out = String::from("x");
+    for byte in message.bytes() {
+        use std::fmt::Write;
+        let _ = write!(out, "{byte:02x}");
+    }
+    out
+}
+fn decode_message(token: &str) -> Result<String> {
+    let hex = token
+        .strip_prefix('x')
+        .ok_or_else(|| crate::Error("guard message must start with x".into()))?;
+    if hex.len() % 2 != 0 || !hex.is_ascii() {
+        return err("guard message must contain hexadecimal byte pairs");
+    }
+    let bytes = (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(|_| crate::Error("guard message contains a non-hex byte".into())))
+        .collect::<Result<Vec<_>>>()?;
+    String::from_utf8(bytes).map_err(|_| crate::Error("guard message is not UTF-8".into()))
 }
 
 #[cfg(test)]

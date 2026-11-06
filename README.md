@@ -355,12 +355,13 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   publishes it, `just check-live` checks it)
 - `just ray-render-cpu` writes an initial CPU logo as uncompressed TIFF
   and a PNG preview under `work/ray-integration/`; use `--width 256
-  --height 64` for a larger still. GPU renderer validation is still pending. The lowercase a needs the
-  upstream glyph correction recorded as RL2a in the library asks.
+  --height 64` for a larger still. The tiny 4x4 diagnostic now agrees on CPU and RTX OpenCL; larger
+  GPU scene validation is pending. The lowercase a needs the
+  committed RL2a glyph correction to be adopted in the next step.
 - [Ray integration status](docs/ray-integration.md) -- committed library
   adoption, CPU diagnostic evidence, tested GPU boolean maps and remaining
   renderer validation gaps; shape guards, boolean reductions and array
-  matching now lower, while runtime guards still need execution support
+  matching and runtime guards now execute on both GPU backends
 - [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
   libraries and macros versus GPU-specific integration
 - [Glass scene plan](docs/glass-scene-plan.md) -- planned glass spheres,

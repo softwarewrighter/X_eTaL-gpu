@@ -35,10 +35,10 @@ fn shape_guards_resolve_and_preserve_the_failure_message() {
 }
 
 #[test]
-fn runtime_guards_are_still_refused_instead_of_discarded() {
-    let source = "{ x -> n_ot '& r_/ x > 0 ? @ p_anic< \"positive required\"; x + 1 }";
-    let error = lower(source, vec![3], Scalar::F64).unwrap_err().0;
-    assert!(error.contains("guard on a value the device computes"), "{error}");
+fn general_dynamic_branches_remain_refused() {
+    let source = "{ x -> x > 0 ? x + 1; x - 1 }";
+    let error = lower(source, vec![], Scalar::F64).unwrap_err().0;
+    assert!(error.contains("general dynamic branches"), "{error}");
 }
 
 #[test]
@@ -98,10 +98,7 @@ fn match_keeps_numeric_limits_explicit_and_nan_unequal() {
         .unwrap_err()
         .0
         .contains("different numeric scalar types"));
-    assert!(lower("{ x -> '& r_/ x }", vec![2], Scalar::I64)
-        .unwrap_err()
-        .0
-        .contains("requires Bool input"));
+    assert!(lower("{ x -> '& r_/ x }", vec![2], Scalar::I64).is_ok());
     let lowered = lower("{ x -> x m_atch x }", vec![2], Scalar::F64).unwrap();
     let inputs = HashMap::from([("x".into(), Array::floats(Shape(vec![2]), vec![1.0, f64::NAN]))]);
     assert_eq!(

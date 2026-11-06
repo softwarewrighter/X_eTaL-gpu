@@ -82,6 +82,13 @@ pub fn check(program: Program) -> Result<Checked> {
                 let shape = extend(name, &format!("map {op}"), &tys.iter().map(|t| &t.shape).collect::<Vec<_>>())?;
                 Ty { scalar: result, shape }
             }
+            Op::Guard { cond, .. } => {
+                let t = ty_of(*cond);
+                if t.scalar != Scalar::Bool || !t.shape.is_scalar() {
+                    return err(format!("%{name}: guard requires a scalar Bool, got {t}"));
+                }
+                t.clone()
+            }
             Op::Select { cond, a, b } => {
                 let (tc, ta, tb) = (ty_of(*cond), ty_of(*a), ty_of(*b));
                 if tc.scalar != Scalar::Bool {

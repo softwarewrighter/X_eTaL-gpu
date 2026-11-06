@@ -193,6 +193,13 @@ impl Library {
         let mut kernels_ms = 0.0;
         let rc = unsafe { f(in_ptrs.as_ptr(), out_ptrs.as_ptr(), &mut kernels_ms) };
         let took = start.elapsed();
+        if rc >= 1000 {
+            if let Some(value) = checked.program.values.get((rc - 1000) as usize) {
+                if let xetal_gpu_xir::Op::Guard { message, .. } = &value.op {
+                    return Err(Error(message.clone()));
+                }
+            }
+        }
         if rc != 0 {
             return Err(Error(format!("xir_run returned {rc} (the device failed; its message is above)")));
         }

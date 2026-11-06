@@ -136,3 +136,8 @@ the right). On this Mac all twelve agree, and `-0.0` comes back as
 `-0.0`, as the evaluator prints it. A Float beyond `float`'s range
 (X_eTaL-ML's `1e300`) is refused at upload with the fix named, since
 it would be infinity on the device and poison a row with NaN.
+
+Runtime guards read a device-computed scalar Bool with a blocking read
+between launch groups. Failure returns the original static message before
+subsequent kernels are queued. Checks run again on repeated calls and
+after rebinding; their synchronization cost is included in launch time.

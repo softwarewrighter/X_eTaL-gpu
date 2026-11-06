@@ -1,0 +1,8 @@
+number = 60
+slug = "ray-live-glass"
+status = "pending"
+description = "Deliver the glass entry in the existing live ray-tracing demo after the refer..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T12:16:30"
+commits = []

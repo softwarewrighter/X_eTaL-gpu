@@ -346,6 +346,14 @@ pub struct PositionCheck {
     pub reader: String,
 }
 
+/// A scalar validation check before the launch at this index (or after all launches).
+#[derive(Debug, Clone, PartialEq)]
+pub struct GuardCheck {
+    pub before_launch: usize,
+    pub buffer: BufferId,
+    pub message: String,
+}
+
 /// The whole plan: source, buffers, launches, outputs.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Plan {
@@ -358,6 +366,7 @@ pub struct Plan {
     pub outputs: Vec<(ValueId, BufferId)>,
     /// The input buffers that hold positions for a lookup.
     pub position_checks: Vec<PositionCheck>,
+    pub guard_checks: Vec<GuardCheck>,
 }
 
 impl Plan {

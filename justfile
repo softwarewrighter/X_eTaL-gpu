@@ -19,6 +19,10 @@ xetal-libraries:
 ray-check-cpu:
     scripts/ray-check-cpu.sh
 
+# Require all committed diagnostic renderer outputs on CPU and the requested GPU
+ray-check-device device="opencl:0":
+    bash scripts/ray-check-device.sh "$1"
+
 # Render the original logo with the CPU evaluator; write uncompressed TIFF and PNG
 ray-render-cpu *args:
     python3 scripts/ray-render-cpu.py {{args}}

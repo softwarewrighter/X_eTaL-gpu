@@ -193,8 +193,9 @@ User visual review found the lowercase a unreadable; RL2a requests an
 upstream glyph correction and silhouette/word checks before logo acceptance.
 The boolean and validation-operator prerequisites add typed maps, all/any
 reductions, array matching, static shape guards and changed-input checks
-on both GPU backends. Runtime guards and bounded sweep eligibility remain
-for ray-source; no rendered GPU result is claimed.
+on both GPU backends. Runtime guards now execute on all backends; the tiny diagnostic produces
+matching IDs and colors on RTX OpenCL. Changed-input renderer tests and
+large-scene compiler/runtime costs remain for ray-source/ray-device.
 Language compatibility and ray adoption/source/device/image steps now
 precede the remaining Mojo/ML steps; the macro work does not block them.
 
@@ -509,3 +510,25 @@ demos.
 | 3 | mojo-structure | DONE (2026-10-26, the Mac lane): lookup (positions clamped on the device; a bound input's stray position refused by the host with the evaluator's message), rotate (one copy per amount, shifts reduced at emit time), reshape (cycled), concat (a single value as one item) and the TopK operation (each thread finds its line's k-th largest distinct value) as indexed kernels, and products under a schedule's `tile` staged in shared memory with the right fold kept; nothing is refused now (`refused.txt` empty). All thirteen demos agree on the M1 Max through Metal, the product demos under `--tile 16` too; a device test checks the structural operations and tiled products against the interpreter. The RTX run of lookup and windows is the Arch lane's (`docs/arch-rerun.md` item 6). Was: complete lookup, rotate, reshape, TopK IR and concat, plus tiled matmul; untiled products, transpose, take/drop, ravel and tables landed as step 2 prerequisites. Every demo through Mojo; validate new coverage on the Mac as well as the RTX |
 | 4 | mojo-device | DONE (2026-11-06, RTX 5060 Ti): device discovery lists Mojo with its API and GPU; the facade uses -2, the accelerate macro accepts a mojo prefix on kinds, and kernel/explain describe the chosen backend. Repeats keep the Mojo library loaded but still allocate/upload each call; OpenCL retains resident buffers. Device intervals use the pinned execution_time API around precompiled kernels, separately from wall/build time, with per-launch profiling overhead stated. All 13 source demos agree on CPU, OpenCL and Mojo, untiled and tile 8; CLI, facade, macro expansion and backend-switch regressions. Timing instrumentation awaits a Mac rerun. |
 | 5 | mojo-results | the demos and X_eTaL-ML's models through Mojo on the M1 Max (Metal) and, by the Arch lane, the RTX 5060 Ti (CUDA driver): `docs/mojo-results.md`, `docs/ml-results.md`, the README's results-by-GPU tables with a backend per row, the landing page; the series post's pipeline (X_eTaL source, lowered, Mojo, GPU) demonstrable on every demo with one command |
+
+
+## Live ray-tracing deliverables
+
+The user requires three entries on the existing live-demo site. Publish
+incrementally with backend/settings/pin provenance, uncompressed masters
+and compressed browser derivatives. Playback of rendered frames must not
+be labeled browser-side ray tracing. No entry is live yet.
+
+| Entry | Next work | Dependencies |
+| ----- | --------- | ------------ |
+| Logo vane | Adopt committed RL2a, put the pivot through stationary X, add outward shaft/arrowhead, render a short rotating _eTaL sequence and publish | General geometry/Scene/RayTrace already delivered; CPU frames need no further GPU work |
+| Benchmark | Convert a licensed Cornell Box subset, match reference settings, show side-by-side supported-feature comparisons and publish | Geometry/direct-light baseline first; full Cornell color bleeding needs indirect diffuse transport |
+| Glass reference | Render original spheres/crystals/floor composition and publish | RL6 geometry, RL5 transport; RL7 for area lighting and depth of field |
+
+The live-logo step is next after runtime guards, before the remaining
+source/device/image steps and unrelated Mojo/ML backlog. The benchmark
+entry follows device/image integration; live glass follows the glass
+render milestones. Logo animation/layout can proceed on CPU while GPU
+scaling is improved. The earlier live Pages deployment failure must be
+checked when publishing; a pushed gh-pages branch is not proof of a live
+successful deployment.

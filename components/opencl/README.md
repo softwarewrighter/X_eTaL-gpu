@@ -166,3 +166,8 @@ values it computes and writes) and every launch with its sizes.
 
 A tree per line for very long axes, and where the weights live
 (host or device) as a schedule field (the model saga).
+
+Validation guards flush fusion and record a check before the next launch.
+The plan retains checks even for unused results and scalar constants.
+The runtime reads the condition buffer before enqueueing dependent kernels;
+`explain` shows each guard and its launch boundary.

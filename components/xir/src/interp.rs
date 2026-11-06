@@ -135,6 +135,12 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
                 let args: Vec<&Array> = args.iter().map(|a| &values[a.0]).collect();
                 map(&v.name, *op, &args, ty)?
             }
+            Op::Guard { cond, message } => {
+                if matches!(&values[cond.0].data, Data::Bool(v) if v[0]) {
+                    return err(message.clone());
+                }
+                values[cond.0].clone()
+            }
             Op::Select { cond, a, b } => {
                 let (c, a, b) = (&values[cond.0], &values[a.0], &values[b.0]);
                 let n = ty.shape.len();

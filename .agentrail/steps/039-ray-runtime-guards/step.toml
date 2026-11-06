@@ -1,0 +1,8 @@
+number = 39
+slug = "ray-runtime-guards"
+status = "in-progress"
+description = "Implement and validate general ordered runtime guards across XIR, OpenCL and ..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T12:27:25"
+commits = []

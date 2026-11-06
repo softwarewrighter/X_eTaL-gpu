@@ -80,11 +80,14 @@ scene-array and fixed-X/pivot animation checks. A local CPU logo image
 uses the Scene macro and RayTrace directly; see
 [ray-integration.md](ray-integration.md). The original requested statuses
 below are historical; upstream completion does not imply GPU eligibility.
-Boolean maps now lower; the remaining validation gap is local GPU work, not a new
+Runtime guards now execute on CPU/OpenCL/Mojo, and the tiny diagnostic
+colors/IDs agree on RTX OpenCL. Remaining scaling/input tests are GPU work, not a new
 library or language ask. RL6 geometry/v2 scene work is now in progress
 in the peer saga, without a committed delivery yet. RL5 glass and RL7
 sampling remain pending; RL8/RL9 remain deferred. No upstream
-acknowledgment or committed fix for RL2a was found in this check.
+acknowledgment was found at the earlier check. RL2a is now completed
+in 811cadd (handoff e7140be), with corrected a/e outlines and visual
+regressions; adopt it at the next step boundary.
 
 ### Request summary and deadlines
 
@@ -201,7 +204,8 @@ all refusal cases. No renderer/device calls appear in the expansion.
 
 ### RL2a: readable lowercase a glyph correction
 
-Status: requested follow-up, 2026-11-06. Owner: X_eTaL-libraries,
+Status: completed upstream in 811cadd (handoff e7140be); adoption pending
+at the next step boundary. Original request, 2026-11-06. Owner: X_eTaL-libraries,
 Extrusion. Needed before accepting the logo appearance and animation;
 independent of local GPU compiler work. No new language feature or font
 engine is requested.

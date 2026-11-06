@@ -111,3 +111,8 @@ lowered from its source, against the evaluator's baseline, exactly.
 A map still extends only a single value, as
 X_eTaL does (a vector across the rows of a matrix is a shape error
 there too).
+
+Runtime validation uses `guard %condition xHEX_MESSAGE`: a scalar Bool
+true fails with the decoded UTF-8 message, and false returns false.
+The operation executes in definition order even when its result is unused.
+Messages use an x-prefixed hex token so comments/newlines round-trip.
