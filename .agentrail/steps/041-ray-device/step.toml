@@ -1,4 +1,4 @@
-number = 40
+number = 41
 slug = "ray-device"
 status = "pending"
 description = "Run the same general-library RayTrace source on XIR CPU and RTX OpenCL follow..."

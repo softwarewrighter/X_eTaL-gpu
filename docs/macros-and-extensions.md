@@ -19,6 +19,17 @@ for the local library audit and evidence required for new requests.
 Language asks are mainly bug reports; a proposed core addition must
 explain why ordinary libraries and macro libraries are insufficient.
 
+## Ray-tracing macros
+
+The approved design requests a scene DSL macro and a reusable geometry
+extrusion macro in X_eTaL-libraries (RL2/RL3 in
+[xetal-libraries-ask.md](xetal-libraries-ask.md)). They qualify on concision:
+named geometry, materials and groups replace hand-written array shapes
+and ID assembly, with notation errors caught during expansion. Ordinary
+library functions implement geometry, frame transforms and ray tracing
+(RL1/RL4). Their expansion is ordinary X_eTaL constructing numeric scene
+arrays; it contains no GPU schedule, backend choice or rendering extension.
+
 ## The rule
 
 A macro or an extension needs a justification. Ordinary X_eTaL is

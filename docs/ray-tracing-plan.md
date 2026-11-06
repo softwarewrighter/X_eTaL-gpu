@@ -23,6 +23,23 @@ POV-Ray 3.7 onward uses AGPLv3 or later; older releases had custom
 licenses. References: [official license](https://www.povray.org/povlegal.html)
 and [older license](https://www.povray.org/povlegal-3.6.html).
 
+## Library deliverables
+
+The approved library requests are RL1 (3D math), RL2 (extrusion and glyph
+macro), RL3 (scene DSL and transform groups) and RL4 (ray-tracing functions),
+specified in [xetal-libraries-ask.md](xetal-libraries-ask.md). They are
+requested locally for owner triage; no upstream completion is claimed.
+RL1 and primary RL4 functions are needed before ray-source finishes;
+RL2/RL3 and RL4 shadows/reflections are needed before ray-logo. These are
+milestone dependencies, not calendar commitments. GPU capability checks
+and the image/benchmark harness can progress before the asks land.
+
+Use the combined macro design: one small scene DSL plus a reusable
+extrusion macro. Compile-time macros emit numeric geometry/material/group
+arrays; ordinary X_eTaL applies the vane's frame transform and renders.
+No new language feature is requested. Pin committed library deliveries
+before closing the milestone that consumes them.
+
 ## Scene and animation
 
 A thick, extruded X stays fixed at the center. The letters `_eTaL`

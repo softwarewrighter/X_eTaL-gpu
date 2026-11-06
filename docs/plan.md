@@ -177,6 +177,8 @@ the ray-prefixed implementation steps are queued after existing work.
 General ray-tracing algorithms and scene macro libraries belong in the
 library repositories; GPU implementation and integration stay here.
 [Library asks and ownership](xetal-libraries-ask.md) records the audit.
+The approved scene/extrusion macro design is requested there as RL1 to
+RL4, with acceptance tests and deadlines by renderer/logo milestone.
 
 ## Asks from other repositories
 

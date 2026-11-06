@@ -1,7 +1,7 @@
-number = 39
+number = 40
 slug = "ray-source"
 status = "pending"
-description = "Follow docs/ray-tracing-plan.md and docs/xetal-libraries-ask.md. Audit existi..."
+description = "Follow docs/ray-tracing-plan.md and concrete RL1-RL4 requests in docs/xetal-l..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T06:33:48"
