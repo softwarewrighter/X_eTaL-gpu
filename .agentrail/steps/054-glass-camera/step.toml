@@ -1,8 +1,0 @@
-number = 54
-slug = "glass-camera"
-status = "pending"
-description = "Follow docs/glass-scene-plan.md and RL7: pin deterministic pixel/lens/emitter..."
-role = "production"
-context_files = []
-created_at = "2026-11-06T09:22:44"
-commits = []

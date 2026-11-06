@@ -158,12 +158,36 @@ RL2 extrusion/glyphs (f28e7ca) and RL3 scene macros (6e58863) are now
 adopted at 7bd8f0a in the visible-preview step. The earlier boolean
 compiler step retained c968326 until this explicit adoption boundary.
 
-The next local work is generic lowering support for boolean/shape
-validation and runtime guard behavior. Preserve the library's finite,
+### Shape and array-validation operators, 2026-11-06
+
+Shape comparisons and boolean expressions over metadata now stay static.
+A bound array with the correct dimensions passes a shape-only guard during
+lowering; incorrect dimensions retain the library's panic message.
+This resolves checks of shapes, not checks of the data in those arrays.
+
+m_atch now compares complete equal-shaped arrays and returns one Bool;
+different shapes return false. Equal-type numeric arrays, Bool/Int
+normalization and static strings are supported. Matching across Float
+and Int remains refused explicitly until conversion semantics are covered.
+This avoids silently changing large-Int equality by casting to Float.
+
+Bool '& r_/ and '| r_/ now lower using existing numeric reductions and
+comparisons. They keep the default first axis, explicit axes and all-axis
+semantics. Empty axes use true for all and false for any. Numeric 0/1
+inputs remain refused pending value validation. Known matrix cases and
+empty identities agree with the pinned evaluator; tests include NaN
+matching, exact failure messages and changing bound inputs. All/any and
+whole-array matching agree exactly on XIR, RTX OpenCL and Mojo.
+
+The full RayTrace audit still refuses all three actual renderer outputs
+at a data-dependent guard; its only device output is the extra unrelated
+scalar. No guard was removed. Runtime guard execution is the next local
+compiler task, followed by an audit of the bounded primitive/light sweeps.
+
+The next local work is runtime guard behavior. Preserve the library's finite,
 shape and domain checks; do not strip guards to make a renderer appear
-eligible. Boolean reductions and m_atch still need validation-path support;
-shape-only guards should be resolved statically, while data-dependent
-failures must remain runtime checks on both backends. Its primitive sweep
+eligible. Shape-only guards now resolve statically, while data-dependent
+failures must become runtime checks on both backends. Its primitive sweep
 is bounded p_ower; its light sweep is bounded
 tail recursion. Their complete eligibility must be tested after the
 first refusal is addressed, not assumed from this initial audit.

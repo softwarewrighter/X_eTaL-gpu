@@ -828,7 +828,17 @@ impl Translator {
     fn monadic(&mut self, p: &Prim, x: V) -> Result<V> {
         match p.name.as_str() {
             "u_se<" => Ok(V::Unit),
+            "[]P_ANIC" => match x {
+                V::Str(message) => err(message),
+                _ => err("[]P_ANIC requires a static message"),
+            },
             "n_ot" => {
+                if let V::Static(a, true) = &x {
+                    return Ok(V::Static(
+                        self.fold("not", vec![a.clone()], |ids| Op::Map { op: MapOp::Not, args: ids })?,
+                        true,
+                    ));
+                }
                 let id = self.node(x, "x")?;
                 Ok(V::Node(self.push(
                     "not",
@@ -996,6 +1006,9 @@ impl Translator {
             },
             "r_/" => {
                 let f = p.funs.first().ok_or_else(|| Error("r_/ needs a function: '+ r_/".into()))?;
+                if matches!(f.name.as_str(), "&" | "|") {
+                    return self.logical_reduce(x, &p.axes, f.name == "&");
+                }
                 let op = reduce_op(&f.name)?;
                 let x = self.bool_to_int(x)?;
                 if let V::Static(a, true) = &x {
@@ -1053,6 +1066,46 @@ impl Translator {
     fn dyadic(&mut self, p: &Prim, l: V, r: V) -> Result<V> {
         let axis = p.axes.first().map(|a| *a as usize);
         match p.name.as_str() {
+            "m_atch" => {
+                if let (V::Str(a), V::Str(b)) = (&l, &r) {
+                    return Ok(V::Static(
+                        Array::new(Scalar::Bool, Shape::scalar(), Data::Bool(vec![a == b]))?,
+                        true,
+                    ));
+                }
+                let shape = self.shape_of(&l)?;
+                if shape != self.shape_of(&r)? {
+                    return Ok(V::Static(Array::new(Scalar::Bool, Shape::scalar(), Data::Bool(vec![false]))?, true));
+                }
+                // Numeric cross-type matching has evaluator-specific conversion rules.
+                // Keep it refused until those rules have their own equivalence coverage.
+                let (l, r) = (self.bool_to_int(l)?, self.bool_to_int(r)?);
+                let eq = match (&l, &r) {
+                    (V::Static(a, _), V::Static(b, _)) if a.scalar == b.scalar => V::Static(
+                        self.fold("eq", vec![a.clone(), b.clone()], |ids| Op::Map { op: MapOp::Eq, args: ids })?,
+                        true,
+                    ),
+                    _ => {
+                        let a = self.node(l, "l")?;
+                        let b = self.node(r, "r")?;
+                        if self.ty(a).scalar != self.ty(b).scalar {
+                            return err("m_atch across different numeric scalar types is outside the subset");
+                        }
+                        V::Node(self.push(
+                            "eq",
+                            None,
+                            Op::Map {
+                                op: MapOp::Eq,
+                                args: vec![a, b],
+                            },
+                        )?)
+                    }
+                };
+                if shape.is_scalar() {
+                    return Ok(eq);
+                }
+                self.logical_reduce(eq, &(1..=shape.rank()).map(|a| a as u8).collect::<Vec<_>>(), true)
+            }
             "+" | "-" | "*" | "/" | "m_ax" | "m_in" | "d_iv" | "m_od" | "=" | "!=" | "<" | "<=" | ">" | ">=" | "&" | "|" => {
                 let op = match p.name.as_str() {
                     "+" => MapOp::Add,
@@ -1080,16 +1133,9 @@ impl Translator {
                 };
                 // A literal adapts to the type it meets: an Int beside a Float is a Float (`x m_ax 0`).
                 let (l, r) = self.adapt_literal(l, r)?;
-                // Int arithmetic on shape-like values (shapes, counts) folds; data goes to the device.
+                // Metadata comparisons/logic stay static so shape guards decide now.
                 if let (V::Static(a, true), V::Static(b, true)) = (&l, &r) {
-                    if a.scalar.is_int()
-                        && b.scalar.is_int()
-                        && !matches!(op, MapOp::Div)
-                        && !matches!(
-                            op.kind(),
-                            xetal_gpu_xir::ir::MapKind::EqCompare | xetal_gpu_xir::ir::MapKind::OrdCompare
-                        )
-                    {
+                    if !matches!(op, MapOp::Div) && !a.scalar.is_float() && !b.scalar.is_float() {
                         return Ok(V::Static(
                             self.fold("i", vec![a.clone(), b.clone()], |ids| Op::Map { op, args: ids })?,
                             true,
@@ -1325,6 +1371,10 @@ impl Translator {
                     None => err("e_ach over nothing"),
                 }
             }
+            "p_anic<" => match (l, r) {
+                (V::Unit, V::Str(message)) => err(message),
+                _ => err("p_anic< requires unit and a static message"),
+            },
             "p_ower" => err("p_ower without its function"),
             other => err(format!("`{other}` is outside the subset the device runs")),
         }
@@ -1399,15 +1449,85 @@ impl Translator {
         Ok((a, b))
     }
 
+    /// Bool all/any, preserving axes and the empty identities without new IR ops.
+    fn logical_reduce(&mut self, x: V, axes: &[u8], all: bool) -> Result<V> {
+        let scalar = match &x {
+            V::Static(a, _) => a.scalar,
+            V::Node(id) => self.ty(*id).scalar,
+            other => return err(format!("logical reduction of a {}", other.what())),
+        };
+        if scalar != Scalar::Bool {
+            return err("logical reduction currently requires Bool input (numeric 0/1 needs runtime validation)");
+        }
+        let shape = self.shape_of(&x)?;
+        if shape.is_scalar() {
+            return err("logical reduction needs an array of rank 1 or more");
+        }
+        let mut axes: Vec<usize> = if axes.is_empty() {
+            vec![1]
+        } else {
+            axes.iter().map(|a| *a as usize).collect()
+        };
+        if axes.iter().any(|a| *a == 0 || *a > shape.rank()) {
+            return err("logical reduction axis is outside the array rank");
+        }
+        axes.sort_unstable();
+        if axes.windows(2).any(|a| a[0] == a[1]) {
+            return err("logical reduction axes repeat");
+        }
+        let op = if all { ReduceOp::Mul } else { ReduceOp::Max };
+        let mut value = self.bool_to_int(x)?;
+        for axis in axes.into_iter().rev() {
+            let mut dims = self.shape_of(&value)?.0;
+            let len = dims.remove(axis - 1);
+            value = if len == 0 {
+                let shape = Shape(dims);
+                V::Static(Array::ints(shape.clone(), vec![i64::from(all); shape.len()]), true)
+            } else if let V::Static(a, true) = value {
+                V::Static(
+                    self.fold("lr", vec![a], |ids| Op::Reduce {
+                        op,
+                        arg: ids[0],
+                        axis: Some(axis),
+                    })?,
+                    true,
+                )
+            } else {
+                let arg = self.node(value, "mask")?;
+                V::Node(self.push("lr", None, Op::Reduce { op, arg, axis: Some(axis) })?)
+            };
+        }
+        // Max over an empty logical axis used 0; all uses multiplicative 1.
+        let one = Array::ints(Shape::scalar(), vec![1]);
+        match value {
+            V::Static(a, shapey) => Ok(V::Static(
+                self.fold("bool", vec![a, one], |ids| Op::Map { op: MapOp::Eq, args: ids })?,
+                shapey,
+            )),
+            value => {
+                let a = self.node(value, "reduced")?;
+                let b = self.constant(one, Some("one"));
+                Ok(V::Node(self.push(
+                    "bool",
+                    None,
+                    Op::Map {
+                        op: MapOp::Eq,
+                        args: vec![a, b],
+                    },
+                )?))
+            }
+        }
+    }
+
     /// A Bool value as an Int (0 or 1); anything else as it is.
     fn bool_to_int(&mut self, v: V) -> Result<V> {
         match v {
-            V::Static(a, _) if a.scalar == Scalar::Bool => Ok(V::Static(
+            V::Static(a, shapey) if a.scalar == Scalar::Bool => Ok(V::Static(
                 self.fold("b", vec![a], |ids| Op::Cast {
                     op: xetal_gpu_xir::ir::CastOp { to: Scalar::I64 },
                     arg: ids[0],
                 })?,
-                false,
+                shapey,
             )),
             V::Node(id) if self.ty(id).scalar == Scalar::Bool => Ok(V::Node(self.push(
                 "b",
@@ -1528,6 +1648,7 @@ fn is_dyadic(name: &str) -> bool {
             | "u_se<"
             | "i_ndexOf"
             | "m_atch"
+            | "p_anic<"
             | "e_ach"
     )
 }

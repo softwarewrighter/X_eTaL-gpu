@@ -1,0 +1,8 @@
+number = 39
+slug = "ray-source"
+status = "in-progress"
+description = "Continue ray-source with runtime validation guards: shape comparisons and met..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T06:33:48"
+commits = []

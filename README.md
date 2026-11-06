@@ -359,7 +359,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   upstream glyph correction recorded as RL2a in the library asks.
 - [Ray integration status](docs/ray-integration.md) -- committed library
   adoption, CPU diagnostic evidence, tested GPU boolean maps and remaining
-  renderer validation gaps
+  renderer validation gaps; shape guards, boolean reductions and array
+  matching now lower, while runtime guards still need execution support
 - [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
   libraries and macros versus GPU-specific integration
 - [Glass scene plan](docs/glass-scene-plan.md) -- planned glass spheres,

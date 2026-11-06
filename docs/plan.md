@@ -191,8 +191,10 @@ The visible-preview prerequisite delivers a CPU logo TIFF/PNG command,
 with eleven pinned CPU checks, while ray-source continues toward GPU guards.
 User visual review found the lowercase a unreadable; RL2a requests an
 upstream glyph correction and silhouette/word checks before logo acceptance.
-A ray-booleans prerequisite adds typed boolean maps and changed-input
-checks on both GPU backends before the remaining ray-source validation work.
+The boolean and validation-operator prerequisites add typed maps, all/any
+reductions, array matching, static shape guards and changed-input checks
+on both GPU backends. Runtime guards and bounded sweep eligibility remain
+for ray-source; no rendered GPU result is claimed.
 Language compatibility and ray adoption/source/device/image steps now
 precede the remaining Mojo/ML steps; the macro work does not block them.
 
