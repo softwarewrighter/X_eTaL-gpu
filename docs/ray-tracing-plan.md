@@ -42,10 +42,22 @@ may be an optional derivative, never the only output.
 
 ## Algorithm and representation
 
-Create `libs/RayTrace/` in the standard library layout: documented source,
-tests with evaluator reg-rs baselines, pinned export types, demos and
-library docs. Keep source demos in the acceleratable subset and lower
-from source; do not write hand-maintained GPU kernels or IR twins.
+Reusable ray-tracing math and scene notation belong in X_eTaL-libraries
+(or an existing general library), not permanently in this GPU repository.
+Audit existing library exports before proposing a new package. Request
+new or changed libraries in [xetal-libraries-ask.md](xetal-libraries-ask.md),
+with ordinary functions and especially macro libraries considered before
+any language change. A macro should expand useful scene or geometry
+notation into ordinary X_eTaL; it must not hide a native renderer.
+
+Keep GPU integration demos, equivalence fixtures, device schedules,
+benchmarks and execution support here. Use a reviewed, pinned general
+library dependency once available. A local algorithm prototype is a
+clearly labeled temporary fixture with an ownership/migration entry in
+the library ask ledger, not a second permanent general library. The
+owning library follows the standard documented source, tests, pinned
+export types and demos layout. Lower the same source on CPU and GPU;
+do not write hand-maintained GPU kernels or IR twins.
 
 Represent rays, triangle vertices, material properties and hit records
 as fixed-shape arrays. Establish the representation with a tiny evaluator
@@ -70,11 +82,15 @@ rule. Chunk sizes and device widths belong to schedules or runner data,
 not rendering semantics. Introduce a BVH only after measuring the simple
 implementation, with a separate planned step if needed.
 
-Missing operations must be general X_eTaL primitives, supported by the
-checker, interpreter, emitter and lowering with tests. Record concrete
-language bugs or missing features with minimal reproductions in
-`docs/xetal-asks.md`; do not edit the pinned language checkout or invent
-asks before the capability audit establishes a need.
+A missing lowering or backend implementation of an existing operation
+is GPU work here: extend the checker, interpreter, emitter or lowering
+as appropriate, using the existing architecture and tests. A missing
+reusable function or notation is a library ask first, with macro libraries
+preferred for new notation. Do not add a language primitive just because
+the ray tracer needs a new algorithm. Reserve `docs/xetal-asks.md` mainly
+for demonstrated language bugs, with minimal reproductions; an exceptional
+core request must explain why libraries and macros cannot express it.
+Do not edit the pinned language checkout or another repository here.
 
 ## Image output
 
@@ -126,7 +142,7 @@ remains queued; appending these steps does not claim priority over it.
 
 | Step | Delivery and acceptance |
 | ---- | ----------------------- |
-| ray-source | Capability audit and ordinary X_eTaL camera/intersection/lighting library; tiny evaluator baselines and pinned types; concrete asks or general primitive prerequisite steps if needed. |
+| ray-source | Audit general libraries and macros first; request reusable camera/intersection/lighting APIs in the library repo; tiny evaluator baselines and pinned types, with GPU prerequisites planned here as needed. |
 | ray-device | Same source lowers and runs on the XIR CPU interpreter and RTX OpenCL; analytical tests and small raw images agree; bounded batching and memory checks. |
 | ray-image | Shared display conversion and host uncompressed TIFF writer; deterministic still image through both paths, decoder validation and documented recipes. |
 | ray-logo | Original extruded X and `_eTaL` geometry, stationary X and rotating vane; shadows and one reflection bounce; multiple angles agree on CPU/GPU. |

@@ -1,7 +1,7 @@
 number = 39
 slug = "ray-source"
 status = "pending"
-description = "Audit pinned X_eTaL and lowering capabilities; implement libs/RayTrace camera..."
+description = "Follow docs/ray-tracing-plan.md and docs/xetal-libraries-ask.md. Audit existi..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T06:33:48"

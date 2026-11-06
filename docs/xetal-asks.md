@@ -40,6 +40,17 @@ provisional IR is to be replaced by X_eTaL's, not kept.
 | G12 | open | docs | **The macro contract stated** (MC10, `docs/combinators-macros-and-trains.md`: a macro is an ordinary function from source text to source text): this repo's `gp:a_ccel<` relies on receiving a function's source text unchanged and on its result being spliced as written; please state it as a promise in `docs/reference.md` | the accel macro (saga 4, 0p) | none; the facade's tests pin the behavior |
 | G13 | open (the user, 2026-10-16) | feature | **Stronger lint-time, macro-time and compile-time checks**, so that what this repository now catches at run time (on the host before an upload, or on the device as a wrong answer) is reported before a program runs; the cases are listed in the details below: a Float literal no device width can hold (`1e300`), a written position outside its table, an empty array reaching an operation that cannot take one, a reshape to a shape computed from data, a macro call whose argument form the macro does not accept, a relative `[]N_GET` path, a `## >>` example whose output has a blank line | every program lowered here: the lowering refuses what it cannot translate with a reason, but a wrong value (NaN from an overflow, a clamped position) is found only by comparing with the evaluator | the XIR checker (static shapes, written positions), the emitter (an empty constant's buffer decided at plan time) and the runtime (`check_f32_range`, `check_positions` at bind and rebind) check on this side, at the latest point that knows the shapes; the gate's equivalence checks against the evaluator catch the rest |
 
+## Routing new requests
+
+Prefer reusable functions and macro libraries over additions to the
+language. New or changed general libraries are tracked in
+[xetal-libraries-ask.md](xetal-libraries-ask.md). File demonstrated language
+bugs here with minimal reproductions; an exceptional core feature request
+must show why library and macro solutions are insufficient. Implement
+GPU-specific lowering, backend and scheduling gaps in this repository.
+The historical asks above do not require new language features for the
+ray-tracing project.
+
 ## Details
 
 ### G1 and G2: the IR and the lowering are X_eTaL's

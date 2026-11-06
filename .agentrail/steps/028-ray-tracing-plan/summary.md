@@ -1,1 +1,1 @@
-Ray-tracing plan and six implementation steps delivered in a41bf96; reordered after upstream completed Mojo structural coverage as requested.
+Ray-tracing plan and implementation queue delivered; planning/bookkeeping commits rebased onto upstream completed Mojo structural work. Saga reordered to preserve completed step 027; prior local IDs remain in snapshot refs.

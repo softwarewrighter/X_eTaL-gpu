@@ -22,3 +22,9 @@ just demo-lib Accel        # run its demos
 just run-lib Accel         # run its test programs
 just test-lib Accel        # check every baseline
 ```
+
+The functions are general array algorithms; the library currently serves
+as this repository's tested acceleration subset. General API reuse and
+possible consolidation with the library and ML repositories are tracked
+in [the ownership audit](../../docs/xetal-libraries-ask.md). GPU demos and
+equivalence coverage remain here. No exports have moved.

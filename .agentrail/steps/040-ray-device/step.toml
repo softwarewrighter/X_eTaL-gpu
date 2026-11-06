@@ -1,7 +1,7 @@
 number = 40
 slug = "ray-device"
 status = "pending"
-description = "Lower the same RayTrace X_eTaL source to XIR CPU and OpenCL GPU. Follow docs/..."
+description = "Run the same general-library RayTrace source on XIR CPU and RTX OpenCL follow..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T06:33:48"

@@ -174,6 +174,9 @@ added an explicit exception on 2026-11-06: an original ray tracer written
 in X_eTaL, with the same code on CPU and GPU, uncompressed image output
 and a rotating logo. See [ray-tracing-plan.md](ray-tracing-plan.md);
 the ray-prefixed implementation steps are queued after existing work.
+General ray-tracing algorithms and scene macro libraries belong in the
+library repositories; GPU implementation and integration stay here.
+[Library asks and ownership](xetal-libraries-ask.md) records the audit.
 
 ## Asks from other repositories
 

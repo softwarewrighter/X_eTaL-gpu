@@ -7,6 +7,18 @@ not. Written 2026-10-07 against X_eTaL 75e6a5c (this repo's pin),
 X_eTaL-libraries, X_eTaL-ML and X_eTaL-extensions as they are on
 that date.
 
+## Library ownership
+
+The current policy (2026-11-06) is library-first, with macro libraries
+preferred for new notation rather than new language syntax. Reusable
+functions and macros belong in the base/library repositories; GPU
+execution, lowering, schedules and device integration belong here.
+The historical verdicts below describe specific candidates, not a ban
+on future macro libraries. See [xetal-libraries-ask.md](xetal-libraries-ask.md)
+for the local library audit and evidence required for new requests.
+Language asks are mainly bug reports; a proposed core addition must
+explain why ordinary libraries and macro libraries are insufficient.
+
 ## The rule
 
 A macro or an extension needs a justification. Ordinary X_eTaL is

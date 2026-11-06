@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 06:45 `plan` Rebase onto upstream Mojo completion and preserve its saga record; audit Accel and Gpu ownership, prefer general libraries and scene macro libraries, route library asks separately from language bugs, and revise ray-tracing implementation prompts.
+
 - 06:41 `chore` Reorder ray planning after upstream Mojo completion, preserve saga snapshots, and record library-ownership follow-up before rebasing onto current main.
 
 - 06:38 `chore` Record completed ray-tracing planning and the upstream saga-numbering conflict blocking push; full GPU gate passed.

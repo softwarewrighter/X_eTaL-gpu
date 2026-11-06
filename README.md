@@ -355,6 +355,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   facade, their `##` comments and running examples, every name
   linked (`just pages` builds it into `pages/`, `just publish`
   publishes it, `just check-live` checks it)
+- [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
+  libraries and macros versus GPU-specific integration
 - [Ray tracing plan](docs/ray-tracing-plan.md) -- planned shared X_eTaL
   CPU/GPU renderer, uncompressed TIFF output and rotating logo
 - [`docs/plan.md`](docs/plan.md) -- architecture decisions, the
