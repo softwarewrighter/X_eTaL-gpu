@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 10:09 `build` Pin X_eTaL abdd371 so the evaluator recognizes the committed ray libraries' s_qrt; refresh both dependent Rust lockfiles. Full existing CPU/OpenCL/Mojo gate and seven committed ray CPU checks pass without baseline reblessing; close the completed library-adoption foundation.
+
 - 10:05 `build` Add a committed X_eTaL-libraries pin and clean clone recipe plus seven exact Vector3/RayTrace CPU checks; record the CPU TIFF preview and honest n_ot/validation GPU refusal, and prioritize local ray integration ahead of remaining Mojo/ML work. Requires the accompanying evaluator pin update.
 
 - 09:27 `chore` Record completed glass-scene planning and queued implementation/library dependencies after the full GPU gate.
