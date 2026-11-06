@@ -75,19 +75,20 @@ with explicit dependencies and rerun baselines before adoption.
 
 RL1 is completed upstream in 202ed3e, RL2 in f28e7ca, RL3 in 6e58863
 and RL4 in 128e557. XETAL_LIBRARIES_COMMIT now pins their committed
-handoff 7bd8f0a. Eleven CPU baselines pass unchanged, including glyph,
+handoff plus the RL2a correction at e7140be. Eleven CPU baselines pass unchanged, including glyph,
 scene-array and fixed-X/pivot animation checks. A local CPU logo image
 uses the Scene macro and RayTrace directly; see
 [ray-integration.md](ray-integration.md). The original requested statuses
 below are historical; upstream completion does not imply GPU eligibility.
 Runtime guards now execute on CPU/OpenCL/Mojo, and the tiny diagnostic
 colors/IDs agree on RTX OpenCL. Remaining scaling/input tests are GPU work, not a new
-library or language ask. RL6 geometry/v2 scene work is now in progress
-in the peer saga, without a committed delivery yet. RL5 glass and RL7
-sampling remain pending; RL8/RL9 remain deferred. No upstream
-acknowledgment was found at the earlier check. RL2a is now completed
-in 811cadd (handoff e7140be), with corrected a/e outlines and visual
-regressions; adopt it at the next step boundary.
+library or language ask. RL6 geometry/Scene v2 is completed in 2c08dfd
+(handoff e172afe), and RL5 Glass transport in 30277f5 (handoff 8bd438d).
+RL7 sampling/lens/emitters is now in progress. Those new deliveries are
+available for adoption at the next relevant step boundary; the current
+logo release remains on tested e7140be. RL8/RL9 remain deferred.
+RL2a is adopted for this release with corrected a/e and visual regressions.
+
 
 ### Request summary and deadlines
 
@@ -204,8 +205,8 @@ all refusal cases. No renderer/device calls appear in the expansion.
 
 ### RL2a: readable lowercase a glyph correction
 
-Status: completed upstream in 811cadd (handoff e7140be); adoption pending
-at the next step boundary. Original request, 2026-11-06. Owner: X_eTaL-libraries,
+Status: completed upstream in 811cadd (handoff e7140be), now adopted
+for the recorded live-logo gallery. Original request, 2026-11-06. Owner: X_eTaL-libraries,
 Extrusion. Needed before accepting the logo appearance and animation;
 independent of local GPU compiler work. No new language feature or font
 engine is requested.
@@ -356,19 +357,20 @@ math, geometry or image libraries where appropriate. No core-language
 addition or native renderer is requested. The MIT/provenance and CPU/GPU
 ownership rules above apply.
 
-Progress snapshot: the peer working plan accepts RL1-RL4 and the v1
-contract, and Vector3 is staged/in progress but not yet committed in the
-inspected checkout. Do not consume it as a pin until it lands. RL5-RL9
-are new local requests; upstream acknowledgment is not claimed. Existing
-RL1-RL4 delivery remains useful and must not wait for these follow-ons.
+Progress snapshot, 2026-11-06: fetched upstream main is 8bd438d.
+RL6 geometry/Scene v2 and RL5 Glass transport are committed and ready
+for adoption. RL7 is in progress with uncommitted library changes;
+consume only a committed delivery. The first glass still can use a
+pinhole camera and point lights before RL7 camera/emitter refinement.
+RL8/RL9 remain deferred.
 
 ### Follow-on summary and delivery points
 
 | ID | Library change | Needed before | Status |
 | -- | -------------- | ------------- | ------ |
-| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Requested here; owner triage pending |
-| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Requested here; owner triage pending |
-| RL7 | Deterministic pixel/lens/emitter sampling, thin-lens camera and emissive/area lights | glass-camera and final glass-render | Requested here; owner triage pending |
+| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Committed 30277f5; adoption pending |
+| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Committed 2c08dfd; adoption pending |
+| RL7 | Deterministic pixel/lens/emitter sampling, thin-lens camera and emissive/area lights | glass-camera and final glass-render | Upstream step 014 in progress; not committed |
 | RL8 | Optional floor caustics via bounded photon transport and radiance estimation | Only a separately approved caustic refinement | Deferred proposal; not a first-render blocker |
 | RL9 | Optional RGB dispersion and linear-image bloom | Only an optional finishing pass | Deferred proposal; not a first-render blocker |
 

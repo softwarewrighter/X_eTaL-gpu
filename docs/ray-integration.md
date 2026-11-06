@@ -2,9 +2,10 @@
 
 ## Committed dependencies
 
-XETAL_LIBRARIES_COMMIT pins X_eTaL-libraries 7bd8f0a, which includes
+XETAL_LIBRARIES_COMMIT pins X_eTaL-libraries e7140be, which includes
 Vector3 (RL1, 202ed3e), Extrusion (RL2, f28e7ca), Scene (RL3, 6e58863)
-and opaque RayTrace (RL4, 128e557). scripts/xetal-libraries.sh clones a committed
+and opaque RayTrace (RL4, 128e557), with readable a/e glyphs from
+RL2a (811cadd). scripts/xetal-libraries.sh clones a committed
 repository into work/xetal-libraries and refuses to replace a dirty clone.
 It never imports the sibling working tree. For an initial local clone,
 set XETAL_LIBRARIES_SOURCE to ../X_eTaL-libraries; the source still comes
@@ -76,11 +77,9 @@ rotates only the vane group around its pivot, and renders with RayTrace.
 It adapts the upstream MIT Scene logo demo without duplicating any
 geometry or rendering algorithm in the host code. The fixed X is silver;
 the _eTaL vane is copper. The camera looks toward the extruded letters.
-The lowercase a is visually unclear in the currently pinned outline.
-RL2a is fixed upstream at 811cadd (handoff e7140be), including e and
-visual glyph tests, but this compiler step keeps pin 7bd8f0a stable.
-Existing logo previews retain the old glyphs until the live-logo step
-adopts the committed correction and renders new frames.
+Earlier files named logo-cpu-256 under work/ray-integration used the
+old glyph outlines. The recorded gallery adopts RL2a at e7140be and uses
+new output paths under work/ray-live/logo; its a/e glyphs are corrected.
 The low-resolution preview has no antialiasing and is an initial scene,
 not the final animation or glass composition.
 
@@ -113,6 +112,10 @@ completely. No GPU timing or speedup is inferred from these CPU images.
 Glass rendering additionally needs the pending RL5-RL7 library work.
 
 ## Current GPU evidence, 2026-11-06
+
+This diagnostic GPU comparison used library pin 7bd8f0a and language
+pin abdd371. The recorded CPU gallery adopts the later glyph correction
+at e7140be; each recording retains its own pins and source archive.
 
 The tiny two-triangle RayTrace diagnostic now lowers all three renderer
 outputs without evaluator fallback. The pristine-source command below has now passed using the committed
@@ -259,3 +262,49 @@ RL2 extrusion and RL3 scene macros are not prerequisites for the opaque
 triangle diagnostic or local lowering work. The existing later logo and
 glass milestones retain their own library dependencies. Source/eligibility
 work can proceed without waiting for those macros.
+
+
+## Recorded logo gallery
+
+The new Ray tracing section on the GPU project's landing page links to
+[the gallery](https://softwarewrighter.github.io/X_eTaL-gpu/ray-tracing/).
+The logo entry provides a recorded WebM, individual PNG frames, render
+settings and an uncompressed ZIP containing TIFF masters and each frame's
+actual X_eTaL source. Glass and benchmark entries are marked planned;
+their thumbnail illustrations are not rendered results.
+
+```sh
+just ray-render-cpu --width 96 --height 40 --angle 0 --output work/ray-live/preview
+just ray-test-scene
+just ray-animate-cpu
+just ray-render-cpu --width 320 --height 128 --angle 0 --output work/ray-live/logo/poster
+just ray-stage-media
+just ray-test-media
+just pages
+just ray-test-page
+```
+
+The animation uses 24 frames at 160 by 64 and 6 fps, with angles
+2*pi*frame/24 and no duplicate endpoint. Frames are rendered independently
+by the CPU evaluator; four jobs are allowed, with pin/source-aware resume
+checks. No browser-side ray tracing or GPU logo timing is claimed. A
+320 by 128 still supplies the thumbnail. This first preview uses direct
+diffuse light and hard shadows via RayTrace s_hade, without reflections.
+Its WebM is a lossy web derivative; its RGB8 TIFF masters have no pixel
+compression and their ZIP entries use storage without compression.
+
+The X is centered on the vertical axis through (0,0.5,0). Only the vane
+group rotates: the original _eTaL mesh, a thin shaft and a triangular
+arrowhead, all pointing outward along local +x. X, post and floor remain
+fixed. General Extrusion and Scene functions build and transform all
+322 triangles in X_eTaL. The camera remains fixed. The geometry test
+checks the X/post/floor, pivot distances, quarter-turn direction and
+full-turn return. The library's corrected lowercase contours are used.
+
+Selected media are curated under site-assets/ray/logo so building the
+site never reruns a long animation. scripts/test-ray-media.py validates
+pins/source hashes, frame angles, PNG CRCs, exact TIFF/PNG master pixels,
+uncompressed archive entries and the decoded WebM frame count. A local
+Chromium check exercises playback, frame selection and mobile layout.
+Actual publication is verified with just check-live after deploying;
+prepared files or a branch push alone do not establish live availability.

@@ -17,9 +17,27 @@ check() { # check PATH TEXT
   if grep -qF -- "$2" <<<"$page"; then echo "ok: live $1"; else echo "FAIL: live $1 does not show: $2"; fail=1; fi
 }
 check "" "X_eTaL-gpu $head"
+check "" "Ray tracing"
+check "ray-tracing/" "Recorded CPU render"
+check "ray-tracing/" "media/logo/logo.webm"
 check "doc/index.html" "Accel"
 check "doc/libs-Accel-src-Accel.xtl.html" "The sum, item by item"
 check "doc/extensions-gpu-lib-Gpu.xtl.html" "Load an XIR program"
 check "doc/extensions-gpu-demos-offload.xtl.html" "offload"
+check_binary() {
+  remote_file="$(mktemp)"
+  if curl -sfL "$url/$1" -o "$remote_file" && python3 - "$remote_file" "$root/$2" <<'PY_HASH'
+from pathlib import Path
+import hashlib
+import sys
+assert hashlib.sha256(Path(sys.argv[1]).read_bytes()).digest() == hashlib.sha256(Path(sys.argv[2]).read_bytes()).digest()
+PY_HASH
+  then echo "ok: live $1 (verified bytes)"; else echo "FAIL: live $1 does not match built media"; fail=1; fi
+  rm -f "$remote_file"
+}
+check_binary "ray-tracing/media/logo/poster.png" "site-assets/ray/logo/poster.png"
+check_binary "ray-tracing/media/logo/logo.webm" "site-assets/ray/logo/logo.webm"
+check_binary "ray-tracing/media/logo/masters.zip" "site-assets/ray/logo/masters.zip"
+check_binary "ray-tracing/media/logo/manifest.json" "site-assets/ray/logo/manifest.json"
 [ "$fail" = 0 ] && echo "check-live: ok ($url, main $head)"
 exit "$fail"

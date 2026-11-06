@@ -18,6 +18,8 @@ cd "$root"
 "$root/scripts/selftest-libs.sh"
 "$root/scripts/test-libs.sh"
 python3 "$root/scripts/test-ray-image.py"
+python3 "$root/scripts/test-ray-scene.py"
+python3 "$root/scripts/test-ray-media.py"
 "$root/scripts/ray-check-cpu.sh"
 if [ -f "$root/components/Cargo.toml" ]; then
   (cd "$root/components" && cargo fmt --all --check) || { echo "FAIL: cargo fmt (run: cd components && cargo fmt --all)"; exit 1; }

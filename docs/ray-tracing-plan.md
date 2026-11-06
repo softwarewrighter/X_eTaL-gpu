@@ -33,7 +33,10 @@ pinned at handoff 7bd8f0a. A reproducible CPU logo TIFF/PNG is available
 with just ray-render-cpu. The tiny 4x4 diagnostic now agrees on XIR CPU and RTX OpenCL, including
 its guards, shadows and one reflection. Larger scenes and changed render
 inputs still need integration/performance validation. The readable a/e
-fix is committed upstream at 811cadd and will be adopted next. See [ray-integration.md](ray-integration.md)
+fix from 811cadd is now adopted at e7140be for the recorded gallery.
+The first gallery animation uses CPU frames, an outward shaft/arrowhead
+and the correct pivot through stationary X. Glass and benchmark entries
+remain planned; see the recorded-gallery section in ray-integration.md. See [ray-integration.md](ray-integration.md)
 for evidence and reproducible CPU checks. Local adoption/source/device/
 image work is prioritized before remaining Mojo/ML steps; it does not
 wait for the extrusion or scene macros.

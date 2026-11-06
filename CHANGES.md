@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 15:12 `feat` Add a Ray tracing thumbnail section and recorded-demo gallery with a 24-frame CPU weather-vane animation, corrected glyphs, fixed X/pivot/shaft/arrow geometry, browser-playable WebM, PNG inspection and uncompressed TIFF/source masters. Validate actual geometry, media/provenance and desktop/mobile playback; record newly committed RL6/RL5 and in-progress RL7.
+
 - 12:46 `build` Adopt committed X_eTaL-libraries e7140be for the readable a/e glyph correction at the live-logo step boundary; all eleven pinned CPU checks pass unchanged against their upstream baselines.
 
 - 12:41 `chore` Record completed runtime guards and first pristine-source RTX ray-tracing equivalence; next is the live CPU logo animation with corrected glyphs.

@@ -1,18 +1,28 @@
 #!/usr/bin/env xetal
-## CPU/GPU-independent logo scene using committed Scene and RayTrace libraries.
-## Scene declaration adapted from X_eTaL-libraries Scene demo, MIT, 7bd8f0a.
+## Original weather-vane scene; all geometry, transforms and shading run in X_eTaL.
+## General Scene/Extrusion/RayTrace libraries, MIT, pinned by XETAL_LIBRARIES_COMMIT.
 "sc:" u_se< "Scene"
+"ex:" u_se< "Extrusion"
 "rt:" u_se< "RayTrace"
-"logo" sc:s_cene< "# References precede their declarations.\ngroup fixed objects x\ngroup vane objects tail pivot 1.2 0 0\nobject x extrude X depth .3 material silver\nobject tail extrude _eTaL depth .2 material copper position 1.2 0 0\nmaterial copper color .8 .3 .1 reflection .2\nmaterial silver color .8 .8 .85 reflection .3\nlight key position 2 5 8 color 200 200 200\ncamera eye 3.3 .4 10 target 3.3 .4 0 up 0 1 0 fov .18\n"
-width := 64
-height := 16
-angle := 0.35
+"logo" sc:s_cene< "group fixed objects x\ngroup vane objects tail pivot 0 0.5 0\nobject x extrude X depth 0.4 material silver position -0.5 0 0\nobject tail extrude _eTaL depth 0.24 material copper position 0.9 0.55 0\nmaterial silver color 0.65 0.75 0.9 reflection 0\nmaterial copper color 0.8 0.32 0.1 reflection 0\nmaterial brass color 0.85 0.58 0.18 reflection 0\nmaterial floor color 0.09 0.12 0.18 reflection 0\nlight key position -3 8 12 color 850 800 750\ncamera eye 8 5 20 target 0 0.5 0 up 0 1 0 fov 0.30\n"
+width := 160
+height := 64
+angle := 0.0
+## Shaft and arrow point along +x in the vane's local frame.
+shaft := 0.16 ex:e_xtrude o_\ 4 2 r_eshape 0.2 0.36  6.4 0.36  6.4 0.46  0.2 0.46
+head := 0.24 ex:e_xtrude o_\ 3 2 r_eshape 6.2 0.02  7.2 0.41  6.2 0.8
+post := 0.18 ex:e_xtrude o_\ 4 2 r_eshape -0.08 -0.2  0.08 -0.2  0.08 0.5  -0.08 0.5
+floor := 2 3 3 r_eshape -8.0 -0.2 -8.0  8.0 -0.2 8.0  8.0 -0.2 -8.0  -8.0 -0.2 -8.0  -8.0 -0.2 8.0  8.0 -0.2 8.0
+base := logotriangles c_at shaft c_at head c_at post c_at floor
+materials := logomaterialids c_at ((t_ally shaft) r_eshape 3) c_at ((t_ally head) r_eshape 3) c_at ((t_ally post) r_eshape 1) c_at 2 r_eshape 4
+groups := logogroupids c_at ((t_ally shaft) r_eshape 3) c_at ((t_ally head) r_eshape 3) c_at ((t_ally post) r_eshape 2) c_at 2 r_eshape 1
 transforms := (((logopivots sc:r_otateGroup 3)_ angle)_ logotransforms)
-triangles := ((logotriangles sc:a_pplyGroups logogroupids)_ transforms)
+triangles := ((base sc:a_pplyGroups groups)_ transforms)
 pixels := r_ange (width * height)
 origins := logocamera rt:o_rigins (width * height)
 directions := ((logocamera rt:r_ays (width c_at height))_ pixels)
 clip := 1e-6 100.0 1e-10 1e-5
-environment := 2 3 r_eshape 0.05 0.05 0.05  0.01 0.02 0.04
-linear := (((((((clip rt:r_ender triangles)_ logomaterialids)_ logomaterials)_ logolights)_ environment)_ origins)_ directions)
+environment := 2 3 r_eshape 0.08 0.09 0.12  0.025 0.03 0.045
+## Direct diffuse light and hard shadows for this first CPU animation.
+linear := (((((((clip rt:s_hade triangles)_ materials)_ logomaterials)_ logolights)_ environment)_ origins)_ directions)
 1.0 rt:s_rgb linear

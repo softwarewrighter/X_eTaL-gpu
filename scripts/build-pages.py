@@ -12,6 +12,8 @@ import html
 import subprocess
 from pathlib import Path
 
+import ray_site
+
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/softwarewrighter/X_eTaL-gpu"
 
@@ -74,6 +76,8 @@ h2 {{ font-size: 1.2rem; margin: 32px 0 10px; }}
 a {{ color: var(--accent); }}
 .grid {{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; }}
 .card {{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; }}
+.ray-cards a {{ text-decoration:none; }}
+.ray-cards img,.ray-cards svg {{ width:100%; height:auto; aspect-ratio:2.5; border-radius:6px; background:#202c40; }}
 .card h3 {{ margin:0; font-size:1.05rem; }}
 .card p {{ margin:0; color:var(--muted); }}
 .card .go {{ margin-top:auto; font-weight:600; }}
@@ -100,6 +104,8 @@ footer {{ border-top:1px solid var(--line); margin-top: 40px; padding-top:16px; 
 <h1>X_eTaL on GPUs</h1>
 <p class="lede"><a href="https://github.com/softwarewrighter/X_eTaL">X_eTaL</a> states a computation as whole-array operations, which already expose their parallelism. This repository runs the same typed X_eTaL programs on GPUs through OpenCL C 1.2, on old and new cards alike (a Kepler Quadro and Maxwell and Pascal Teslas that the newest CUDA toolkits retire, Turing to Blackwell, and Apple silicon), and proves every answer against the X_eTaL evaluator. The goal is the concept, not speed.</p>
 </header>
+
+{ray_section}
 
 <h2>What runs today</h2>
 <p class="cap">X_eTaL source, lowered. Every example program is lowered from its own <code>.xtl</code> by this repository's translator, which takes the program's Core (libraries included) from X_eTaL's own crates and builds the program the device runs; the checks prove each one gives the evaluator's output, exactly on the interpreter and within f32's tolerance on the GPU. The hand-written twins that stood in until 2026-10-13 were the translator's oracle and are gone. X_eTaL-ML's own programs run the same way, unchanged: its benchmarks, the world model, the digit reader, the denoiser and the tiny GPT, each lowered from its source (<a href="{repo}/blob/main/docs/ml-results.md">docs/ml-results.md</a>); what the device cannot take, the evaluator computes. A second backend of the same IR, Mojo (<a href="{repo}/blob/main/components/mojo/README.md">components/mojo</a>), runs all thirteen example programs on the M1 Max through Metal (2026-10-26: every IR operation, products tiled when the schedule asks) and all thirteen on the RTX 5060 Ti through the CUDA driver (2026-11-06; untiled and tile size 8). The lowering belongs to X_eTaL in the end (<a href="{repo}/blob/main/docs/xetal-asks.md">asks G1 and G2</a>).</p>
@@ -157,6 +163,7 @@ Built from <a href="{repo}/commit/{commit}">X_eTaL-gpu {commit}</a>, with X_eTaL
 
 
 def main():
+    ray_site.build()
     lines = "\n".join(
         f'<p class="cap">{html.escape(cap)}</p>\n<div class="xline">{render(code)}</div>' for cap, code in LINES
     )
@@ -166,7 +173,7 @@ def main():
         f'<div class="xline">{render(src)}</div>\n<pre class="flow wrap">{html.escape(made)}</pre>' for src, made in macro_expansions()
     )
     out.write_text(PAGE.format(
-        lines=lines, macro=macro, repo=REPO, commit=git("rev-parse", "--short", "HEAD"),
+        lines=lines, macro=macro, ray_section=ray_site.cards(), repo=REPO, commit=git("rev-parse", "--short", "HEAD"),
         xetal=(ROOT / "XETAL_COMMIT").read_text()[:7], ext=(ROOT / "XETAL_EXTENSIONS_COMMIT").read_text()[:7]))
     print(f"pages: {out.relative_to(ROOT)}")
 

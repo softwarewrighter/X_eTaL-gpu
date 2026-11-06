@@ -27,6 +27,26 @@ ray-check-device device="opencl:0":
 ray-render-cpu *args:
     python3 scripts/ray-render-cpu.py {{args}}
 
+# Render a seamless low-resolution CPU vane recording and TIFF master frames
+ray-animate-cpu *args:
+    python3 scripts/ray-animate-cpu.py {{args}}
+
+# Curate completed rendered media as reproducible inputs to the published gallery
+ray-stage-media:
+    python3 scripts/stage-ray-media.py
+
+# Verify stationary X, correct rotation pivot and a seamless full turn
+ray-test-scene:
+    python3 scripts/test-ray-scene.py
+
+# Check curated video/master pixels and provenance
+ray-test-media:
+    python3 scripts/test-ray-media.py
+
+# Check the built gallery in installed Chromium
+ray-test-page *args:
+    python3 scripts/test-ray-page.py {{args}}
+
 # Validate host pixel encoding without running a renderer
 ray-test-image:
     python3 scripts/test-ray-image.py

@@ -517,18 +517,20 @@ demos.
 The user requires three entries on the existing live-demo site. Publish
 incrementally with backend/settings/pin provenance, uncompressed masters
 and compressed browser derivatives. Playback of rendered frames must not
-be labeled browser-side ray tracing. No entry is live yet.
+be labeled browser-side ray tracing. The logo entry is a recorded CPU animation; publication is checked
+with just check-live. Glass and benchmark are planned.
 
 | Entry | Next work | Dependencies |
 | ----- | --------- | ------------ |
-| Logo vane | Adopt committed RL2a, put the pivot through stationary X, add outward shaft/arrowhead, render a short rotating _eTaL sequence and publish | General geometry/Scene/RayTrace already delivered; CPU frames need no further GPU work |
+| Logo vane | Recorded CPU preview with corrected glyphs, pivot through X, shaft/arrowhead and uncompressed masters; GPU/quality work remains | General geometry/Scene/RayTrace already delivered; CPU frames need no further GPU work |
 | Benchmark | Convert a licensed Cornell Box subset, match reference settings, show side-by-side supported-feature comparisons and publish | Geometry/direct-light baseline first; full Cornell color bleeding needs indirect diffuse transport |
-| Glass reference | Render original spheres/crystals/floor composition and publish | RL6 geometry, RL5 transport; RL7 for area lighting and depth of field |
+| Glass reference | Adopt committed geometry/transport, render original spheres/crystals/floor composition and publish | RL6 and RL5 delivered; RL7 in progress for area lighting and depth of field |
 
 The live-logo step is next after runtime guards, before the remaining
-source/device/image steps and unrelated Mojo/ML backlog. The benchmark
-entry follows device/image integration; live glass follows the glass
-render milestones. Logo animation/layout can proceed on CPU while GPU
-scaling is improved. The earlier live Pages deployment failure must be
+source/device/image steps and unrelated Mojo/ML backlog. With RL6 and RL5 now committed, initial glass composition/transport/render
+and live publication follow the logo. The benchmark entry follows that
+initial glass release, before unrelated GPU/ML work. RL7 camera/sampling
+refinement and final matched CPU/GPU validation remain separate milestones.
+CPU previews can publish while GPU scaling is improved. The earlier live Pages deployment failure must be
 checked when publishing; a pushed gh-pages branch is not proof of a live
 successful deployment.

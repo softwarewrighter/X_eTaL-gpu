@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ray tracing demos | X_eTaL on GPUs</title>
+<meta name="description" content="Recorded ray-tracing demos computed by X_eTaL: a stationary X and rotating lettered vane, with glass and benchmark scenes planned.">
+<style>
+:root{color-scheme:light dark;--bg:#fbfaf7;--fg:#1d1d1f;--muted:#5f6368;--card:#fff;--line:#e3e0d8;--accent:#2457c5}
+@media(prefers-color-scheme:dark){:root{--bg:#141518;--fg:#e8e6e3;--muted:#a0a4ab;--card:#1d1f23;--line:#30333a;--accent:#8fb0ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,sans-serif}
+main{max-width:980px;margin:auto;padding:24px 18px 64px}a{color:var(--accent)}h1{line-height:1.2;margin:20px 0 8px}h2{margin-top:0}p{max-width:70ch}
+.muted{color:var(--muted)}nav{display:flex;gap:18px;flex-wrap:wrap}section{margin-top:28px;padding:22px;background:var(--card);border:1px solid var(--line);border-radius:12px;scroll-margin-top:16px}
+.badge{display:inline-block;padding:3px 10px;border:1px solid var(--line);border-radius:20px;font-size:.85rem;margin-bottom:12px}
+video,.frame-image{display:block;width:100%;height:auto;background:#202c40;border-radius:8px;aspect-ratio:@@WIDTH@@ / @@HEIGHT@@}.frame-image{image-rendering:pixelated}
+.links{display:flex;gap:12px 22px;flex-wrap:wrap;margin:14px 0}.links a{font-weight:600}details{margin-top:18px}summary{cursor:pointer;font-weight:600}label{display:block;margin:12px 0}input[type=range]{width:min(100%,600px)}output{display:inline-block;min-width:50px}
+.planned{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:center}.planned img{width:160px;height:64px;border-radius:6px}code{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem}footer{margin-top:32px;color:var(--muted);font-size:.9rem}
+@media(max-width:540px){section{padding:15px}.planned{grid-template-columns:1fr}.planned img{width:100%;height:auto;max-width:320px}}
+</style>
+</head>
+<body><main>
+<nav aria-label="Ray tracing navigation"><a href="../#ray-tracing">X_eTaL on GPUs</a><a href="#logo">Logo vane</a><a href="#glass">Glass</a><a href="#benchmark">Benchmark</a></nav>
+<h1>Ray tracing</h1>
+<p class="muted">Demos and recorded videos from X_eTaL scene programs. The first animation is ready; the glass and benchmark scenes are in development.</p>
+<section id="logo" aria-labelledby="logo-title">
+<span class="badge">Recorded CPU render</span>
+<h2 id="logo-title">A fixed X and a rotating _eTaL vane</h2>
+<p>The silver X stays still. The copper letters, shaft and arrowhead turn together around its vertical axis. The camera, post and floor stay fixed.</p>
+<video id="logo-video" controls loop muted playsinline preload="metadata" poster="media/logo/poster.png" width="@@WIDTH@@" height="@@HEIGHT@@" aria-label="Recorded X_eTaL weather-vane animation">
+<source src="media/logo/logo.webm" type="video/webm">Your browser cannot play this video. <a href="media/logo/logo.webm">Download the WebM recording</a> or inspect the PNG frames below.
+</video>
+<p class="muted">@@FRAMES@@ frames &middot; @@WIDTH@@ &times; @@HEIGHT@@ pixels &middot; @@FPS@@ fps. This is a low-resolution CPU preview, with a point light and hard shadows. It plays recorded pixels; the browser does not trace rays. Letter backs naturally appear reversed during the turn.</p>
+<div class="links"><a href="media/logo/logo.webm" download>Download video</a><a href="media/logo/poster.png">Larger PNG still</a><a href="media/logo/masters.zip" download>Uncompressed TIFF masters + source</a><a href="media/logo/manifest.json">Render settings</a><a href="#scene-source">Scene source</a></div>
+<details><summary>Inspect individual rendered frames</summary>
+<label for="frame">Vane angle: <output id="angle" for="frame">0 degrees</output></label>
+<input id="frame" type="range" min="0" max="@@LAST@@" step="1" value="0">
+<img id="frame-image" class="frame-image" src="media/logo/frames/frame-000.png" width="@@WIDTH@@" height="@@HEIGHT@@" alt="Ray-traced vane at zero degrees">
+<a id="frame-download" href="media/logo/frames/frame-000.png" download>Download this PNG frame</a>
+</details>
+<details id="scene-source"><summary>Scene source used for this recording</summary><pre><code>@@SOURCE@@</code></pre><a href="media/logo/scene.xtl" download>Download scene</a></details>
+<p class="muted">Computed by the X_eTaL CPU evaluator, using shared Scene, Extrusion and RayTrace libraries. Language pin <code>@@XETAL@@</code>; library pin <code>@@LIBRARIES@@</code>. Reproduce with <code>just ray-animate-cpu</code>. The separate tiny two-triangle diagnostic agrees on CPU and RTX OpenCL; this animation is a CPU result.</p>
+</section>
+<section id="glass" class="planned" aria-labelledby="glass-title">
+<img src="glass.svg" alt="Illustration of the planned glass sphere and crystal scene">
+<div><span class="badge">Planned</span><h2 id="glass-title">Glass spheres and crystals</h2><p>An original scene inspired by the supplied block-ray-tracing reference. Geometry and glass-transport libraries have landed. Scene integration and rendering are next; there is no glass recording here yet.</p><a href="@@REPO@@/blob/main/docs/glass-scene-plan.md">Scene plan and dependencies</a></div>
+</section>
+<section id="benchmark" class="planned" aria-labelledby="benchmark-title">
+<img src="benchmark.svg" alt="Illustration of the planned Cornell Box test scene">
+<div><span class="badge">Planned</span><h2 id="benchmark-title">Test / benchmark scene</h2><p>A Cornell Box comparison will use matched scene and camera settings, with reference and X_eTaL renders side by side. Conversion and rendering are pending. The illustration is not a ray-traced result.</p><a href="@@REPO@@/blob/main/docs/ray-tracing-plan.md">Validation plan</a></div>
+</section>
+<footer>The masters are RGB8 TIFF with no pixel compression, stored in an uncompressed ZIP archive. The WebM is a smaller, lossy web derivative. Geometry and shading are computed in X_eTaL; the host only encodes the images and recording.</footer>
+<script id="render-data" type="application/json">@@DATA@@</script>
+<script>
+const data=JSON.parse(document.getElementById('render-data').textContent);
+const video=document.getElementById('logo-video');
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches)video.play().catch(()=>{});
+document.getElementById('frame').addEventListener('input',event=>{
+  const index=Number(event.target.value),degrees=Math.round(data.frames[index].angle_radians*180/Math.PI);
+  const path='media/logo/frames/frame-'+String(index).padStart(3,'0')+'.png';
+  video.pause();video.currentTime=index/data.fps;
+  document.getElementById('angle').value=degrees+' degrees';
+  const image=document.getElementById('frame-image');image.src=path;image.alt='Ray-traced vane at '+degrees+' degrees';
+  document.getElementById('frame-download').href=path;
+});
+</script>
+</main></body></html>

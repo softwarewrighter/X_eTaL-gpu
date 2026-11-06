@@ -353,11 +353,12 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   facade, their `##` comments and running examples, every name
   linked (`just pages` builds it into `pages/`, `just publish`
   publishes it, `just check-live` checks it)
-- `just ray-render-cpu` writes an initial CPU logo as uncompressed TIFF
-  and a PNG preview under `work/ray-integration/`; use `--width 256
-  --height 64` for a larger still. The tiny 4x4 diagnostic now agrees on CPU and RTX OpenCL; larger
-  GPU scene validation is pending. The lowercase a needs the
-  committed RL2a glyph correction to be adopted in the next step.
+- [Ray tracing demos and recordings](https://softwarewrighter.github.io/X_eTaL-gpu/ray-tracing/)
+  provide the first CPU logo animation with corrected glyphs, PNG frames
+  and uncompressed TIFF masters. Glass and benchmark scenes remain planned.
+  Reproduce with `just ray-animate-cpu`; `just ray-render-cpu` makes a still.
+  The tiny diagnostic agrees on CPU and RTX OpenCL; larger GPU scenes
+  still need scaling and validation.
 - [Ray integration status](docs/ray-integration.md) -- committed library
   adoption, CPU diagnostic evidence, tested GPU boolean maps and remaining
   renderer validation gaps; shape guards, boolean reductions and array

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run the X_eTaL logo on CPU; encode its pixels as uncompressed TIFF and PNG."""
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -42,8 +43,8 @@ def png(width, height, pixels):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--width", type=int, default=64)
-    parser.add_argument("--height", type=int, default=16)
+    parser.add_argument("--width", type=int, default=96)
+    parser.add_argument("--height", type=int, default=40)
     parser.add_argument("--angle", type=float, default=0.35, help="vane angle in radians")
     parser.add_argument("--output", type=Path, default=ROOT / "work/ray-integration/logo-cpu")
     args = parser.parse_args()
@@ -56,6 +57,7 @@ def main():
     import os
     env = dict(os.environ, XETAL_PATH=":".join(str(p) for p in sorted(libraries.glob("libs/*/src"))))
     source = (ROOT / "examples/ray/logo.xtl").read_text()
+    scene_sha256 = hashlib.sha256(source.encode()).hexdigest()
     for name, value in [("width", args.width), ("height", args.height), ("angle", args.angle)]:
         source = "\n".join(f"{name} := {value}" if line.startswith(f"{name} := ") else line for line in source.splitlines()) + "\n"
     prefix = args.output.resolve()
@@ -73,7 +75,8 @@ def main():
     Path(str(prefix) + ".out").write_text(result.stdout)
     write_tiff(Path(str(prefix) + ".tif"), args.width, args.height, pixels)
     Path(str(prefix) + ".png").write_bytes(png(args.width, args.height, pixels))
-    metadata = dict(backend="X_eTaL CPU evaluator", width=args.width, height=args.height,
+    metadata = dict(backend="X_eTaL CPU evaluator", scene_sha256=scene_sha256,
+                    source_sha256=hashlib.sha256(source.encode()).hexdigest(), width=args.width, height=args.height,
                     angle_radians=args.angle, render_seconds=elapsed, compression="None (TIFF)",
                     xetal=(ROOT / "XETAL_COMMIT").read_text().strip(),
                     libraries=(ROOT / "XETAL_LIBRARIES_COMMIT").read_text().strip())
