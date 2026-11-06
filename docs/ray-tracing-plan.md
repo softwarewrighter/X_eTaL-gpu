@@ -151,6 +151,18 @@ precision for a strict backend speedup; label evaluator f64 versus GPU f32
 comparisons. Report speedup as CPU time / GPU time, including slowdowns.
 Sweep small to larger resolutions; do not assume a crossover exists.
 
+## Second scene: glass spheres and crystals
+
+After the initial renderer/logo work, build the reference-inspired still
+in [glass-scene-plan.md](glass-scene-plan.md): clear spheres and faceted
+crystals, dark reflective floor, bright panels and shallow focus. This
+is a staged extension, not a claim that v1 renders glass. Library asks
+RL5-RL7 add compatible v2 optics, geometry, camera and light support;
+RL8/RL9 are optional caustic/finishing proposals and do not block the
+first glass image. The same X_eTaL source, deterministic samples and
+settings run on CPU/GPU and produce uncompressed TIFF. Existing v1
+materials, logo milestones and library asks remain unchanged.
+
 ## Implementation sequence and acceptance
 
 These are the ray-tracing workstream within the existing active saga;

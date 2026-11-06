@@ -280,6 +280,197 @@ repo supplies documented exports, pinned types and evaluator baselines;
 this repo proves the same source lowers and agrees on GPU and CPU, with
 stated tolerances and measured timing. Upstream need not own GPU tests.
 
+## Glass-scene follow-on requests, 2026-11-06
+
+The user requested the reference-inspired glass render described in
+[glass-scene-plan.md](glass-scene-plan.md). RL5-RL7 are requested here for
+owner triage and are required for that milestone. RL8/RL9 are deferred
+refinements, not prerequisites or approved extra packages. All belong in
+X_eTaL-libraries as compatible additions to RayTrace/Scene and existing
+math, geometry or image libraries where appropriate. No core-language
+addition or native renderer is requested. The MIT/provenance and CPU/GPU
+ownership rules above apply.
+
+Progress snapshot: the peer working plan accepts RL1-RL4 and the v1
+contract, and Vector3 is staged/in progress but not yet committed in the
+inspected checkout. Do not consume it as a pin until it lands. RL5-RL9
+are new local requests; upstream acknowledgment is not claimed. Existing
+RL1-RL4 delivery remains useful and must not wait for these follow-ons.
+
+### Follow-on summary and delivery points
+
+| ID | Library change | Needed before | Status |
+| -- | -------------- | ------------- | ------ |
+| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Requested here; owner triage pending |
+| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Requested here; owner triage pending |
+| RL7 | Deterministic pixel/lens/emitter sampling, thin-lens camera and emissive/area lights | glass-camera and final glass-render | Requested here; owner triage pending |
+| RL8 | Optional floor caustics via bounded photon transport and radiance estimation | Only a separately approved caustic refinement | Deferred proposal; not a first-render blocker |
+| RL9 | Optional RGB dispersion and linear-image bloom | Only an optional finishing pass | Deferred proposal; not a first-render blocker |
+
+### Compatible v2 schema proposal
+
+Keep v1 materials M by 4, camera length 10, triangle arrays and point
+lights valid, with their original meanings. A v2 constructor/macro emits
+an explicit version and additional separate arrays; a v1 adapter provides
+opaque defaults. Do not infer the version by silently reinterpreting an
+old column. The library owner should finalize and test this contract
+before independent Scene and RayTrace changes land.
+
+| Added array | Proposed shape/type | Meaning |
+| ----------- | ------------------- | ------- |
+| sceneversion | scalar Int | 2 for the extended contract |
+| materialkind | M Int | Opaque or dielectric tag, declared constants |
+| optics | M by 5 Float | Transmission blend weight, positive IOR, nonnegative absorption coefficients RGB per scene unit |
+| emission | M by 3 Float | Nonnegative linear emitted radiance, may exceed 1 |
+| spheres | S by 4 Float | Center xyz and positive radius |
+| spherematerialids, spheregroupids | S Int each | Material and rigid transform group IDs |
+| triangleobjectids, sphereobjectids | T Int and S Int | Closed-object identity for entry/exit; multiple faces of one crystal share an object ID |
+| triangleids, sphereids | T Int and S Int | Unique global primitive IDs in declaration order for stable mixed-geometry ties |
+| lens | 2 Float | Aperture radius and positive focus distance; zero radius is pinhole |
+| emitters | E by 3 by 3 Float | Rectangle origin, span vector u, span vector v |
+| emitterradiance | E by 3 Float | Emitted linear RGB radiance, with orientation and visibility defined |
+
+Opaque v1 defaults: no transmission, no absorption, no emission, pinhole
+camera and no analytic spheres or area emitters. Existing opaque reflection
+weights retain their meaning. For dielectrics, document an energy-consistent
+blend of the opaque and dielectric lobes; the dielectric Fresnel reflected
+and transmitted weights sum to one for a lossless interface. Do not add
+an independent full-strength reflection on top of full transmission.
+
+IDs remain Int and zero remains the miss/no-medium sentinel. Active-ray
+medium IDs, hit kind/local index, throughput, direction, origin and sample
+identity are runtime arrays, not encoded inside colors. V1 opaque faces
+need no closed-volume identity; v2 dielectric faces require one. All APIs
+state shapes, units, defaults and malformed-input diagnostics. Geometry
+kind dispatch is ordinary X_eTaL code, not a new language primitive.
+
+### RL5: glass transport and material functions
+
+Extend the ordinary RL4 renderer with reflection and Snell refraction,
+Fresnel interface weights, total internal reflection and distance-based
+Beer-Lambert absorption. Start with air (IOR 1) and non-overlapping,
+non-nested closed glass objects. Track entry/exit using geometric and
+oriented normals plus object identity. Refuse unsupported nested or
+interpenetrating glass during shared scene preflight; do not guess the
+medium from material ID when several objects share one material.
+
+Use finite masked denominators and clamp roundoff only within documented
+numeric tolerances. At total internal reflection, return a reflection
+path and an explicit invalid-transmission mask without sqrt of a negative
+value. Define offsets, near/far clipping and interactions beginning inside
+a supported medium. Document transparent shadow treatment: an optional
+straight-segment attenuation approximation must be labeled and must not
+be presented as refracted caustic illumination.
+
+Multiple interactions must use bounded arrays and a fixed cap, not
+unbounded recursion or exponential reflection/transmission splitting.
+Prefer deterministic sample-indexed selection between weighted lobes for
+production, with the estimator and throughput compensation documented.
+A small deterministic branch-both oracle is acceptable for analytical
+tests. State the radiance/importance convention and refractive IOR factors
+in throughput; sampling probabilities alone are not a radiance model.
+Preserve the v1 one-reflection entry point and its baselines.
+
+Acceptance: normal-incidence air/glass IOR 1.5 reflectance is 0.04;
+normal transmission preserves direction; Snell transmission for incidence
+pi/6 has sin(theta_t)=1/3. An internal glass-to-air ray at pi/3 totally
+reflects. Test finite results, Fresnel bounds/energy, entry/exit through a
+sphere and slab, correct medium reset, absorption exp(-sigma*d), offsets,
+clipping, interaction caps and fixed-seed repeatability. Compare tiny
+images at increasing caps and record truncation effects. The GPU repo
+handles lowering and execution tests for these existing array operations.
+
+### RL6: geometry and scene macro extensions
+
+Add ordinary analytic sphere intersection and normal functions, plus
+closed convex polyhedron constructors, initially an octahedron and box.
+Reuse RL2 mesh validation/extrusion and RL1 transforms where suitable;
+closed crystals stay triangles. Analytic spheres avoid high triangle
+counts and flat-normal artifacts without a renderer-specific primitive.
+Rigid group transforms preserve sphere radius; bake static positive
+uniform scale into the radius or reject unsupported transforms.
+
+Extend the RL3 macro/constructors for sphere, closed-polyhedron and
+v2 dielectric material declarations. Support a finite floor rectangle
+using existing triangles. Assign object IDs separately from material IDs
+and global primitive IDs separately from per-kind positions. The nearest
+hit across spheres and triangles uses distance then smallest global ID,
+independent of batches/traversal order. Retain v1 syntax and expansion
+behavior with explicit v2 opt-in.
+
+Validate finite/positive radii, mesh closure, winding and degenerate faces.
+Macro validation can fold static geometry, but ordinary constructors must
+perform equivalent checks for dynamically supplied data. Do not introduce
+an arbitrary geometry scripting language or a font/CSG dependency.
+
+Acceptance: unit sphere at origin, ray (0,0,3) along (0,0,-1), nearest
+t=2 and normal (0,0,1); ray from its center exits at t=1; test tangent,
+miss, unnormalized directions with documented t units, clipping and
+transforms. Test mixed sphere/triangle ties and chunk equivalence. Closed
+polyhedra have consistent outward normals and edge pairing. Pin macro
+expansions and compare with ordinary constructors; v1 goldens stay valid.
+
+### RL7: camera, emitter and deterministic sampling support
+
+Add sample generation indexed by pixel, sample number, interaction,
+dimension and seed, with a documented integer algorithm. The sequence
+must be independent of thread order, chunk size and device scheduling.
+Reuse any existing suitable sampling functions instead of a second RNG.
+Expose arrays so CPU/GPU can receive identical sample data; any generator
+run during rendering remains X_eTaL, not host rendering code.
+
+Extend the pinhole camera with a thin lens: focus distance along the
+camera forward axis, aperture radius in scene units, and uniform-disk lens
+samples. Focus is a shared render parameter. Add finite rectangular area
+emitters and visible emissive geometry, with sidedness, radiance units,
+sampling density and visibility/shadow weights stated. Reuse scene material
+emission for reflection panels. No bloom is required for a bright panel
+to appear in a glass reflection.
+
+Acceptance: aperture radius zero reproduces the pinhole rays, invalid
+radius/focus refuses, rays for one film sample meet its chosen focal-plane
+point, and a known nearer/farther object blurs as aperture grows. Integer
+sample sequences are exact; Float conversions use documented precision.
+Chunked samples match unchunked samples. Refuse zero-area/invalid emitters;
+check constant-radiance sampling weights and repeatability, soft-shadow
+convergence and emissive reflection through tiny scenes. Pin CPU outputs,
+export types, macro expansion and new refusals; GPU comparisons live here.
+
+### RL8: deferred caustic library addition
+
+If the initial image needs concentrated illumination beneath glass,
+request a separate light-to-surface photon pass and floor radiance
+estimator, using the same RL5 optics and scene. Start with a finite planar
+receiver and a bounded photon budget; keep photon positions, power and
+IDs as arrays. Both photon tracing and camera shading remain X_eTaL.
+Do not treat a texture decal or painted highlight as a physical caustic.
+
+Specify estimator radius/kernel, normalization, sampling, fixed seeds and
+memory bounds. Use deterministic chunked accumulation for the small CPU
+oracle; GPU reduction order may differ only within recorded tolerances.
+A spatial index is a measured follow-on optimization, not a core-language
+ask or an implicit prerequisite for the first image. Test a glass slab,
+symmetric focusing case, emitted/deposited energy accounting, chunk
+agreement and convergence as photon count grows. Queue implementation only
+after reviewing the first glass render and its cost.
+
+### RL9: deferred dispersion and image finishing
+
+Optional RGB-channel IOR parameters can create approximate rainbow edges;
+label this RGB dispersion, not full spectral transport. Preserve a single
+IOR mode and account for the extra path cost. Verify identical channel
+IORs reproduce the non-dispersive result, all paths remain finite, and
+CPU/GPU use the same channel/sample mapping.
+
+If bloom is desired, reuse or add a general linear-image filter with
+threshold, normalized kernel and strength as explicit parameters. Keep
+an effect-disabled identity test, constant-image/filter tests, finite
+results, documented border handling, exposure order and CPU/GPU agreement.
+Apply it to linear pixels before display transfer, in shared X_eTaL.
+An optional thin emissive rod is scene geometry; do not label it a
+volumetric shaft. Full spectral rendering, volumetric transport and
+lens diffraction/starbursts are not requested for this milestone.
+
 ## Delivery and adoption
 
 Implement in dependency order RL1, the RL4 diagnostic renderer, then RL2

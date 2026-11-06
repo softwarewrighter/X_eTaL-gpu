@@ -355,6 +355,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   publishes it, `just check-live` checks it)
 - [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
   libraries and macros versus GPU-specific integration
+- [Glass scene plan](docs/glass-scene-plan.md) -- planned glass spheres,
+  faceted crystals, optics/library extensions and CPU/GPU still rendering
 - [Ray tracing plan](docs/ray-tracing-plan.md) -- planned shared X_eTaL
   CPU/GPU renderer, uncompressed TIFF output and rotating logo
 - [`docs/plan.md`](docs/plan.md) -- architecture decisions, the

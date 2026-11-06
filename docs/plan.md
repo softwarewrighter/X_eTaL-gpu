@@ -179,6 +179,11 @@ library repositories; GPU implementation and integration stay here.
 [Library asks and ownership](xetal-libraries-ask.md) records the audit.
 The approved scene/extrusion macro design is requested there as RL1 to
 RL4, with acceptance tests and deadlines by renderer/logo milestone.
+A second still-image milestone, [glass-scene-plan.md](glass-scene-plan.md),
+plans the user's glass-sphere/crystal reference after the ray steps.
+RL5-RL7 are required compatible library extensions; RL8/RL9 are deferred
+effects. Four glass-prefixed steps cover composition, optics, camera and
+final CPU/GPU rendering; no new language feature is planned.
 
 ## Asks from other repositories
 
