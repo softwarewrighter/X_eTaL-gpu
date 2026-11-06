@@ -184,6 +184,10 @@ plans the user's glass-sphere/crystal reference after the ray steps.
 RL5-RL7 are required compatible library extensions; RL8/RL9 are deferred
 effects. Four glass-prefixed steps cover composition, optics, camera and
 final CPU/GPU rendering; no new language feature is planned.
+Integration has begun: [ray-integration.md](ray-integration.md) records
+the committed library pin, CPU diagnostic and local lowering blockers.
+Language compatibility and ray adoption/source/device/image steps now
+precede the remaining Mojo/ML steps; the macro work does not block them.
 
 ## Asks from other repositories
 

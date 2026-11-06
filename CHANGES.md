@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 10:05 `build` Add a committed X_eTaL-libraries pin and clean clone recipe plus seven exact Vector3/RayTrace CPU checks; record the CPU TIFF preview and honest n_ot/validation GPU refusal, and prioritize local ray integration ahead of remaining Mojo/ML work. Requires the accompanying evaluator pin update.
+
 - 09:27 `chore` Record completed glass-scene planning and queued implementation/library dependencies after the full GPU gate.
 
 - 09:22 `plan` Plan the reference-inspired glass sphere/crystal still, staged CPU/GPU rendering and uncompressed TIFF; request compatible library optics, geometry, lens/emitter sampling changes RL5-RL7, defer caustics/dispersion/bloom RL8-RL9, and queue four implementation steps without changing the v1 logo scope.

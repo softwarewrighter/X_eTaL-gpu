@@ -23,6 +23,17 @@ POV-Ray 3.7 onward uses AGPLv3 or later; older releases had custom
 licenses. References: [official license](https://www.povray.org/povlegal.html)
 and [older license](https://www.povray.org/povlegal-3.6.html).
 
+## Integration progress
+
+RL1 and RL4 have committed deliveries at X_eTaL-libraries c968326.
+The committed CPU diagnostic and six other examples match their baselines
+under X_eTaL abdd371; a 64 by 64 uncompressed TIFF preview was produced.
+The full renderer is not yet GPU-eligible: the lowering currently refuses
+n_ot in its validation paths. See [ray-integration.md](ray-integration.md)
+for evidence and reproducible CPU checks. Local adoption/source/device/
+image work is prioritized before remaining Mojo/ML steps; it does not
+wait for the extrusion or scene macros.
+
 ## Library deliverables
 
 The approved library requests are RL1 (3D math), RL2 (extrusion and glyph

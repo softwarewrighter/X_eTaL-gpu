@@ -11,6 +11,14 @@ default:
 xetal:
     @scripts/xetal.sh
 
+# Get the committed general libraries used for ray-tracing integration
+xetal-libraries:
+    @scripts/xetal-libraries.sh
+
+# Check pinned Vector3/RayTrace CPU examples against their upstream baselines
+ray-check-cpu:
+    scripts/ray-check-cpu.sh
+
 # Pin a newer X_eTaL: a committed ref of ../X_eTaL (default HEAD) into XETAL_COMMIT, built; then test and commit it on its own
 xetal-pin ref="HEAD":
     scripts/xetal-pin.sh "$1"

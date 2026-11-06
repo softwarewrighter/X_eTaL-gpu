@@ -1,0 +1,8 @@
+number = 35
+slug = "ray-source"
+status = "pending"
+description = "Continue the now-prioritized ray source integration using committed RL1/RL4 a..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T06:33:48"
+commits = []

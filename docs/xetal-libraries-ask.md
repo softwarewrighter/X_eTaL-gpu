@@ -71,6 +71,18 @@ before implementing. Existing APIs above are reuse candidates, not asks
 for reimplementation. This repo will pin a committed library revision
 with explicit dependencies and rerun baselines before adoption.
 
+### Adoption snapshot, 2026-11-06
+
+RL1 is completed upstream in 202ed3e (handoff 4cd8725), and RL4 in
+128e557 (handoff c968326). XETAL_LIBRARIES_COMMIT pins c968326, with
+CPU compatibility and GPU eligibility evidence in
+[ray-integration.md](ray-integration.md). RL2 is in progress and RL3
+queued in the last inspected peer saga. The original requested statuses
+below are historical; upstream completion does not imply GPU eligibility.
+The concrete n_ot/validation lowering gap is local GPU work, not a new
+library or language ask. RL5-RL7 are accepted in the peer working plan
+but remain pending; RL8/RL9 remain deferred.
+
 ### Request summary and deadlines
 
 Deadlines are dependency milestones, not calendar promises. Ask status

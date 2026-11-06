@@ -353,6 +353,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   facade, their `##` comments and running examples, every name
   linked (`just pages` builds it into `pages/`, `just publish`
   publishes it, `just check-live` checks it)
+- [Ray integration status](docs/ray-integration.md) -- committed library
+  adoption, CPU diagnostic evidence and current GPU lowering gaps
 - [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
   libraries and macros versus GPU-specific integration
 - [Glass scene plan](docs/glass-scene-plan.md) -- planned glass spheres,
