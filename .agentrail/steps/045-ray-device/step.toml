@@ -1,8 +1,9 @@
 number = 45
 slug = "ray-device"
-status = "in-progress"
+status = "completed"
 description = "Implement and publish the first structured GPU loop/fusion checkpoint for sha..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T06:33:48"
-commits = []
+completed_at = "2026-11-06T22:58:17"
+commits = ["53186cf826c5aa0ccc43b42e6b20eb5c97d88d2e"]

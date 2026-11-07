@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 22:58 `chore` Record completed structured GPU loop/fusion checkpoint and verified native RTX publication; advance to image/scene integration with further performance work queued after the other stills.
+
 - 22:47 `feat` Retain opt-in structured loops and scalar mapped regions in XIR/OpenCL, preserve ordered device validation and input recovery, and render a native 1280 by 512 RTX logo. Verify constant query launches across geometry sizes, shared shading and matched small CPU pixels; publish uncompressed masters and cold/resident observations while recording remaining residency and channel optimizations.
 
 - 22:23 `chore` Record completed native CPU still publication and public byte verification; advance to the generic GPU loop/fusion implementation.
