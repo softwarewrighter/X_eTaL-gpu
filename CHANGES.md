@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 23:16 `chore` Record completed paired CPU/GPU image output and verified live TIFF/Float archive downloads; advance to glass transport.
+
 - 23:07 `feat` Preserve linear and display Float output and uncompressed TIFF/PNG from identical CPU/GPU X_eTaL programs; validate and publish a paired 16 by 8 fixture with independent pixel/tag checks and raw comparisons. Prioritize glass and Cornell scene integrations before further logo polish.
 
 - 22:58 `chore` Record completed structured GPU loop/fusion checkpoint and verified native RTX publication; advance to image/scene integration with further performance work queued after the other stills.
