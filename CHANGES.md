@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 22:46 `fix` Include the native still gallery template and responsive image styling in the published source commit; Chromium and full gate checks pass.
+
 - 22:15 `feat` Render a native 1280 by 512 CPU logo still using parallel full-camera strips and an isolated committed library snapshot; add uncompressed masters/source provenance, exact strip/antialiasing checks and a prominent gallery image. Keep GPU/video claims separate and record reviewed primary compiler/rendering references for the next device-loop/fusion implementation.
 
 - 21:47 `chore` Record completed GPU storage/preparation prerequisite; next is the first-principles device-side loop/fusion execution fix, with tiled/frame residency and high-resolution validation still pending.
