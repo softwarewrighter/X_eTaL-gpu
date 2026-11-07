@@ -32,6 +32,7 @@ usage: xetal-gpu COMMAND FILE [OPTIONS]
       [--repeat N] [--refresh NAME]...   reuse kernels/buffers; reupload named inputs each repeat
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run (--backend mojo: the Mojo source)
+  memory FILE.xir [SCHEDULE]     logical/physical allocation bytes, buffers, launches and guards
   explain FILE.xir [SCHEDULE]    the plan: buffers, kernels, launches, in words
   binary FILE.xir [--device opencl:N] [SCHEDULE] [--out FILE]   build the kernels on the device and report what
       its compiler keeps (CL_PROGRAM_BINARY_TYPE, CL_PROGRAM_BINARY_SIZES, what the bytes look like); --out writes them
@@ -127,13 +128,26 @@ fn dispatch(args: &[String]) -> Result<()> {
             print!("{source}");
             Ok(())
         }
-        "kernel" | "explain" => {
+        "kernel" | "explain" | "memory" => {
             let loaded = load(args.get(1))?;
             let checked = &loaded.checked;
             let schedule = schedule(&args[2.min(args.len())..])?;
             let p = plan(checked, &schedule);
             if cmd == "kernel" {
                 print!("{}", p.source);
+            } else if cmd == "memory" {
+                let m = xetal_gpu_opencl::memory::layout(&p);
+                println!(
+                    "logical_buffers {}\nphysical_buffers {}\nlogical_bytes {}\nphysical_bytes {}\nkernels {}\nkernel_source_bytes {}\nlaunches {}\nguards {}",
+                    p.buffers.len(),
+                    m.representatives.len(),
+                    m.logical_bytes,
+                    m.physical_bytes,
+                    p.kernels.len(),
+                    p.source.len(),
+                    p.launches.len(),
+                    p.guard_checks.len()
+                );
             } else {
                 print!("{}", explain(checked, &p));
                 if !loaded.lines.is_empty() {

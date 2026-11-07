@@ -19,12 +19,15 @@
 //! item for every position. Names are letters, digits and
 //! underscores; a value is defined before it is used, once.
 
+use std::collections::HashMap;
+
 use crate::ir::*;
 use crate::{err, Result};
 
 /// Parse a program from its text.
 pub fn parse(src: &str) -> Result<Program> {
     let mut program = Program::default();
+    let mut names = HashMap::new();
     for (n, raw) in src.lines().enumerate() {
         let line_no = n + 1;
         let line = match raw.find('#') {
@@ -41,7 +44,7 @@ pub fn parse(src: &str) -> Result<Program> {
             if toks.len() != 2 {
                 at("output takes one value: output %name".into())?;
             }
-            let id = reference(&program, toks[1]).map_err(|e| prefix(line_no, e))?;
+            let id = reference(&names, toks[1]).map_err(|e| prefix(line_no, e))?;
             program.outputs.push(id);
             continue;
         }
@@ -54,7 +57,7 @@ pub fn parse(src: &str) -> Result<Program> {
                 ))
             }
         };
-        if program.find(name).is_some() {
+        if names.contains_key(name) {
             at(format!("%{name} is defined twice"))?;
         }
         if toks.get(1) != Some(&"=") {
@@ -64,7 +67,8 @@ pub fn parse(src: &str) -> Result<Program> {
         let Some(&kind) = rest.first() else {
             return err(format!("line {line_no}: %{name} has no operation"));
         };
-        let (ty, op) = operation(&program, kind, &rest[1..]).map_err(|e| prefix(line_no, e))?;
+        let (ty, op) = operation(&names, kind, &rest[1..]).map_err(|e| prefix(line_no, e))?;
+        names.insert(name.to_string(), ValueId(program.values.len()));
         program.values.push(Value {
             name: name.to_string(),
             ty,
@@ -83,11 +87,11 @@ fn is_name(s: &str) -> bool {
     matches!(chars.next(), Some(c) if c.is_ascii_alphabetic() || c == '_') && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
-fn reference(program: &Program, tok: &str) -> Result<ValueId> {
+fn reference(names: &HashMap<String, ValueId>, tok: &str) -> Result<ValueId> {
     let Some(name) = tok.strip_prefix('%') else {
         return err(format!("expected a value reference `%name`, got `{tok}`"));
     };
-    match program.find(name) {
+    match names.get(name).copied() {
         Some(id) => Ok(id),
         None => err(format!("%{name} is not defined (a value is defined before it is used)")),
     }
@@ -118,7 +122,7 @@ fn shape<'a>(toks: &'a [&'a str]) -> Result<(Shape, &'a [&'a str])> {
     Ok((Shape(dims), &toks[i + 1..]))
 }
 
-fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>, Op)> {
+fn operation(names: &HashMap<String, ValueId>, kind: &str, rest: &[&str]) -> Result<(Option<Ty>, Op)> {
     match kind {
         "input" => {
             let (sc, rest) = typed(rest)?;
@@ -155,7 +159,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                     MapOp::ALL.iter().map(|o| o.name()).collect::<Vec<_>>().join(", ")
                 ))
             })?;
-            let args: Vec<ValueId> = rest[1..].iter().map(|t| reference(program, t)).collect::<Result<_>>()?;
+            let args: Vec<ValueId> = rest[1..].iter().map(|t| reference(names, t)).collect::<Result<_>>()?;
             if args.len() != op.arity() {
                 return err(format!(
                     "map {op} takes {} argument{}, got {}",
@@ -168,7 +172,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
         }
         "guard" => {
             if rest.len() != 2 { return err("guard takes a condition and hex message: guard %cond x..."); }
-            Ok((None, Op::Guard { cond: reference(program, rest[0])?, message: decode_message(rest[1])? }))
+            Ok((None, Op::Guard { cond: reference(names, rest[0])?, message: decode_message(rest[1])? }))
         }
         "select" => {
             if rest.len() != 3 {
@@ -177,9 +181,9 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             Ok((
                 None,
                 Op::Select {
-                    cond: reference(program, rest[0])?,
-                    a: reference(program, rest[1])?,
-                    b: reference(program, rest[2])?,
+                    cond: reference(names, rest[0])?,
+                    a: reference(names, rest[1])?,
+                    b: reference(names, rest[2])?,
                 },
             ))
         }
@@ -210,7 +214,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Reduce {
                     op,
-                    arg: reference(program, rest[1])?,
+                    arg: reference(names, rest[1])?,
                     axis,
                 },
             ))
@@ -224,7 +228,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Cast {
                     op: CastOp { to },
-                    arg: reference(program, rest[1])?,
+                    arg: reference(names, rest[1])?,
                 },
             ))
         }
@@ -242,7 +246,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             let n: i64 = n
                 .parse()
                 .map_err(|_| crate::Error(format!("{kind}: a count is a whole number, got `{n}`")))?;
-            let arg = reference(program, v)?;
+            let arg = reference(names, v)?;
             Ok((
                 None,
                 if kind == "take" {
@@ -276,7 +280,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 Op::Rotate {
                     axis,
                     amounts,
-                    arg: reference(program, last)?,
+                    arg: reference(names, last)?,
                 },
             ))
         }
@@ -293,8 +297,8 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Lookup {
                     axis,
-                    idx: reference(program, rest[0])?,
-                    arg: reference(program, rest[1])?,
+                    idx: reference(names, rest[0])?,
+                    arg: reference(names, rest[1])?,
                 },
             ))
         }
@@ -315,7 +319,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 Op::TopK {
                     k,
                     axis: axis.unwrap_or(0),
-                    arg: reference(program, v)?,
+                    arg: reference(names, v)?,
                 },
             ))
         }
@@ -332,8 +336,8 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Concat {
                     axis,
-                    a: reference(program, rest[0])?,
-                    b: reference(program, rest[1])?,
+                    a: reference(names, rest[0])?,
+                    b: reference(names, rest[1])?,
                 },
             ))
         }
@@ -346,7 +350,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Reshape {
                     shape,
-                    arg: reference(program, rest[0])?,
+                    arg: reference(names, rest[0])?,
                 },
             ))
         }
@@ -357,7 +361,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             Ok((
                 None,
                 Op::Ravel {
-                    arg: reference(program, rest[0])?,
+                    arg: reference(names, rest[0])?,
                 },
             ))
         }
@@ -375,8 +379,8 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Table {
                     op,
-                    a: reference(program, rest[1])?,
-                    b: reference(program, rest[2])?,
+                    a: reference(names, rest[1])?,
+                    b: reference(names, rest[2])?,
                 },
             ))
         }
@@ -397,7 +401,7 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
                 None,
                 Op::Transpose {
                     perm: if perm.is_empty() { None } else { Some(perm) },
-                    arg: reference(program, last)?,
+                    arg: reference(names, last)?,
                 },
             ))
         }
@@ -408,8 +412,8 @@ fn operation(program: &Program, kind: &str, rest: &[&str]) -> Result<(Option<Ty>
             Ok((
                 None,
                 Op::Matmul {
-                    a: reference(program, rest[0])?,
-                    b: reference(program, rest[1])?,
+                    a: reference(names, rest[0])?,
+                    b: reference(names, rest[1])?,
                 },
             ))
         }

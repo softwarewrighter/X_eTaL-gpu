@@ -23,6 +23,8 @@
 pub mod emit;
 pub mod explain;
 
+pub mod memory;
+
 use std::fmt;
 
 use xetal_gpu_xir::{Const, Scalar, ValueId};

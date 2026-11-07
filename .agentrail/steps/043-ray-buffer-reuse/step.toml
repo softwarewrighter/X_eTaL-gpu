@@ -1,0 +1,8 @@
+number = 43
+slug = "ray-buffer-reuse"
+status = "in-progress"
+description = "Resolve discovered GPU allocation and large-graph preparation costs before co..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T21:34:02"
+commits = []

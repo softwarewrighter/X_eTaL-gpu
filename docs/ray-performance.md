@@ -25,13 +25,72 @@ single-frame latency and total animation throughput separate. The sum of
 concurrent frame wall times is not a measured serial baseline; run the
 serial baseline independently rather than claiming speedup from that sum.
 
+## Target execution model
+
+The scene and image fit the device. A 1024 by 1024 Float32 RGB output
+is 12 MiB; a 3840 by 2160 output is about 95 MiB. A hundred thousand
+host kernel launches are a lowering limitation, not a requirement of
+ray tracing. Arithmetic grows with rays, primitives and interactions;
+that does not justify a dispatch per array operation or per primitive.
+
+The primary fix is execution granularity: compile many independent ray
+calculations into a small number of kernels. Each ray keeps its local
+intersection/path state in registers and executes geometry/interaction
+loops on the device. General map/loop/reduction fusion belongs in this
+GPU backend; the tracing math remains shared X_eTaL library code. Do not
+introduce a hand-written OpenCL renderer or new language syntax.
+
+Use image tiles, for example 64 by 64 or 128 by 128 pixels, with smaller
+hardware work-groups inside them. Many tiles can execute concurrently;
+they can also be batched in one dispatch. Full-frame camera coordinates
+and stable global pixel/sample IDs prevent projection changes or tile
+seams. Shadows and secondary rays still query the full scene. CPU tiles
+run the same shared computation. Repeating the old fine-grained launch
+graph separately for every tile would increase overhead.
+
+Keep scene data, cached geometry, path state and sample accumulations on
+the GPU. Update only changed camera/vane parameters; transform geometry
+on the device when needed. A bounded ring of GPU frame buffers can retain
+completed frames while subsequent frames render. Read back a finished
+frame only when export or a CPU consumer needs it. Overlap that readback
+and TIFF/video encoding with later rendering using event dependencies.
+Ring capacity is scheduling data, not a promise to retain an unlimited
+animation in memory.
+
+On one GPU, intermediate traffic uses device-local memory bandwidth.
+The current path already keeps intermediate arrays on the device; its
+problem is frequent global-memory spills plus launches and blocking
+reads of tiny guard flags. Those flag bytes are small, but their round
+trips synchronize the pipeline. Buffer reuse reduces capacity; it does
+not remove the traffic or synchronization.
+
+Validation must remain safe: check before invalid arithmetic/indexing on
+the device, collect errors with deterministic failure ordering, and check
+the resulting error status at a batch/frame boundary. Shared scene/input
+preflight may run once per changed scene. Do not simply postpone all
+checks until after unsafe work or discard guards to reduce launch count.
+
+The target is a small fixed set of tracing kernels per phase, independent
+of primitive count, with no intermediate CPU round trips. A wavefront
+pipeline may use several kernels per interaction; it must keep queues
+and ray state resident. Compare this with a fused per-ray loop rather
+than assuming either wins. Retain an explicit CPU reference and compare
+raw pixels, tile order, edge tiles, sample identity, frame-ring wrap and
+error recovery before timing.
+
+Current status: transient allocation reuse and resident prepared sessions
+exist. Prepared execution still reads outputs each call and guards still
+block the host; fused tracing loops, resident frame-result handling and
+asynchronous export are subsequent work. RL10's bounded library queries
+are complementary; they do not replace the backend granularity fix.
+
 ## Current measured constraints
 
 The old two-triangle audit has 23,770 IR lines and 1,585 ordered guards.
 Incremental checking and reuse of identical immutable SSA expressions
 reduce the pristine diagnostic to 4,541 lines and 310 guards. This is
 about an 81 percent structural reduction, not a measured render speedup.
-The optimized default OpenCL plan still has 2,230 kernel launches for
+The optimized default OpenCL plan still has 2,233 kernel launches for
 only sixteen primary rays. Ordered guards require blocking flag reads;
 launch and synchronization costs can dominate such a small workload.
 
@@ -106,3 +165,44 @@ all diagnostic IDs, linear RGB and display RGB against upstream CPU
 outputs. Actual bound-input tests are in components/cli/tests/ray_inputs.rs;
 they mutate geometry, origins, directions and materials in a prepared
 OpenCL session, check invalid data, then recover with valid inputs.
+
+## Physical buffer reuse
+
+OpenCL prepared sessions now reuse transient allocations when their
+logical values have disjoint lifetimes. Inputs and constants stay
+resident and distinct. Outputs remain live until readback. Guard reads
+extend a condition's lifetime, and a kernel's readers cannot alias its
+writers. This relies on the existing in-order queue and write-all kernels.
+Repeated runs start at the beginning and overwrite transient values.
+
+| Graph, default Float32/Int64 schedule | Logical buffers | Physical allocations | Unpooled payload bytes | Reused payload bytes |
+| ------------------------------------ | --------------- | -------------------- | ---------------------- | -------------------- |
+| Two triangles, 16 rays | 2481 | 87 | 280284 | 13212 |
+| Full 322-triangle logo, one ray | 142866 | 73 | 1381624 | 83516 |
+| Full logo, 4 by 2 rays | 143510 | 78 | 8941960 | 86728 |
+
+These are planned buffer payloads, including minimum dummy allocations;
+they exclude driver allocation granularity, compiled kernels, events,
+source text and build workspaces. They are not measured total VRAM or
+render speedups. The 4 by 2 graph still has 129916 launches and 16817
+guards, with 99535 kernel definitions and 39650839 bytes of generated
+OpenCL source. Buffer reuse addresses memory, not that remaining launch
+and build cost.
+The earlier 2230 diagnostic figure counted launches before the final
+guard; the full plan has 2233 launches, including display conversion.
+
+```sh
+just ray-memory
+just ray-memory work/ray-integration/logo-small.xir
+```
+
+The report builds a plan without allocating GPU buffers. Text parsing
+now indexes SSA names, and the OpenCL emitter indexes shared kernels,
+avoiding repeated scans of growing programs/source during large reports.
+Existing generated-source and plan snapshots stay unchanged.
+
+The RL7 a2d4de1 trial passed twenty existing CPU baselines and additional
+lens/area-light checks. Strict bound-input RayTrace GPU lowering refused
+the new data-dependent nearest-query branch. The trial was not adopted;
+8bd438d remains pinned. RL10 needs a compatible bounded vectorized path
+without that dynamic-shape requirement. Shared validation stays intact.

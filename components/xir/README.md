@@ -125,3 +125,6 @@ lookup-index bounds and declared types. This lets builders check new
 operations without cloning or revisiting the entire program. Forward
 operands are refused. Whole-program check remains the validation entry
 point for loaded programs.
+
+The text reader indexes SSA names while parsing, preserving duplicate and
+forward-reference refusals without scanning the growing program per operand.

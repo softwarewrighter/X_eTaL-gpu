@@ -358,7 +358,9 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   and uncompressed TIFF masters. Glass and benchmark scenes remain planned.
   Reproduce with `just ray-animate-cpu`; `just ray-render-cpu` makes a still.
   The tiny diagnostic agrees on CPU and RTX OpenCL; larger GPU scenes
-  still need scaling and validation. The next quality target is a native
+  still need device-side tracing loops/fusion and validation. Temporary
+  device storage is reused; `just ray-memory` reports allocation costs.
+  The next quality target is a native
   1280 by 512 or larger antialiased still/video with paired CPU/GPU timings.
 - [Ray performance choices](docs/ray-performance.md) -- batching, resident
   sessions, frame concurrency and matched CPU/GPU measurement

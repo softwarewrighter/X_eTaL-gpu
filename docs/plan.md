@@ -574,3 +574,36 @@ bounded vectorized primitive queries; ray-device must profile resource
 use before allocating or compiling a full-resolution workload. Compare
 ray batches and resident sessions first, then bounded frame concurrency.
 Do not treat reduced IR counts as an established renderer speedup.
+
+## Ray device allocation and library compatibility progress
+
+Physical transient-buffer reuse now preserves resident inputs/constants,
+guards and output lifetimes; actual GPU rebinding/failure tests pass.
+Large-graph text parsing and shared-kernel lookup use indexes rather
+than repeated whole-program/source scans. Reports show substantial
+payload savings, but launch/guard expansion remains. See ray-performance.md.
+
+RL7 trial a2d4de1 passes the CPU checks but refuses strict GPU query
+lowering at a data-dependent tuple branch. Keep 8bd438d pinned until a
+compatible path or necessary backend support is validated. RL10 records
+that portability requirement; do not erase validation or silently use
+CPU-rendered pixels as GPU output.
+
+The storage/preparation prerequisite is recorded separately before
+ray-device verification, so completing it does not claim the large GPU
+scene works. Prioritize one high-resolution still of each requested scene
+before spending on the longer high-resolution animation; all three gallery
+entries and paired CPU/GPU timing remain required.
+
+## First-principles device execution priority
+
+The user's tile/frame-residency feedback makes general device-side loops
+and map/reduction fusion the primary fix. Geometry and 1K/4K output fit;
+the excessive dispatch graph is a compiler/runtime limitation, not a
+scene-memory justification. Ray batches alone do not solve that graph.
+Keep ray state local/resident, use bounded parallel image tiles with full
+camera/sample coordinates, retain a GPU frame ring, and export finished
+frames at the boundary. Preserve safe deterministic validation without
+per-operation host round trips. RL10 supplies compatible reusable math;
+the backend execution model is local work and must not wait on a new
+language feature. The target contract is in ray-performance.md.

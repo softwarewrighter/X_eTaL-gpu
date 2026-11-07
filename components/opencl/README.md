@@ -171,3 +171,12 @@ Validation guards flush fusion and record a check before the next launch.
 The plan retains checks even for unused results and scalar constants.
 The runtime reads the condition buffer before enqueueing dependent kernels;
 `explain` shows each guard and its launch boundary.
+
+## Allocation lifetimes
+
+memory::layout maps logical buffers to reusable physical allocations.
+It accounts for launch arguments, ordered guards and output readback;
+resident inputs and constants are never reused as transient storage.
+The runtime consumes this map without changing generated kernels or
+logical buffer IDs. Shared kernel names are indexed during emission,
+so growing source strings are not repeatedly searched for definitions.

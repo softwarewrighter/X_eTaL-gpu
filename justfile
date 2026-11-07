@@ -250,3 +250,7 @@ status:
 # Open the saga plan
 plan:
     @cat docs/plan.md
+
+# Report allocation reuse and launch/guard costs without allocating GPU memory.
+ray-memory file="work/ray-integration/diagnostic-source.xir": build
+    target/release/xetal-gpu memory "{{file}}"

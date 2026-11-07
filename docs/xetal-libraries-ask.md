@@ -90,13 +90,13 @@ tested e7140be pin. RL8/RL9 remain deferred.
 RL2a is adopted for this release with corrected a/e and visual regressions.
 
 
-Latest peer check: RL7 is committed in bfe0c67 (handoff a2d4de1),
-including subpixel/lens sampling and area emitters. It is ready for
-adoption at the ray-device boundary; the current pin remains 8bd438d
-until its changed/new CPU baselines pass. The peer also documents CPU
-candidate culling; GPU eligibility and performance are not established
-by that delivery. RL10 remains requested here, not acknowledged or
-delivered upstream. Local GPU profiling/resource work can proceed.
+Latest peer check: RL7 is committed in bfe0c67 (handoff a2d4de1).
+The adoption trial passed existing CPU baselines and lens/area-light
+checks, but strict GPU query lowering refused a new data-dependent
+branch. The candidate was not adopted; the pin remains 8bd438d.
+See the adoption-trial details below. RL10 is still requested here,
+not acknowledged/delivered upstream; it now includes a compatibility
+requirement for the portable query path. Local GPU resource work proceeds.
 
 ### Request summary and deadlines
 
@@ -556,7 +556,7 @@ local compiler work removes the same cost. No language syntax is requested.
 Evidence: the shared primitive sweep holds bounded ray/triangle working
 arrays, but static p_ower is unrolled by this GPU lowering. A one-pixel
 322-triangle logo probe produces 258,581 IR lines and 16,817 guards after
-expression reuse. The tiny two-triangle diagnostic still plans 2,230
+expression reuse. The tiny two-triangle diagnostic still plans 2,233
 launches for sixteen rays. Ray batching alone cannot remove that graph
 expansion. Existing nearest-hit/render APIs should remain the oracle.
 
@@ -602,3 +602,41 @@ Any temporary local fixture must name its RL ask, path and removal point;
 none exists yet. Replace it with the pinned library before closing the
 relevant renderer/logo milestone. No duplicate permanent general library
 is introduced here, and no ask is sent automatically to another service.
+
+## RL7 adoption trial and RL10 portability requirement
+
+Trial a2d4de1 passed all twenty previously checked CPU baselines and
+RayTrace lens / Glass area-light baselines unchanged against that commit.
+The strict renderer input test refused during lowering, before device
+execution: "a device guard requires a static-message panic branch
+(general dynamic branches are outside the subset)". The new nearest-query
+candidate-compaction branch returns a tuple under a data-dependent
+condition; it also uses data-dependent replication. Only the first
+lowering failure is established here. The candidate pin was restored
+to validated 8bd438d, so RL7 is delivered but not adopted in this repo.
+
+Minimal reproducer: lower the actual nearest/render closure in
+components/cli/tests/ray_inputs.rs against a2d4de1 with bound triangle,
+origin, direction and material arrays. The same test passes with 8bd438d.
+No alternate renderer or removed guard is used as a workaround.
+
+RL10 should retain a portable query path for these existing static-shape
+GPU arrays while keeping CPU candidate culling available. Bounded array
+blocks can supply more GPU work without requiring runtime-sized arrays.
+CPU and GPU benchmark the same chosen shared path and parameters.
+The local runtime now reuses temporary device buffers; query launch/guard
+expansion remains separate from that memory improvement.
+
+## RL10 first-principles refinement
+
+The primary backend fix is general per-ray map/loop/reduction fusion.
+Bounded array queries alone must not be mistaken for a solution if each
+scalar/array operation still becomes a separate kernel. Keep per-ray
+intersection/path math reusable as ordinary shared functions, with fixed
+cell shapes and geometry loops suitable for device execution. Preserve
+a portable shared path rather than making CPU candidate compaction the
+only implementation. CPU and GPU must run the same chosen path for the
+comparison. Scene notation remains independent of backend scheduling.
+GPU loop lowering, validation error propagation, tile scheduling, resident
+frame buffers and asynchronous export belong in this GPU repo. See
+ray-performance.md for the execution contract and acceptance checks.

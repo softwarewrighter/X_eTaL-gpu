@@ -80,3 +80,7 @@ $ xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0
 `kernel` and `explain` are the emitter (`xetal-gpu-opencl`);
 `devices` and `--device opencl:N` are the runtime
 (`xetal-gpu-runtime`), which takes the same schedule flags.
+
+Use xetal-gpu memory FILE.xir to report logical/physical buffer counts,
+planned payload bytes, launches and guards without allocating GPU memory.
+The just ray-memory recipe builds the CLI and defaults to the ray diagnostic.

@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 21:32 `feat` Reuse temporary OpenCL device storage with input/constant/output/guard lifetimes preserved; add memory reports and index SSA names/shared kernels for large graphs. Verify resident GPU reruns and recovery, and document the RL7 candidate pin regression without adopting it. Record device-side fusion/loops, parallel tiles and a resident frame ring as the primary execution fix; a cold full-logo probe produced no pixels within its 180-second budget.
+
 - 20:29 `chore` Begin ray-device and record newly committed RL7 delivery (bfe0c67/a2d4de1), awaiting deliberate adoption; RL10 bounded vectorized queries remain undelivered and GPU scaling work remains in progress.
 
 - 19:55 `chore` Record completed strict ray-source correctness and expression-reuse checkpoint; next is bounded-query/resource work for high-resolution GPU rendering and paired CPU/GPU timing.

@@ -26,6 +26,7 @@ struct Builder<'a> {
     schedule: &'a Schedule,
     buffers: Vec<Buffer>,
     kernels: Vec<KernelInfo>,
+    shared_kernels: HashMap<String, usize>,
     launches: Vec<Launch>,
     source: String,
     places: HashMap<ValueId, Place>,
@@ -56,6 +57,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         schedule,
         buffers: Vec::new(),
         kernels: Vec::new(),
+        shared_kernels: HashMap::new(),
         launches: Vec::new(),
         source: String::new(),
         places: HashMap::new(),
@@ -401,7 +403,8 @@ impl<'a> Builder<'a> {
             unreachable!("a slice reads a buffer")
         };
         let kname = format!("slice_{elem}");
-        if !self.source.contains(&format!("__kernel void {kname}(")) {
+        if !self.shared_kernels.contains_key(&kname) {
+            self.shared_kernels.insert(kname.clone(), self.kernels.len());
             self.source.push_str(&format!(
                 "
 // {kname}: a take or a drop along an axis: of every line (outer lines
@@ -455,7 +458,7 @@ __kernel void {kname}(__global const {elem}* in, __global {elem}* out, const lon
                 )
             },
         });
-        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+        if let Some(k) = self.kernels.get_mut(self.shared_kernels[&kname]) {
             k.computes.push(id);
             k.writes.push(id);
         }
@@ -613,7 +616,8 @@ __kernel void {kname}({}) {{
         };
         let (outer, len, inner) = xetal_gpu_xir::interp::axis_split(&self.ty(arg).shape, axis);
         let kname = format!("topk{k}_{elem}");
-        if !self.source.contains(&format!("__kernel void {kname}(")) {
+        if !self.shared_kernels.contains_key(&kname) {
+            self.shared_kernels.insert(kname.clone(), self.kernels.len());
             self.source.push_str(&topk_kernel(&kname, elem, k));
             self.kernels.push(KernelInfo {
                 name: kname.clone(),
@@ -645,7 +649,7 @@ __kernel void {kname}({}) {{
                 if lines == 1 { "" } else { "s" }
             ),
         });
-        if let Some(kinfo) = self.kernels.iter_mut().find(|kinfo| kinfo.name == kname) {
+        if let Some(kinfo) = self.kernels.get_mut(self.shared_kernels[&kname]) {
             kinfo.computes.push(id);
             kinfo.writes.push(id);
         }
@@ -757,7 +761,8 @@ __kernel void {kname}(__global {elem}* {out_name}) {{
             Place::Buffer(src) => {
                 let m = self.ty(arg).shape.len();
                 let kname = format!("cycle_{elem}");
-                if !self.source.contains(&format!("__kernel void {kname}(")) {
+                if !self.shared_kernels.contains_key(&kname) {
+                    self.shared_kernels.insert(kname.clone(), self.kernels.len());
                     self.source.push_str(&format!(
                         "
 // {kname}: a reshape to another count: the m items repeated as needed
@@ -783,7 +788,7 @@ __kernel void {kname}(__global const {elem}* in, __global {elem}* out, const lon
                     local,
                     note: format!("%{name}: {m} items cycled over {n}"),
                 });
-                if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+                if let Some(k) = self.kernels.get_mut(self.shared_kernels[&kname]) {
                     k.computes.push(id);
                     k.writes.push(id);
                 }
@@ -946,7 +951,8 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
         let (rows, cols) = (shape.0[rank - 2], shape.0[rank - 1]);
         let planes: usize = shape.0[..rank - 2].iter().product();
         let kname = format!("transpose_tiled{t}_{elem}");
-        if !self.source.contains(&format!("__kernel void {kname}(")) {
+        if !self.shared_kernels.contains_key(&kname) {
+            self.shared_kernels.insert(kname.clone(), self.kernels.len());
             self.source.push_str(&transpose_tiled_kernel(&kname, elem, t));
             self.kernels.push(KernelInfo {
                 name: kname.clone(),
@@ -976,7 +982,7 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
                 t * t
             ),
         });
-        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+        if let Some(k) = self.kernels.get_mut(self.shared_kernels[&kname]) {
             k.computes.push(id);
             k.writes.push(id);
         }
@@ -1000,7 +1006,8 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
         } else {
             format!("matmul_tiled{t}_{elem}")
         };
-        if !self.source.contains(&format!("__kernel void {kname}(")) {
+        if !self.shared_kernels.contains_key(&kname) {
+            self.shared_kernels.insert(kname.clone(), self.kernels.len());
             self.source.push_str(&if t == 0 {
                 matmul_kernel(&kname, elem)
             } else {
@@ -1054,7 +1061,7 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
             local,
             note,
         });
-        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+        if let Some(k) = self.kernels.get_mut(self.shared_kernels[&kname]) {
             k.computes.push(id);
             k.writes.push(id);
         }
@@ -1071,7 +1078,8 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
         };
         let (outer, len, inner) = xetal_gpu_xir::interp::axis_split(&self.ty(arg).shape, axis);
         let kname = format!("reduce_axis_{}_{}", op, elem);
-        if !self.source.contains(&format!("__kernel void {kname}(")) {
+        if !self.shared_kernels.contains_key(&kname) {
+            self.shared_kernels.insert(kname.clone(), self.kernels.len());
             self.source.push_str(&reduce_axis_kernel(&kname, op, elem));
             self.kernels.push(KernelInfo {
                 name: kname.clone(),
@@ -1106,7 +1114,7 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
                 len
             ),
         });
-        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+        if let Some(k) = self.kernels.get_mut(self.shared_kernels[&kname]) {
             k.computes.push(id);
             k.writes.push(id);
         }
@@ -1122,7 +1130,8 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
         };
         let n = self.ty(arg).shape.len();
         let kname = format!("reduce_{}_{}", op, elem);
-        if !self.source.contains(&format!("__kernel void {kname}(")) {
+        if !self.shared_kernels.contains_key(&kname) {
+            self.shared_kernels.insert(kname.clone(), self.kernels.len());
             self.source.push_str(&reduce_kernel(&kname, op, elem));
             self.kernels.push(KernelInfo {
                 name: kname.clone(),
@@ -1178,7 +1187,7 @@ __kernel void {kname}(__global const {elem}* {src_name}, __global {elem}* {out_n
             count = groups;
             pass += 1;
         }
-        if let Some(k) = self.kernels.iter_mut().find(|k| k.name == kname) {
+        if let Some(k) = self.kernels.get_mut(self.shared_kernels[&kname]) {
             k.computes.push(id);
             k.writes.push(id);
         }

@@ -395,3 +395,27 @@ vectorized primitive queries in the general library; local allocation,
 fusion and guard-readback costs remain GPU work. See
 [performance choices](ray-performance.md) for batching, residency,
 parallel-frame tradeoffs and matched CPU/GPU measurement requirements.
+
+## Transient storage and RL7 trial
+
+Prepared OpenCL execution reuses temporary allocations across disjoint
+logical lifetimes, with guard and output lifetimes preserved. Inputs and
+constants remain resident and distinct. Tests cover repeated runs,
+rebinding, invalid data and recovery against unchanged CPU results.
+The memory command reports planned allocation savings without executing
+kernels; see [performance choices](ray-performance.md) for measured counts.
+SSA parsing and shared-kernel lookup are indexed for large programs.
+
+RL7 a2d4de1 passed twenty existing CPU checks plus lens/area-light
+baselines, but the actual bound-input renderer refused its new dynamic
+nearest-query branch during strict GPU lowering. The pin stays 8bd438d;
+RL10 records the compatible bounded-query requirement. No high-resolution
+GPU image or speedup is established by the memory improvement.
+
+A cold 4 by 2 full-logo source probe did not finish within a 180-second
+budget and produced no device pixels. That budget includes lowering/load,
+OpenCL setup/build and execution, so it is not a measured render-only time
+or evidence identifying a particular phase. Its planned payload falls
+from 8941960 to 86728 bytes with reuse, while 129916 launches remain.
+The first-principles correction prioritizes fused device-side tracing
+loops and resident tiled/frame execution; see ray-performance.md.

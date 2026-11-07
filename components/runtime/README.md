@@ -141,3 +141,13 @@ Runtime guards read a device-computed scalar Bool with a blocking read
 between launch groups. Failure returns the original static message before
 subsequent kernels are queued. Checks run again on repeated calls and
 after rebinding; their synchronization cost is included in launch time.
+
+## Transient storage
+
+Prepared sessions allocate a physical storage pool from the OpenCL plan's
+logical lifetimes. Same-type buffers may share storage after the last
+reader, including guard reads. Inputs/constants stay resident; outputs
+stay live through readback. The queue remains in order, and generated
+kernels overwrite their complete logical result. Rebinding inputs and
+rerunning after a guard failure preserve those rules. The memory command
+reports planned payload savings, excluding driver/kernel/event overhead.

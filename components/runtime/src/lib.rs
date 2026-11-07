@@ -348,6 +348,7 @@ pub struct Prepared {
     checked: Checked,
     plan: Plan,
     bufs: Vec<DevBuf>,
+    allocations: Vec<usize>,
     kernels: HashMap<String, Kernel>,
     queue: CommandQueue,
     _program: Option<Program>,
@@ -409,9 +410,11 @@ impl Prepared {
         }
         stats.setup_ms = ms(start);
         let phase = Instant::now();
-        // Buffers: allocate each, upload inputs and constants.
-        let mut bufs: Vec<DevBuf> = Vec::with_capacity(plan.buffers.len());
-        for b in &plan.buffers {
+        // Allocate physical slots; inputs/constants never share transient storage.
+        let memory = xetal_gpu_opencl::memory::layout(plan);
+        let mut bufs: Vec<DevBuf> = Vec::with_capacity(memory.representatives.len());
+        for representative in &memory.representatives {
+            let b = &plan.buffers[representative.0];
             let len = b.len.max(1);
             let host: Option<Array> = match &b.init {
                 Init::Input(name) => {
@@ -473,6 +476,7 @@ impl Prepared {
                 checked: checked.clone(),
                 plan: plan.clone(),
                 bufs,
+                allocations: memory.assignments,
                 kernels,
                 queue,
                 _program: program,
@@ -500,7 +504,7 @@ impl Prepared {
         // An empty array has no bytes to upload; its buffer is a dummy allocation.
         if !array.data.is_empty() {
             unsafe {
-                match &mut self.bufs[id] {
+                match &mut self.bufs[self.allocations[id]] {
                     DevBuf::I32(b) => {
                         let v: Vec<i32> = to_i64(array).into_iter().map(|x| x as i32).collect();
                         self.queue.enqueue_write_buffer(b, CL_BLOCKING, 0, &v, &[]).map_err(cl)?;
@@ -534,13 +538,14 @@ impl Prepared {
         let mut stats = Stats::default();
         let (checked, plan, bufs, kernels, queue) = (&self.checked, &self.plan, &self.bufs, &self.kernels, &self.queue);
         let phase = Instant::now();
+        let allocations = &self.allocations;
         let mut events = Vec::with_capacity(plan.launches.len());
         // Launches, in order, on the in-order queue.
         let mut guards = plan.guard_checks.iter().peekable();
         for index in 0..=plan.launches.len() {
             while guards.peek().is_some_and(|g| g.before_launch == index) {
                 let guard = guards.next().unwrap();
-                let DevBuf::I32(buffer) = &bufs[guard.buffer.0] else {
+                let DevBuf::I32(buffer) = &bufs[allocations[guard.buffer.0]] else {
                     unreachable!("guard Bool is i32");
                 };
                 let mut flag = [0i32];
@@ -559,7 +564,7 @@ impl Prepared {
             unsafe {
                 for a in &l.args {
                     match a {
-                        Arg::Buffer(id) => match &bufs[id.0] {
+                        Arg::Buffer(id) => match &bufs[allocations[id.0]] {
                             DevBuf::I32(b) => ex.set_arg(b),
                             DevBuf::I64(b) => ex.set_arg(b),
                             DevBuf::F32(b) => ex.set_arg(b),
@@ -590,7 +595,7 @@ impl Prepared {
             let b = plan.buffer(*buf);
             let ty = checked.ty(*value);
             let data = unsafe {
-                match &bufs[buf.0] {
+                match &bufs[allocations[buf.0]] {
                     DevBuf::I32(d) => {
                         let mut v = vec![0i32; b.len.max(1)];
                         queue.enqueue_read_buffer(d, CL_BLOCKING, 0, &mut v, &[]).map_err(cl)?;
