@@ -371,3 +371,27 @@ render-call wall times during other work, not a paired benchmark. The
 in the framing and need adjustment for a darker presentation image.
 After this checkpoint the user prioritizes high-resolution logo output
 and paired CPU/GPU timings; transparent glass integration follows.
+
+## Bound-input renderer checks and lowering cost
+
+The lowerer now checks each new operation incrementally and reuses
+identical immutable expressions. The pristine diagnostic remains exact
+on XIR CPU and within 1e-5 on RTX OpenCL, with exact IDs. Against the
+saved old audit, its IR falls from 23,770 to 4,541 lines, and guards from
+1,585 to 310. These are structural counts, not render speedup timings.
+
+components/cli/tests/ray_inputs.rs lowers the actual RayTrace nearest
+and render functions with four bound arrays and no evaluator fallback.
+It changes geometry, origins, directions and materials, compares raw
+GPU colors/IDs to the interpreter, checks zero directions, invalid
+materials and nonfinite geometry, and verifies valid rebinding recovers
+after each mutation or failure. Prepared OpenCL execution is tested on
+the installed device. Full renderer Mojo remains unverified.
+
+The one-pixel 322-triangle logo still produces 258,581 IR lines and
+16,817 guards. Geometry preparation explicitly falls back for r_ev and
+g_rade. This is not a high-resolution GPU result. RL10 requests bounded
+vectorized primitive queries in the general library; local allocation,
+fusion and guard-readback costs remain GPU work. See
+[performance choices](ray-performance.md) for batching, residency,
+parallel-frame tradeoffs and matched CPU/GPU measurement requirements.

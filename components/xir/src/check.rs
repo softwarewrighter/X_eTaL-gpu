@@ -31,328 +31,339 @@ impl Checked {
 pub fn check(program: Program) -> Result<Checked> {
     let mut types: Vec<Ty> = Vec::with_capacity(program.values.len());
     for (i, v) in program.values.iter().enumerate() {
-        let name = &v.name;
-        let ty_of = |id: ValueId| -> &Ty { &types[id.0] };
-        let ty = match &v.op {
-            Op::Input => v.ty.clone().expect("an input declares its type"),
-            Op::Const(c) => {
-                let ty = v.ty.clone().expect("a const declares its type");
-                let ok = match c {
-                    Const::Int(_) => ty.scalar.is_int(),
-                    Const::Float(_) => ty.scalar.is_float(),
-                    Const::Bool(_) => ty.scalar == Scalar::Bool,
-                };
-                if !ok {
-                    return err(format!("%{name}: the items do not fit {}", ty.scalar));
-                }
-                ty
-            }
-            Op::Map { op, args } => {
-                let tys: Vec<&Ty> = args.iter().map(|a| ty_of(*a)).collect();
-                let sc = tys[0].scalar;
-                if let Some(t) = tys.iter().find(|t| t.scalar != sc) {
-                    return err(format!(
-                        "%{name}: map {op} needs arguments of one scalar type, got {} and {}",
-                        sc, t.scalar
-                    ));
-                }
-                let result = match op.kind() {
-                    MapKind::Num => {
-                        require(name, op, sc.is_num(), sc, "a number")?;
-                        sc
-                    }
-                    MapKind::Float => {
-                        require(name, op, sc.is_float(), sc, "a Float (f32 or f64; cast an Int first)")?;
-                        sc
-                    }
-                    MapKind::Int => {
-                        require(name, op, sc.is_int(), sc, "an Int (i32 or i64)")?;
-                        sc
-                    }
-                    MapKind::EqCompare => Scalar::Bool,
-                    MapKind::OrdCompare => {
-                        require(name, op, sc.is_num(), sc, "a number")?;
-                        Scalar::Bool
-                    }
-                    MapKind::Logic => {
-                        require(name, op, sc == Scalar::Bool, sc, "a Bool")?;
-                        Scalar::Bool
-                    }
-                };
-                let shape = extend(name, &format!("map {op}"), &tys.iter().map(|t| &t.shape).collect::<Vec<_>>())?;
-                Ty { scalar: result, shape }
-            }
-            Op::Guard { cond, .. } => {
-                let t = ty_of(*cond);
-                if t.scalar != Scalar::Bool || !t.shape.is_scalar() {
-                    return err(format!("%{name}: guard requires a scalar Bool, got {t}"));
-                }
-                t.clone()
-            }
-            Op::Select { cond, a, b } => {
-                let (tc, ta, tb) = (ty_of(*cond), ty_of(*a), ty_of(*b));
-                if tc.scalar != Scalar::Bool {
-                    return err(format!("%{name}: select needs a Bool condition, got {}", tc.scalar));
-                }
-                if ta.scalar != tb.scalar {
-                    return err(format!(
-                        "%{name}: select needs both values of one scalar type, got {} and {}",
-                        ta.scalar, tb.scalar
-                    ));
-                }
-                let shape = extend(name, "select", &[&tc.shape, &ta.shape, &tb.shape])?;
-                Ty { scalar: ta.scalar, shape }
-            }
-            Op::Reduce { op, arg, axis } => {
-                let t = ty_of(*arg);
-                if !t.scalar.is_num() {
-                    return err(format!("%{name}: reduce {op} needs numbers, got {}", t.scalar));
-                }
-                if t.shape.is_scalar() {
-                    return err(format!("%{name}: reduce {op} needs an array of rank 1 or more, got a single value"));
-                }
-                let shape = match axis {
-                    None if t.shape.is_empty() => return err(format!("%{name}: reduce {op} of an empty array has no value")),
-                    None => Shape::scalar(),
-                    Some(a) if *a > t.shape.rank() => {
-                        return err(format!("%{name}: reduce {op} axis={a}: the array has rank {}", t.shape.rank()));
-                    }
-                    Some(a) => {
-                        let mut dims = t.shape.0.clone();
-                        if dims[a - 1] == 0 {
-                            return err(format!("%{name}: reduce {op} axis={a}: that axis is empty, so there is no value"));
-                        }
-                        dims.remove(a - 1);
-                        Shape(dims)
-                    }
-                };
-                Ty { scalar: t.scalar, shape }
-            }
-            Op::Matmul { a, b } => {
-                let (ta, tb) = (ty_of(*a), ty_of(*b));
-                if ta.scalar != tb.scalar || !ta.scalar.is_num() {
-                    return err(format!(
-                        "%{name}: matmul needs numbers of one scalar type, got {} and {}",
-                        ta.scalar, tb.scalar
-                    ));
-                }
-                if ta.shape.is_scalar() || tb.shape.is_scalar() {
-                    return err(format!(
-                        "%{name}: matmul needs arrays of rank 1 or more (a single value scales: map mul)"
-                    ));
-                }
-                let n = *ta.shape.0.last().unwrap();
-                if n != tb.shape.0[0] {
-                    return err(format!(
-                        "%{name}: matmul: the last axis of {} ({n}) is not the first of {} ({})",
-                        ta.shape, tb.shape, tb.shape.0[0]
-                    ));
-                }
-                if n == 0 {
-                    return err(format!("%{name}: matmul over an empty axis has no value"));
-                }
-                let mut dims = ta.shape.0[..ta.shape.rank() - 1].to_vec();
-                dims.extend_from_slice(&tb.shape.0[1..]);
-                Ty {
-                    scalar: ta.scalar,
-                    shape: Shape(dims),
-                }
-            }
-            Op::Take { n, axis, arg } | Op::Drop { n, axis, arg } => {
-                let t = ty_of(*arg);
-                let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
-                if t.shape.is_scalar() {
-                    return err(format!("%{name}: {what} needs an array of rank 1 or more, got a single value"));
-                }
-                if *axis > t.shape.rank() {
-                    return err(format!("%{name}: {what} axis={axis}: the array has rank {}", t.shape.rank()));
-                }
-                let d = t.shape.0[axis - 1];
-                let k = n.unsigned_abs() as usize;
-                if k > d {
-                    return err(format!("%{name}: {what} {n} of {d} items along axis {axis} (no padding here)"));
-                }
-                let mut dims = t.shape.0.clone();
-                dims[axis - 1] = if what == "take" { k } else { d - k };
-                Ty {
-                    scalar: t.scalar,
-                    shape: Shape(dims),
-                }
-            }
-            Op::Rotate { axis, amounts, arg } => {
-                let t = ty_of(*arg);
-                if t.shape.is_scalar() {
-                    return err(format!("%{name}: rotate needs an array of rank 1 or more, got a single value"));
-                }
-                if *axis > t.shape.rank() {
-                    return err(format!("%{name}: rotate axis={axis}: the array has rank {}", t.shape.rank()));
-                }
-                let mut dims = t.shape.0.clone();
-                if amounts.len() > 1 {
-                    dims.insert(0, amounts.len());
-                }
-                Ty {
-                    scalar: t.scalar,
-                    shape: Shape(dims),
-                }
-            }
-            Op::Lookup { axis, idx, arg } => {
-                let (ti, ta) = (ty_of(*idx), ty_of(*arg));
-                if !ti.scalar.is_int() {
-                    return err(format!("%{name}: lookup needs Int positions, got {}", ti.scalar));
-                }
-                if ta.shape.is_scalar() {
-                    return err(format!(
-                        "%{name}: lookup needs an array of rank 1 or more to pick from, got a single value"
-                    ));
-                }
-                if *axis > ta.shape.rank() {
-                    return err(format!("%{name}: lookup axis={axis}: the array has rank {}", ta.shape.rank()));
-                }
-                if *axis > 1 && ti.shape.rank() > 1 {
-                    return err(format!(
-                        "%{name}: lookup axis={axis}: along a later axis the positions are a vector or a single value (as s_elect_{axis}), got rank {}",
-                        ti.shape.rank()
-                    ));
-                }
-                let len = ta.shape.0[axis - 1];
-                // Positions written in the program are checked here; bound ones when the program runs.
-                if let Op::Const(Const::Int(items)) = &program.value(*idx).op {
-                    if let Some(bad) = items.iter().find(|i| **i < 1 || **i > len as i64) {
-                        return err(format!("%{name}: lookup: index {bad} is outside 1..{len}"));
-                    }
-                }
-                let mut dims = ta.shape.0[..axis - 1].to_vec();
-                dims.extend_from_slice(&ti.shape.0);
-                dims.extend_from_slice(&ta.shape.0[*axis..]);
-                Ty {
-                    scalar: ta.scalar,
-                    shape: Shape(dims),
-                }
-            }
-            Op::Concat { axis, a, b } => {
-                let (ta, tb) = (ty_of(*a), ty_of(*b));
-                if ta.scalar != tb.scalar {
-                    return err(format!(
-                        "%{name}: concat needs items of one scalar type, got {} and {}",
-                        ta.scalar, tb.scalar
-                    ));
-                }
-                // A single value joins a vector as one item.
-                let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
-                let (sa, sb) = (lift(&ta.shape), lift(&tb.shape));
-                if sa.rank() != sb.rank() {
-                    return err(format!("%{name}: concat: ranks differ, {} and {}", sa, sb));
-                }
-                if *axis > sa.rank() {
-                    return err(format!("%{name}: concat axis={axis}: the arrays have rank {}", sa.rank()));
-                }
-                for (i, (x, y)) in sa.0.iter().zip(&sb.0).enumerate() {
-                    if i + 1 != *axis && x != y {
-                        return err(format!(
-                            "%{name}: concat along axis {axis}: the other axes differ, {} and {}",
-                            sa, sb
-                        ));
-                    }
-                }
-                let mut dims = sa.0.clone();
-                dims[axis - 1] += sb.0[axis - 1];
-                Ty {
-                    scalar: ta.scalar,
-                    shape: Shape(dims),
-                }
-            }
-            Op::TopK { k, axis, arg } => {
-                let t = ty_of(*arg);
-                if !t.scalar.is_num() {
-                    return err(format!("%{name}: topk needs numbers, got {}", t.scalar));
-                }
-                if t.shape.is_scalar() {
-                    return err(format!("%{name}: topk needs an array of rank 1 or more, got a single value"));
-                }
-                if *axis > t.shape.rank() {
-                    return err(format!("%{name}: topk axis={axis}: the array has rank {}", t.shape.rank()));
-                }
-                if *k == 0 {
-                    return err(format!("%{name}: topk needs a count from 1"));
-                }
-                Ty {
-                    scalar: Scalar::Bool,
-                    shape: t.shape.clone(),
-                }
-            }
-            Op::Reshape { shape, arg } => {
-                let t = ty_of(*arg);
-                if t.shape.is_empty() && !shape.is_empty() {
-                    return err(format!("%{name}: reshape {shape} of an empty array: there is no item to repeat"));
-                }
-                Ty {
-                    scalar: t.scalar,
-                    shape: shape.clone(),
-                }
-            }
-            Op::Ravel { arg } => {
-                let t = ty_of(*arg);
-                Ty {
-                    scalar: t.scalar,
-                    shape: Shape(vec![t.shape.len()]),
-                }
-            }
-            Op::Table { op, a, b } => {
-                let (ta, tb) = (ty_of(*a), ty_of(*b));
-                let scalar = match op {
-                    TableOp::Left => ta.scalar,
-                    TableOp::Right => tb.scalar,
-                    TableOp::Map(m) => {
-                        if ta.scalar != tb.scalar {
-                            return err(format!(
-                                "%{name}: table {m} needs arguments of one scalar type, got {} and {}",
-                                ta.scalar, tb.scalar
-                            ));
-                        }
-                        let sc = ta.scalar;
-                        match m.kind() {
-                            MapKind::Num => require(name, m, sc.is_num(), sc, "a number").map(|_| sc)?,
-                            MapKind::Float => require(name, m, sc.is_float(), sc, "a Float (f32 or f64; cast an Int first)").map(|_| sc)?,
-                            MapKind::Int => require(name, m, sc.is_int(), sc, "an Int (i32 or i64)").map(|_| sc)?,
-                            MapKind::EqCompare => Scalar::Bool,
-                            MapKind::OrdCompare => require(name, m, sc.is_num(), sc, "a number").map(|_| Scalar::Bool)?,
-                            MapKind::Logic => require(name, m, sc == Scalar::Bool, sc, "a Bool").map(|_| Scalar::Bool)?,
-                        }
-                    }
-                };
-                let mut dims = ta.shape.0.clone();
-                dims.extend_from_slice(&tb.shape.0);
-                Ty {
-                    scalar,
-                    shape: Shape(dims),
-                }
-            }
-            Op::Cast { op, arg } => Ty {
-                scalar: op.to,
-                shape: ty_of(*arg).shape.clone(),
-            },
-            Op::Transpose { perm, arg } => {
-                let t = ty_of(*arg);
-                let perm = permutation(t.shape.rank(), perm).map_err(|e| crate::Error(format!("%{name}: transpose: {e}")))?;
-                Ty {
-                    scalar: t.scalar,
-                    shape: transpose_layout(&t.shape, &perm).0,
-                }
-            }
-        };
-        if let Some(declared) = &v.ty {
-            if *declared != ty {
-                return err(format!("%{name}: declared {declared}, computed {ty}"));
-            }
-        }
-        debug_assert_eq!(types.len(), i);
-        types.push(ty);
+        types.push(check_value(v, &types, &program.values[..i])?);
     }
     if program.outputs.is_empty() {
         return err("the program has no output");
     }
     Ok(Checked { program, types })
+}
+
+/// Check one SSA value against the already checked types of preceding values.
+/// Incremental builders use the same rules as the whole-program checker.
+pub fn check_value(v: &Value, types: &[Ty], preceding: &[Value]) -> Result<Ty> {
+    if preceding.len() != types.len() {
+        return err("preceding values and checked types must have the same length");
+    }
+    if v.op.args().iter().any(|id| id.0 >= types.len()) {
+        return err(format!("%{}: operand does not precede this value", v.name));
+    }
+    let name = &v.name;
+    let ty_of = |id: ValueId| -> &Ty { &types[id.0] };
+    let ty = match &v.op {
+        Op::Input => v.ty.clone().expect("an input declares its type"),
+        Op::Const(c) => {
+            let ty = v.ty.clone().expect("a const declares its type");
+            let ok = match c {
+                Const::Int(_) => ty.scalar.is_int(),
+                Const::Float(_) => ty.scalar.is_float(),
+                Const::Bool(_) => ty.scalar == Scalar::Bool,
+            };
+            if !ok {
+                return err(format!("%{name}: the items do not fit {}", ty.scalar));
+            }
+            ty
+        }
+        Op::Map { op, args } => {
+            let tys: Vec<&Ty> = args.iter().map(|a| ty_of(*a)).collect();
+            let sc = tys[0].scalar;
+            if let Some(t) = tys.iter().find(|t| t.scalar != sc) {
+                return err(format!(
+                    "%{name}: map {op} needs arguments of one scalar type, got {} and {}",
+                    sc, t.scalar
+                ));
+            }
+            let result = match op.kind() {
+                MapKind::Num => {
+                    require(name, op, sc.is_num(), sc, "a number")?;
+                    sc
+                }
+                MapKind::Float => {
+                    require(name, op, sc.is_float(), sc, "a Float (f32 or f64; cast an Int first)")?;
+                    sc
+                }
+                MapKind::Int => {
+                    require(name, op, sc.is_int(), sc, "an Int (i32 or i64)")?;
+                    sc
+                }
+                MapKind::EqCompare => Scalar::Bool,
+                MapKind::OrdCompare => {
+                    require(name, op, sc.is_num(), sc, "a number")?;
+                    Scalar::Bool
+                }
+                MapKind::Logic => {
+                    require(name, op, sc == Scalar::Bool, sc, "a Bool")?;
+                    Scalar::Bool
+                }
+            };
+            let shape = extend(name, &format!("map {op}"), &tys.iter().map(|t| &t.shape).collect::<Vec<_>>())?;
+            Ty { scalar: result, shape }
+        }
+        Op::Guard { cond, .. } => {
+            let t = ty_of(*cond);
+            if t.scalar != Scalar::Bool || !t.shape.is_scalar() {
+                return err(format!("%{name}: guard requires a scalar Bool, got {t}"));
+            }
+            t.clone()
+        }
+        Op::Select { cond, a, b } => {
+            let (tc, ta, tb) = (ty_of(*cond), ty_of(*a), ty_of(*b));
+            if tc.scalar != Scalar::Bool {
+                return err(format!("%{name}: select needs a Bool condition, got {}", tc.scalar));
+            }
+            if ta.scalar != tb.scalar {
+                return err(format!(
+                    "%{name}: select needs both values of one scalar type, got {} and {}",
+                    ta.scalar, tb.scalar
+                ));
+            }
+            let shape = extend(name, "select", &[&tc.shape, &ta.shape, &tb.shape])?;
+            Ty { scalar: ta.scalar, shape }
+        }
+        Op::Reduce { op, arg, axis } => {
+            let t = ty_of(*arg);
+            if !t.scalar.is_num() {
+                return err(format!("%{name}: reduce {op} needs numbers, got {}", t.scalar));
+            }
+            if t.shape.is_scalar() {
+                return err(format!("%{name}: reduce {op} needs an array of rank 1 or more, got a single value"));
+            }
+            let shape = match axis {
+                None if t.shape.is_empty() => return err(format!("%{name}: reduce {op} of an empty array has no value")),
+                None => Shape::scalar(),
+                Some(a) if *a > t.shape.rank() => {
+                    return err(format!("%{name}: reduce {op} axis={a}: the array has rank {}", t.shape.rank()));
+                }
+                Some(a) => {
+                    let mut dims = t.shape.0.clone();
+                    if dims[a - 1] == 0 {
+                        return err(format!("%{name}: reduce {op} axis={a}: that axis is empty, so there is no value"));
+                    }
+                    dims.remove(a - 1);
+                    Shape(dims)
+                }
+            };
+            Ty { scalar: t.scalar, shape }
+        }
+        Op::Matmul { a, b } => {
+            let (ta, tb) = (ty_of(*a), ty_of(*b));
+            if ta.scalar != tb.scalar || !ta.scalar.is_num() {
+                return err(format!(
+                    "%{name}: matmul needs numbers of one scalar type, got {} and {}",
+                    ta.scalar, tb.scalar
+                ));
+            }
+            if ta.shape.is_scalar() || tb.shape.is_scalar() {
+                return err(format!(
+                    "%{name}: matmul needs arrays of rank 1 or more (a single value scales: map mul)"
+                ));
+            }
+            let n = *ta.shape.0.last().unwrap();
+            if n != tb.shape.0[0] {
+                return err(format!(
+                    "%{name}: matmul: the last axis of {} ({n}) is not the first of {} ({})",
+                    ta.shape, tb.shape, tb.shape.0[0]
+                ));
+            }
+            if n == 0 {
+                return err(format!("%{name}: matmul over an empty axis has no value"));
+            }
+            let mut dims = ta.shape.0[..ta.shape.rank() - 1].to_vec();
+            dims.extend_from_slice(&tb.shape.0[1..]);
+            Ty {
+                scalar: ta.scalar,
+                shape: Shape(dims),
+            }
+        }
+        Op::Take { n, axis, arg } | Op::Drop { n, axis, arg } => {
+            let t = ty_of(*arg);
+            let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
+            if t.shape.is_scalar() {
+                return err(format!("%{name}: {what} needs an array of rank 1 or more, got a single value"));
+            }
+            if *axis > t.shape.rank() {
+                return err(format!("%{name}: {what} axis={axis}: the array has rank {}", t.shape.rank()));
+            }
+            let d = t.shape.0[axis - 1];
+            let k = n.unsigned_abs() as usize;
+            if k > d {
+                return err(format!("%{name}: {what} {n} of {d} items along axis {axis} (no padding here)"));
+            }
+            let mut dims = t.shape.0.clone();
+            dims[axis - 1] = if what == "take" { k } else { d - k };
+            Ty {
+                scalar: t.scalar,
+                shape: Shape(dims),
+            }
+        }
+        Op::Rotate { axis, amounts, arg } => {
+            let t = ty_of(*arg);
+            if t.shape.is_scalar() {
+                return err(format!("%{name}: rotate needs an array of rank 1 or more, got a single value"));
+            }
+            if *axis > t.shape.rank() {
+                return err(format!("%{name}: rotate axis={axis}: the array has rank {}", t.shape.rank()));
+            }
+            let mut dims = t.shape.0.clone();
+            if amounts.len() > 1 {
+                dims.insert(0, amounts.len());
+            }
+            Ty {
+                scalar: t.scalar,
+                shape: Shape(dims),
+            }
+        }
+        Op::Lookup { axis, idx, arg } => {
+            let (ti, ta) = (ty_of(*idx), ty_of(*arg));
+            if !ti.scalar.is_int() {
+                return err(format!("%{name}: lookup needs Int positions, got {}", ti.scalar));
+            }
+            if ta.shape.is_scalar() {
+                return err(format!(
+                    "%{name}: lookup needs an array of rank 1 or more to pick from, got a single value"
+                ));
+            }
+            if *axis > ta.shape.rank() {
+                return err(format!("%{name}: lookup axis={axis}: the array has rank {}", ta.shape.rank()));
+            }
+            if *axis > 1 && ti.shape.rank() > 1 {
+                return err(format!(
+                    "%{name}: lookup axis={axis}: along a later axis the positions are a vector or a single value (as s_elect_{axis}), got rank {}",
+                    ti.shape.rank()
+                ));
+            }
+            let len = ta.shape.0[axis - 1];
+            // Positions written in the program are checked here; bound ones when the program runs.
+            if let Op::Const(Const::Int(items)) = &preceding[idx.0].op {
+                if let Some(bad) = items.iter().find(|i| **i < 1 || **i > len as i64) {
+                    return err(format!("%{name}: lookup: index {bad} is outside 1..{len}"));
+                }
+            }
+            let mut dims = ta.shape.0[..axis - 1].to_vec();
+            dims.extend_from_slice(&ti.shape.0);
+            dims.extend_from_slice(&ta.shape.0[*axis..]);
+            Ty {
+                scalar: ta.scalar,
+                shape: Shape(dims),
+            }
+        }
+        Op::Concat { axis, a, b } => {
+            let (ta, tb) = (ty_of(*a), ty_of(*b));
+            if ta.scalar != tb.scalar {
+                return err(format!(
+                    "%{name}: concat needs items of one scalar type, got {} and {}",
+                    ta.scalar, tb.scalar
+                ));
+            }
+            // A single value joins a vector as one item.
+            let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
+            let (sa, sb) = (lift(&ta.shape), lift(&tb.shape));
+            if sa.rank() != sb.rank() {
+                return err(format!("%{name}: concat: ranks differ, {} and {}", sa, sb));
+            }
+            if *axis > sa.rank() {
+                return err(format!("%{name}: concat axis={axis}: the arrays have rank {}", sa.rank()));
+            }
+            for (i, (x, y)) in sa.0.iter().zip(&sb.0).enumerate() {
+                if i + 1 != *axis && x != y {
+                    return err(format!(
+                        "%{name}: concat along axis {axis}: the other axes differ, {} and {}",
+                        sa, sb
+                    ));
+                }
+            }
+            let mut dims = sa.0.clone();
+            dims[axis - 1] += sb.0[axis - 1];
+            Ty {
+                scalar: ta.scalar,
+                shape: Shape(dims),
+            }
+        }
+        Op::TopK { k, axis, arg } => {
+            let t = ty_of(*arg);
+            if !t.scalar.is_num() {
+                return err(format!("%{name}: topk needs numbers, got {}", t.scalar));
+            }
+            if t.shape.is_scalar() {
+                return err(format!("%{name}: topk needs an array of rank 1 or more, got a single value"));
+            }
+            if *axis > t.shape.rank() {
+                return err(format!("%{name}: topk axis={axis}: the array has rank {}", t.shape.rank()));
+            }
+            if *k == 0 {
+                return err(format!("%{name}: topk needs a count from 1"));
+            }
+            Ty {
+                scalar: Scalar::Bool,
+                shape: t.shape.clone(),
+            }
+        }
+        Op::Reshape { shape, arg } => {
+            let t = ty_of(*arg);
+            if t.shape.is_empty() && !shape.is_empty() {
+                return err(format!("%{name}: reshape {shape} of an empty array: there is no item to repeat"));
+            }
+            Ty {
+                scalar: t.scalar,
+                shape: shape.clone(),
+            }
+        }
+        Op::Ravel { arg } => {
+            let t = ty_of(*arg);
+            Ty {
+                scalar: t.scalar,
+                shape: Shape(vec![t.shape.len()]),
+            }
+        }
+        Op::Table { op, a, b } => {
+            let (ta, tb) = (ty_of(*a), ty_of(*b));
+            let scalar = match op {
+                TableOp::Left => ta.scalar,
+                TableOp::Right => tb.scalar,
+                TableOp::Map(m) => {
+                    if ta.scalar != tb.scalar {
+                        return err(format!(
+                            "%{name}: table {m} needs arguments of one scalar type, got {} and {}",
+                            ta.scalar, tb.scalar
+                        ));
+                    }
+                    let sc = ta.scalar;
+                    match m.kind() {
+                        MapKind::Num => require(name, m, sc.is_num(), sc, "a number").map(|_| sc)?,
+                        MapKind::Float => require(name, m, sc.is_float(), sc, "a Float (f32 or f64; cast an Int first)").map(|_| sc)?,
+                        MapKind::Int => require(name, m, sc.is_int(), sc, "an Int (i32 or i64)").map(|_| sc)?,
+                        MapKind::EqCompare => Scalar::Bool,
+                        MapKind::OrdCompare => require(name, m, sc.is_num(), sc, "a number").map(|_| Scalar::Bool)?,
+                        MapKind::Logic => require(name, m, sc == Scalar::Bool, sc, "a Bool").map(|_| Scalar::Bool)?,
+                    }
+                }
+            };
+            let mut dims = ta.shape.0.clone();
+            dims.extend_from_slice(&tb.shape.0);
+            Ty {
+                scalar,
+                shape: Shape(dims),
+            }
+        }
+        Op::Cast { op, arg } => Ty {
+            scalar: op.to,
+            shape: ty_of(*arg).shape.clone(),
+        },
+        Op::Transpose { perm, arg } => {
+            let t = ty_of(*arg);
+            let perm = permutation(t.shape.rank(), perm).map_err(|e| crate::Error(format!("%{name}: transpose: {e}")))?;
+            Ty {
+                scalar: t.scalar,
+                shape: transpose_layout(&t.shape, &perm).0,
+            }
+        }
+    };
+    if let Some(declared) = &v.ty {
+        if *declared != ty {
+            return err(format!("%{name}: declared {declared}, computed {ty}"));
+        }
+    }
+    Ok(ty)
 }
 
 fn require(name: &str, op: &MapOp, ok: bool, got: Scalar, wanted: &str) -> Result<()> {

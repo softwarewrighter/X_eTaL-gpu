@@ -5,10 +5,10 @@ inline int xetal_idiv_int(int a, int b) { int q = a / b; return (a % b != 0 && (
 inline int xetal_imod_int(int a, int b) { return a - xetal_idiv_int(a, b) * b; }
 
 // k0: 8 elements, one work-item each; computes %mul %add %div %mul_2 %add_2
-__kernel void k0(__global const long* b_r, __global const long* b_a, __global const float* b_l_2, __global long* b_add, __global float* b_add_2) {
+__kernel void k0(__global const long* b_a, __global const float* b_l_2, __global long* b_add, __global float* b_add_2) {
     size_t i = get_global_id(0);
     if (i >= 8) return;
-    long t_mul = (10L * b_r[i]);
+    long t_mul = (10L * b_a[i]);
     long t_add = (b_a[i] + t_mul);
     float t_div = (b_l_2[i] / 4.0f);
     float t_mul_2 = (0.5f * t_div);

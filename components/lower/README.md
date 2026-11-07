@@ -20,6 +20,22 @@ builds the components only after that; the pin is `XETAL_COMMIT`, and
 what a repin breaks here is fixed here (ask G11 in
 `docs/xetal-asks.md`).
 
+## Repeated expression work
+
+The builder uses XIR's incremental checker for each new value rather
+than cloning and rechecking the entire prefix. Identical immutable SSA
+expressions reuse their original value, including guards with the same
+condition and message. Different inputs and different failure messages
+remain distinct; the first guard stays in its original execution order.
+Rollback removes entries for discarded values. This does not evaluate
+renderer outputs on the host or remove validation of changed inputs.
+
+The ray-tracing input tests bind and change geometry, origins, directions
+and materials through actual library entry points, compare GPU pixels,
+check invalid data, and recover in the same prepared session. See
+[performance choices](../../docs/ray-performance.md) for measured graph
+sizes and remaining primitive-loop expansion costs.
+
 ## How it translates
 
 The translator is a small evaluator over Core. A value is one of:

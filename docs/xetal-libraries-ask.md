@@ -538,6 +538,46 @@ An optional thin emissive rod is scene geometry; do not label it a
 volumetric shaft. Full spectral rendering, volumetric transport and
 lens diffraction/starbursts are not requested for this milestone.
 
+## RL10: bounded vectorized primitive queries for high-resolution rendering
+
+Status: requested here, not acknowledged upstream. Intended owner:
+X_eTaL-libraries, compatible RayTrace additions rather than a new package.
+Needed before practical high-resolution logo CPU/GPU benchmarking unless
+local compiler work removes the same cost. No language syntax is requested.
+
+Evidence: the shared primitive sweep holds bounded ray/triangle working
+arrays, but static p_ower is unrolled by this GPU lowering. A one-pixel
+322-triangle logo probe produces 258,581 IR lines and 16,817 guards after
+expression reuse. The tiny two-triangle diagnostic still plans 2,230
+launches for sixteen rays. Ray batching alone cannot remove that graph
+expansion. Existing nearest-hit/render APIs should remain the oracle.
+
+Provide an ordinary X_eTaL path that evaluates a bounded block of
+primitive/ray pairs with array operations, then reduces by distance and
+stable primitive ID. An explicit positive primitive-block size and ray
+batch bound control working memory. Reuse the pair intersection math;
+keep numeric IDs as Int. Return the same miss, near/far clipping and
+exact-tie semantics as existing APIs. Expose ordinary query functions
+and use them in a compatible renderer path, including shadow queries,
+without duplicating the renderer in this GPU repository. The owner may
+choose names; b_atchedNearest/b_atchedRender are illustrative only.
+
+Do not replace the current bounded sweep with an unbounded allocation of
+all image pixels times all geometry. A small bounded product can expose
+more parallel work while preserving memory limits. Keep validation,
+finite-result errors, chunk-independent tie handling and stable global
+pixel/sample identity. No unchecked public renderer is requested.
+
+Acceptance: CPU comparisons against the existing path for primary,
+shadow and reflected rays, zero/one/multiple primitive blocks, final
+partial blocks, misses, exact ties, invalid bounds and nonfinite data.
+Different ray/primitive chunk sizes must agree under the established
+Float tolerance with exact IDs. Commit types/docs/failure tests. This
+repo then verifies strict lowering, changed bound inputs and GPU pixels,
+reports graph/launch/memory costs and paired timings for fixed quality.
+A BVH remains a later option if these measurements justify it; RL10 does
+not require BVH construction, new macros, native extensions or core syntax.
+
 ## Delivery and adoption
 
 Implement in dependency order RL1, the RL4 diagnostic renderer, then RL2

@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 19:11 `feat` Check new IR values incrementally and reuse immutable expressions/guards during lowering; test actual RayTrace bound-input changes and invalid-input recovery on RTX OpenCL. Preserve diagnostic pixels while reducing the saved graph audit from 23,770 to 4,541 lines and 1,585 to 310 guards. Document ray batching, residency, parallel frame tradeoffs and RL10 bounded vectorized primitive queries for the remaining logo expansion cost. Regenerate and review five affected Mojo source snapshots and nine OpenCL kernel/plan snapshots; all thirteen GPU demo outputs still match their unchanged baselines.
+
 - 16:04 `chore` Record completed sphere/crystal composition checkpoint and prioritize GPU source/scaling for native high-resolution logo output with matched CPU/GPU timing.
 
 - 15:57 `feat` Assemble an original Scene v2 sphere/crystal composition with closed-volume checks, bounded opaque/mirror CPU diagnostics, uncompressed TIFF and settings metadata; extend the committed library checks from eleven to twenty and preserve the published logo recording pins. Record the preview pixelation limit and prioritize native high-resolution logo output with matched CPU/GPU timing before further glass rendering.

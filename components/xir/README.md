@@ -116,3 +116,12 @@ Runtime validation uses `guard %condition xHEX_MESSAGE`: a scalar Bool
 true fails with the decoded UTF-8 message, and false returns false.
 The operation executes in definition order even when its result is unused.
 Messages use an x-prefixed hex token so comments/newlines round-trip.
+
+## Incremental construction
+
+check::check_value validates one SSA value against the checked types and
+values that precede it. It uses the same rules as check, including static
+lookup-index bounds and declared types. This lets builders check new
+operations without cloning or revisiting the entire program. Forward
+operands are refused. Whole-program check remains the validation entry
+point for loaded programs.

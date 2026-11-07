@@ -360,6 +360,8 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   The tiny diagnostic agrees on CPU and RTX OpenCL; larger GPU scenes
   still need scaling and validation. The next quality target is a native
   1280 by 512 or larger antialiased still/video with paired CPU/GPU timings.
+- [Ray performance choices](docs/ray-performance.md) -- batching, resident
+  sessions, frame concurrency and matched CPU/GPU measurement
 - [Ray integration status](docs/ray-integration.md) -- committed library
   adoption, CPU diagnostic evidence, tested GPU boolean maps and remaining
   renderer validation gaps; shape guards, boolean reductions and array

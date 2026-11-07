@@ -45,7 +45,7 @@ __kernel void k1(__global const float* b_mm, __global const float* b_tb, __globa
 }
 
 // table6: %tb_2 := a 'right t_able b, 4 by 2 items, one work-item each.
-__kernel void table6(__global const long* b_a_2, __global const float* b_take_2, __global float* b_tb_2) {
+__kernel void table6(__global const long* b_a, __global const float* b_take_2, __global float* b_tb_2) {
     long k = get_global_id(0);
     const long nb = 2;
     if (k >= 8) return;
@@ -102,7 +102,7 @@ __kernel void reduce_axis_add_float(__global const float* in, __global float* ou
 }
 
 // table14: %tb_4 := a 'left t_able b, 4 by 2 items, one work-item each.
-__kernel void table14(__global const float* b_addr, __global const long* b_b_2, __global float* b_tb_4) {
+__kernel void table14(__global const float* b_addr, __global const long* b_b, __global float* b_tb_4) {
     long k = get_global_id(0);
     const long nb = 2;
     if (k >= 8) return;

@@ -21,7 +21,7 @@
 
 pub mod cache;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -99,6 +99,8 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
     let mut t = Translator {
         program: Program::default(),
         types: Vec::new(),
+        expressions: HashMap::new(),
+        used_names: HashSet::new(),
         globals: HashMap::new(),
         dir: dir.to_path_buf(),
         names: HashMap::new(),
@@ -222,6 +224,8 @@ pub fn lower_function(function: &str, params: &[(String, Ty)], dir: &Path, uses:
     let mut t = Translator {
         program: Program::default(),
         types: Vec::new(),
+        expressions: HashMap::new(),
+        used_names: HashSet::new(),
         globals: HashMap::new(),
         dir: dir.to_path_buf(),
         names: HashMap::new(),
@@ -503,6 +507,9 @@ struct Translator {
     program: Program,
     /// The type of every value of `program`, as the checker gives them.
     types: Vec<Ty>,
+    /// Identical immutable SSA expressions, including ordered validation.
+    expressions: HashMap<String, ValueId>,
+    used_names: HashSet<String>,
     /// Library and `u:` definitions, lazily evaluated at each reference.
     globals: HashMap<String, Expr>,
     dir: PathBuf,
@@ -536,12 +543,12 @@ impl Translator {
         };
         let n = self.names.entry(base.clone()).or_insert(0);
         *n += 1;
-        if *n == 1 && self.program.find(&base).is_none() {
+        if *n == 1 && self.used_names.insert(base.clone()) {
             return base;
         }
         loop {
             let candidate = format!("{base}_{}", n);
-            if self.program.find(&candidate).is_none() {
+            if self.used_names.insert(candidate.clone()) {
                 return candidate;
             }
             *n += 1;
@@ -550,22 +557,28 @@ impl Translator {
 
     /// Push a value and learn its type from the checker.
     fn push(&mut self, base: &str, ty: Option<Ty>, op: Op) -> Result<ValueId> {
-        let name = self.name(base);
-        self.program.values.push(Value { name, ty, op });
-        let id = ValueId(self.program.values.len() - 1);
-        let mut probe = self.program.clone();
-        probe.outputs = vec![id];
-        match check(probe) {
-            Ok(c) => {
-                self.types = c.types;
-                self.lines.insert(id, self.line.clone());
-                Ok(id)
-            }
-            Err(e) => {
-                self.program.values.pop();
-                Err(e)
+        // Inputs remain distinct named bindings. Debug includes Float signed
+        // zero; equality additionally prevents merging NaNs.
+        let key = (!matches!(op, Op::Input)).then(|| format!("{ty:?}:{op:?}"));
+        if let Some(id) = key.as_ref().and_then(|key| self.expressions.get(key)) {
+            if self.program.value(*id).op == op {
+                return Ok(*id);
             }
         }
+        let value = Value {
+            name: self.name(base),
+            ty,
+            op,
+        };
+        let ty = xetal_gpu_xir::check::check_value(&value, &self.types, &self.program.values)?;
+        let id = ValueId(self.program.values.len());
+        self.program.values.push(value);
+        self.types.push(ty);
+        self.lines.insert(id, self.line.clone());
+        if let Some(key) = key {
+            self.expressions.insert(key, id);
+        }
+        Ok(id)
     }
 
     fn ty(&self, id: ValueId) -> &Ty {
@@ -583,6 +596,8 @@ impl Translator {
         self.types.truncate(n);
         self.lines.retain(|id, _| id.0 < n);
         self.names = names;
+        self.expressions.retain(|_, id| id.0 < n);
+        self.used_names = self.program.values.iter().map(|v| v.name.clone()).collect();
     }
 
     /// A static array written into the program as a constant.

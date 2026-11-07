@@ -559,3 +559,18 @@ CPU implementation, cold setup, warm render wall time, GPU device time,
 transfers, and encoding are distinct. Measure speedup or slowdown rather
 than assuming the GPU wins. No timing at one resolution is presented as
 a measured result at a different resolution.
+
+## Ray source correctness and scaling checkpoint
+
+Strict bound-input RayTrace nearest/render tests now change scene/ray
+arrays and validate GPU results and failures, including recovery after
+rebinding. Incremental type checking and immutable expression reuse
+reduce repeated graph construction and validation without weakening
+runtime guards. The tiny diagnostic remains correct on CPU/OpenCL.
+
+The 322-triangle logo probe remains too expanded for an efficient large
+render: 258,581 IR lines and 16,817 guards at one pixel. RL10 requests
+bounded vectorized primitive queries; ray-device must profile resource
+use before allocating or compiling a full-resolution workload. Compare
+ray batches and resident sessions first, then bounded frame concurrency.
+Do not treat reduced IR counts as an established renderer speedup.
