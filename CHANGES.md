@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-07
 
+- `chore` Record completed native RTX glass transport preview and advance to gallery integration, retaining explicit sampling and quality limitations.
+
 - `feat` Preserve the first native glass sphere/crystal still with raw linear/display Float data, uncompressed TIFF masters and independent matched CPU/GPU validation. Add reproducible curation and artifact checks; keep RTX observations separate from parallel Apple Silicon work.
 
 - `chore` Record completed shared glass transport validation and advance to the larger glass still; retain cold compilation and tuple-loop optimization limits.
