@@ -25,7 +25,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use xetal_gpu_xir::ir::{Const, MapOp, Op, Program, ReduceOp, Scalar, Shape, TableOp, Ty, Value, ValueId};
+use xetal_gpu_xir::ir::{Const, MapOp, Op, Program, ReduceOp, RegionKind, Scalar, Shape, TableOp, Ty, Value, ValueId};
 use xetal_gpu_xir::{check, interp, Array, Data, Error, Result};
 
 fn err<T>(message: impl Into<String>) -> Result<T> {
@@ -78,11 +78,17 @@ pub fn lower_file_full(path: &Path) -> Result<Lowered> {
 /// Lower `src`, reported as `name`; files are read relative to `dir`.
 /// A lowering is cached by everything it read (see [`cache`]).
 pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
+    lower_source_regions(name, src, dir, false)
+}
+
+/// Opt-in structured local regions for the OpenCL prototype. Region cache
+/// entries are kept separate from legacy lowering and Mojo programs.
+pub fn lower_source_regions(name: &str, src: &str, dir: &Path, regions: bool) -> Result<Lowered> {
     let loaded = xetal_program::load(name, src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
     let cache_dir = cache::dir();
     // The files []N_GET reads are part of the key; they are known only after
     // translating, so the key is checked against a manifest of them.
-    let combined = loaded.sources.combined().to_string();
+    let combined = format!("regions={regions}\n{}", loaded.sources.combined());
     if let Some(cd) = &cache_dir {
         let manifest = cd.join(format!("{}.files", cache::key(&combined, &[])));
         if let Ok(list) = std::fs::read_to_string(&manifest) {
@@ -97,6 +103,7 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
         }
     }
     let mut t = Translator {
+        regions,
         program: Program::default(),
         types: Vec::new(),
         expressions: HashMap::new(),
@@ -219,9 +226,15 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
 /// `gp:a_ccel<`: the arguments' shapes are known when they are bound,
 /// so the lowering is specialized to them (and cached by the caller).
 pub fn lower_function(function: &str, params: &[(String, Ty)], dir: &Path, uses: &str) -> Result<Lowered> {
+    lower_function_regions(function, params, dir, uses, false)
+}
+
+/// Lower an array function with structured device loops and dynamic each.
+pub fn lower_function_regions(function: &str, params: &[(String, Ty)], dir: &Path, uses: &str, regions: bool) -> Result<Lowered> {
     let src = format!("{uses}\nu:a_ccel := {function}\n");
     let loaded = xetal_program::load("gp:a_ccel<", &src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
     let mut t = Translator {
+        regions,
         program: Program::default(),
         types: Vec::new(),
         expressions: HashMap::new(),
@@ -504,6 +517,7 @@ impl Env {
 }
 
 struct Translator {
+    regions: bool,
     program: Program,
     /// The type of every value of `program`, as the checker gives them.
     types: Vec<Ty>,
@@ -627,6 +641,136 @@ impl Translator {
             V::Static(a, _) => Ok(self.constant(a, Some(base))),
             other => err(format!("expected an array, got a {}", other.what())),
         }
+    }
+
+    /// Trace one body using a symbolic argument; move its graph into a local
+    /// scope and capture every external SSA value explicitly. Array constants
+    /// are hoisted, so scene data is shared rather than copied per work-item.
+    fn region(&mut self, f: V, x: V, kind: RegionKind) -> Result<V> {
+        let initial = self.node(x, "state")?;
+        let mut input_ty = self.ty(initial).clone();
+        if kind == RegionKind::Each {
+            if input_ty.shape.rank() != 1 {
+                return err("e_ach requires a vector");
+            }
+            input_ty.shape = Shape::scalar();
+        }
+        let mark = self.mark();
+        let start = self.program.values.len();
+        let state = self.push("region_state", Some(input_ty.clone()), Op::Input)?;
+        let result = self.apply(f, V::Node(state))?;
+        let output = self.node(result, "region_result")?;
+        let out_ty = self.ty(output).clone();
+        if (kind == RegionKind::Each && !out_ty.shape.is_scalar()) || (matches!(kind, RegionKind::Repeat(_)) && out_ty != input_ty) {
+            self.rollback(mark);
+            return err("region body must preserve state type or return a scalar from each");
+        }
+        let nodes = self.program.values[start..].to_vec();
+        self.rollback(mark);
+        let mut ids = HashMap::new();
+        // Hoist only total, side-effect-free expressions independent of state.
+        // Guards stay at their original point, even if their condition is invariant.
+        // Dynamic lookups, integer division and float-to-Int casts stay local.
+        for (offset, value) in nodes.iter().enumerate().skip(1) {
+            let total = matches!(
+                value.op,
+                Op::Const(_)
+                    | Op::Select { .. }
+                    | Op::Reduce { .. }
+                    | Op::Take { .. }
+                    | Op::Drop { .. }
+                    | Op::Ravel { .. }
+                    | Op::Reshape { .. }
+                    | Op::Concat { .. }
+                    | Op::Transpose { .. }
+                    | Op::Table { .. }
+            ) || matches!(value.op, Op::Map { op, .. } if !matches!(op, MapOp::IDiv | MapOp::Mod));
+            let total = total
+                && !matches!(
+                    value.op,
+                    Op::Table {
+                        op: TableOp::Map(MapOp::IDiv | MapOp::Mod),
+                        ..
+                    }
+                );
+            if total && value.op.args().iter().all(|arg| arg.0 < start || ids.contains_key(arg)) {
+                let op = value.op.remap(|arg| if arg.0 < start { arg } else { ids[&arg] });
+                let parent = self.push("capture", value.ty.clone(), op)?;
+                ids.insert(ValueId(start + offset), parent);
+            }
+        }
+        let mut captures = Vec::new();
+        for (offset, value) in nodes.iter().enumerate().skip(1) {
+            if ids.contains_key(&ValueId(start + offset)) {
+                continue;
+            }
+            for old in value.op.args() {
+                let parent = if old.0 < start { Some(old) } else { ids.get(&old).copied() };
+                if let Some(parent) = parent {
+                    if !captures.contains(&parent) {
+                        captures.push(parent);
+                    }
+                }
+            }
+        }
+        let parent_output = if output.0 < start {
+            Some(output)
+        } else {
+            ids.get(&output).copied()
+        };
+        if let Some(parent) = parent_output {
+            if !captures.contains(&parent) {
+                captures.push(parent);
+            }
+        }
+        let mut body = Program::default();
+        body.values.push(Value {
+            name: "state".into(),
+            ty: Some(input_ty),
+            op: Op::Input,
+        });
+        let mut mapping = HashMap::from([(state, ValueId(0))]);
+        for (i, &arg) in captures.iter().enumerate() {
+            body.values.push(Value {
+                name: format!("capture{i}"),
+                ty: Some(self.ty(arg).clone()),
+                op: Op::Input,
+            });
+            if arg.0 < start {
+                mapping.insert(arg, ValueId(i + 1));
+            }
+        }
+        for (&old, &parent) in &ids {
+            if let Some(i) = captures.iter().position(|a| *a == parent) {
+                mapping.insert(old, ValueId(1 + i));
+            }
+        }
+        for (offset, value) in nodes.iter().enumerate().skip(1) {
+            let old = ValueId(start + offset);
+            if ids.contains_key(&old) {
+                continue;
+            }
+            let op = value.op.remap(|arg| mapping[&arg]);
+            let id = ValueId(body.values.len());
+            body.values.push(Value {
+                name: format!("local{offset}"),
+                ty: value.ty.clone(),
+                op,
+            });
+            mapping.insert(old, id);
+        }
+        body.outputs.push(mapping[&output]);
+        let mut args = vec![initial];
+        args.extend(captures);
+        Ok(V::Node(self.push(
+            "region",
+            None,
+            Op::Region {
+                kind,
+                args,
+                body: Box::new(body),
+            },
+        )?))
     }
 
     /// An operation on static arrays, computed now by the XIR interpreter.
@@ -799,7 +943,21 @@ impl Translator {
                 Ok(V::Power { f, count: Some(count) })
             }
             V::Power { f, count: Some(count) } => {
-                // `k 'f p_ower m`: f applied k times, unrolled (k is known now).
+                if count < 0 {
+                    return err("p_ower requires a nonnegative count");
+                }
+                if count == 0 {
+                    return Ok(x);
+                }
+                // Preserve fixed-shape array state as a structured device loop.
+                // Tuple/shape-changing recurrences retain the existing specialization.
+                if self.regions && count > 1 && matches!(x, V::Node(_) | V::Static(_, _)) {
+                    let mark = self.mark();
+                    match self.region(*f.clone(), x.clone(), RegionKind::Repeat(count as usize)) {
+                        Ok(v) => return Ok(v),
+                        Err(_) => self.rollback(mark),
+                    }
+                }
                 let mut v = x;
                 for _ in 0..count.max(0) {
                     v = self.apply((*f).clone(), v)?;
@@ -1409,8 +1567,11 @@ impl Translator {
                 // `'f e_ach v`: f on each item of v, known now (r_ange n, a strand); each
                 // result a single value, the results a vector (a nested result is not an array).
                 let f = l;
+                if self.regions && matches!(r, V::Node(_)) {
+                    return self.region(f, r, RegionKind::Each);
+                }
                 let V::Static(items, _) = r else {
-                    return err("e_ach over a value the device computes is outside the subset (its items must be known now)");
+                    return err("e_ach requires an array");
                 };
                 if items.shape.rank() != 1 {
                     return err("e_ach over other than a vector is outside the subset");

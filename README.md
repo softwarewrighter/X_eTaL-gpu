@@ -354,13 +354,17 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   linked (`just pages` builds it into `pages/`, `just publish`
   publishes it, `just check-live` checks it)
 - [Ray tracing demos and recordings](https://softwarewrighter.github.io/X_eTaL-gpu/ray-tracing/)
-  provide a native 1280 by 512 CPU logo still, the first motion preview,
-  exact source/settings and uncompressed TIFF masters. The video remains
-  low resolution; glass and benchmark scenes remain planned.
-  Reproduce with `just ray-animate-cpu`; `just ray-render-cpu` makes a still.
-  The tiny diagnostic agrees on CPU and RTX OpenCL; larger GPU scenes
-  still need device-side tracing loops/fusion and validation. Temporary
-  device storage is reused; `just ray-memory` reports allocation costs.
+  provide native 1280 by 512 RTX and CPU logo stills, the first CPU motion
+  preview, exact source/settings and uncompressed TIFF masters. The video
+  remains low resolution; glass and benchmark scenes remain planned.
+  Reproduce the GPU still with `just ray-render-regions`; its measured
+  second resident call took 1.21 seconds including output readback.
+  Structured loops keep the actual shared nearest query at 10 launches
+  across 2/44/322 triangles; a small image from the exact generated program
+  agrees with the pinned CPU evaluator. The scalar channel prototype
+  still traces each pixel three times. Full-resolution matched CPU timing,
+  compact error reduction and frame-ring/export overlap remain pending.
+  Temporary device storage is reused; `just ray-memory` reports costs.
   The next quality target is a native
   1280 by 512 or larger antialiased still/video with paired CPU/GPU timings.
 - [Ray performance choices](docs/ray-performance.md) -- batching, resident

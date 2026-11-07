@@ -86,6 +86,7 @@ pub fn emit(checked: &Checked, schedule: &Schedule, name: &str) -> Result<(Strin
         let id = ValueId(i);
         let ty = checked.ty(id);
         match &v.op {
+            Op::Region { .. } => return Err(Error("structured regions currently require the OpenCL backend".into())),
             Op::Input | Op::Const(_) => {}
             Op::Guard { .. } => {
                 flush(&mut steps, &mut current, &mut current_len);

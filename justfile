@@ -270,3 +270,11 @@ ray-test-cpu-tiles:
 # Validate the curated high-resolution still and its uncompressed masters.
 ray-test-still:
     python3 scripts/test-ray-still.py
+
+# Experimental shared ray tracing through structured OpenCL regions
+ray-render-regions *args:
+    python3 scripts/ray-render-regions.py {{args}}
+
+# Generic region, shared ray-query and shading CPU/GPU checks
+ray-test-regions:
+    cd components && cargo test -p xetal-gpu-cli --test regions -- --nocapture

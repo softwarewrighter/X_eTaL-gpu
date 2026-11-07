@@ -12,7 +12,7 @@
 main{max-width:980px;margin:auto;padding:24px 18px 64px}a{color:var(--accent)}h1{line-height:1.2;margin:20px 0 8px}h2{margin-top:0}p{max-width:70ch}
 .muted{color:var(--muted)}nav{display:flex;gap:18px;flex-wrap:wrap}section{margin-top:28px;padding:22px;background:var(--card);border:1px solid var(--line);border-radius:12px;scroll-margin-top:16px}
 .badge{display:inline-block;padding:3px 10px;border:1px solid var(--line);border-radius:20px;font-size:.85rem;margin-bottom:12px}
-figure#native-still{margin:0 0 16px}img.native-still{display:block;width:100%;height:auto;border-radius:8px}figcaption{margin-top:10px}video,.frame-image{display:block;width:100%;height:auto;background:#202c40;border-radius:8px;aspect-ratio:@@WIDTH@@ / @@HEIGHT@@}.frame-image{image-rendering:pixelated}
+figure#native-still,figure#gpu-still{margin:0 0 16px}img.native-still{display:block;width:100%;height:auto;border-radius:8px}figcaption{margin-top:10px}video,.frame-image{display:block;width:100%;height:auto;background:#202c40;border-radius:8px;aspect-ratio:@@WIDTH@@ / @@HEIGHT@@}.frame-image{image-rendering:pixelated}
 .links{display:flex;gap:12px 22px;flex-wrap:wrap;margin:14px 0}.links a{font-weight:600}details{margin-top:18px}summary{cursor:pointer;font-weight:600}label{display:block;margin:12px 0}input[type=range]{width:min(100%,600px)}output{display:inline-block;min-width:50px}
 .planned{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:center}.planned img{width:160px;height:64px;border-radius:6px}code{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem}footer{margin-top:32px;color:var(--muted);font-size:.9rem}
 @media(max-width:540px){section{padding:15px}.planned{grid-template-columns:1fr}.planned img{width:100%;height:auto;max-width:320px}}
@@ -21,18 +21,21 @@ figure#native-still{margin:0 0 16px}img.native-still{display:block;width:100%;he
 <body><main>
 <nav aria-label="Ray tracing navigation"><a href="../#ray-tracing">X_eTaL on GPUs</a><a href="#logo">Logo vane</a><a href="#glass">Glass</a><a href="#benchmark">Benchmark</a></nav>
 <h1>Ray tracing</h1>
-<p class="muted">Demos and recorded videos from X_eTaL scene programs. The first animation is ready; the glass and benchmark scenes are in development.</p>
+<p class="muted">Demos and recorded videos from X_eTaL scene programs. A native RTX still and the earlier CPU animation are ready; the glass and benchmark scenes are in development.</p>
 <section id="logo" aria-labelledby="logo-title">
-<span class="badge">Recorded CPU render</span>
+<span class="badge">RTX still and recorded CPU animation</span>
 <h2 id="logo-title">A fixed X and a rotating _eTaL vane</h2>
 <p>The silver X stays still. The copper letters, shaft and arrowhead turn together around its vertical axis. The camera, post and floor stay fixed.</p>
+@@GPU@@
+<details id="cpu-still"><summary>Earlier native CPU still and sources</summary>
 @@HIRES@@
+</details>
 <video id="logo-video" controls loop muted playsinline preload="metadata" poster="media/logo/poster.png" width="@@WIDTH@@" height="@@HEIGHT@@" aria-label="Recorded X_eTaL weather-vane animation">
 <source src="media/logo/logo.webm" type="video/webm">Your browser cannot play this video. <a href="media/logo/logo.webm">Download the WebM recording</a> or inspect the PNG frames below.
 </video>
 <p class="muted">@@FRAMES@@ frames &middot; @@WIDTH@@ &times; @@HEIGHT@@ pixels &middot; @@FPS@@ fps. This is a low-resolution CPU preview, with a point light and hard shadows. It plays recorded pixels; the browser does not trace rays. Letter backs naturally appear reversed during the turn.</p>
 <div class="links"><a href="media/logo/logo.webm" download>Download video</a><a href="media/logo/poster.png">Larger PNG still</a><a href="media/logo/masters.zip" download>Uncompressed TIFF masters + source</a><a href="media/logo/manifest.json">Render settings</a><a href="#scene-source">Scene source</a></div>
-<details><summary>Inspect individual rendered frames</summary>
+<details id="frame-inspector"><summary>Inspect individual rendered frames</summary>
 <label for="frame">Vane angle: <output id="angle" for="frame">0 degrees</output></label>
 <input id="frame" type="range" min="0" max="@@LAST@@" step="1" value="0">
 <img id="frame-image" class="frame-image" src="media/logo/frames/frame-000.png" width="@@WIDTH@@" height="@@HEIGHT@@" alt="Ray-traced vane at zero degrees">

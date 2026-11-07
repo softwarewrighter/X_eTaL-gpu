@@ -38,11 +38,14 @@ usage: xetal-gpu COMMAND FILE [OPTIONS]
       its compiler keeps (CL_PROGRAM_BINARY_TYPE, CL_PROGRAM_BINARY_SIZES, what the bytes look like); --out writes them
     SCHEDULE: --float f32|f64 (f32)  --int i32|i64 (i64)  --work-group N (256)  --tile T (0)  --schedule FILE (a schedules/*.toml; the flags override it)
   pack f32|f64|i64 SHAPE INPUT.txt OUTPUT.xta   convert text items (shape: 2,3 or scalar)
+  --regions                                  experimental OpenCL local loops/scalar each (also CPU IR)
   version";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    match dispatch(&args) {
+    let regions = args.iter().any(|arg| arg == "--regions");
+    let args: Vec<String> = args.into_iter().filter(|arg| arg != "--regions").collect();
+    match dispatch(&args, regions) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("xetal-gpu: {e}");
@@ -51,7 +54,7 @@ fn main() -> ExitCode {
     }
 }
 
-fn dispatch(args: &[String]) -> Result<()> {
+fn dispatch(args: &[String], regions: bool) -> Result<()> {
     let Some(cmd) = args.first() else { return Err(Error(USAGE.into())) };
     match cmd.as_str() {
         "pack" => pack(&args[1..]),
@@ -64,7 +67,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "check" => {
-            let checked = load(args.get(1))?.checked;
+            let checked = load(args.get(1), regions)?.checked;
             for (i, v) in checked.program.values.iter().enumerate() {
                 println!("%{} : {} = {}", v.name, checked.types[i], describe(&checked.program, &v.op));
             }
@@ -74,7 +77,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "print" | "lower" => {
-            let loaded = load(args.get(1))?;
+            let loaded = load(args.get(1), regions)?;
             print!("{}", text::print(&loaded.checked.program));
             for (what, reason) in &loaded.reasons {
                 eprintln!("evaluated by xetal: {what}: {reason}");
@@ -109,7 +112,7 @@ fn dispatch(args: &[String]) -> Result<()> {
         }
         "kernel" if args.iter().any(|a| a == "--backend") => {
             // --backend mojo: the Mojo source the Mojo backend would build.
-            let loaded = load(args.get(1))?;
+            let loaded = load(args.get(1), regions)?;
             let k = args.iter().position(|a| a == "--backend").unwrap();
             let backend = args.get(k + 1).cloned().unwrap_or_default();
             if backend != "mojo" {
@@ -129,7 +132,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "kernel" | "explain" | "memory" => {
-            let loaded = load(args.get(1))?;
+            let loaded = load(args.get(1), regions)?;
             let checked = &loaded.checked;
             let schedule = schedule(&args[2.min(args.len())..])?;
             let p = plan(checked, &schedule);
@@ -170,7 +173,7 @@ fn dispatch(args: &[String]) -> Result<()> {
         }
         "binary" => {
             // The program binary the device's OpenCL compiler hands back.
-            let loaded = load(args.get(1))?;
+            let loaded = load(args.get(1), regions)?;
             let mut device = "opencl:0".to_string();
             let mut out: Option<String> = None;
             let mut rest: Vec<String> = Vec::new();
@@ -232,7 +235,7 @@ fn dispatch(args: &[String]) -> Result<()> {
             Ok(())
         }
         "run" => {
-            let loaded = load(args.get(1))?;
+            let loaded = load(args.get(1), regions)?;
             let checked = loaded.checked.clone();
             let mut device = "cpu".to_string();
             let mut binds: Vec<String> = Vec::new();
@@ -443,10 +446,22 @@ struct Loaded {
 /// The program in FILE: an `.xir` parsed, an `.xtl` lowered from
 /// X_eTaL source (its libraries beside it and on XETAL_PATH; a
 /// statement outside the subset evaluated by the pinned xetal).
-fn load(path: Option<&String>) -> Result<Loaded> {
+fn load(path: Option<&String>, regions: bool) -> Result<Loaded> {
     let Some(path) = path else { return Err(Error(USAGE.into())) };
     if path.ends_with(".xtl") {
-        let lowered = xetal_gpu_lower::lower_file_full(std::path::Path::new(path)).map_err(|e| Error(format!("{path}: {e}")))?;
+        let lowered = if regions {
+            let source = std::fs::read_to_string(path).map_err(|e| Error(e.to_string()))?;
+            let p = std::path::Path::new(path);
+            let dir = p
+                .parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or(std::path::Path::new("."));
+            let dir = std::fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf());
+            xetal_gpu_lower::lower_source_regions(path, &source, &dir, true)
+        } else {
+            xetal_gpu_lower::lower_file_full(std::path::Path::new(path))
+        }
+        .map_err(|e| Error(format!("{path}: {e}")))?;
         let checked = check(lowered.program).map_err(|e| Error(format!("{path}: {e}")))?;
         return Ok(Loaded {
             checked,
@@ -477,6 +492,7 @@ fn describe(program: &Program, op: &Op) -> String {
     debug_assert!(line.is_empty());
     let name = |id| format!("%{}", program.value(id).name);
     match op {
+        Op::Region { kind, .. } => format!("region {kind:?}"),
         Op::Input => "input".to_string(),
         Op::Const(c) => format!("const ({} item{})", c.len(), if c.len() == 1 { "" } else { "s" }),
         Op::Map { op, args } => format!("map {op} {}", args.iter().map(|a| name(*a)).collect::<Vec<_>>().join(" ")),

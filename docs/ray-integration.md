@@ -456,3 +456,14 @@ are unchanged. This still makes resolution visible before the separate
 GPU loop/fusion implementation is ready; glass and Cornell stills remain
 pending. One-sample edge aliasing and the L/arrow junction geometry are
 future quality refinements, rather than hidden image postprocessing.
+
+## Native RTX still
+
+The gallery now includes a real 1280 by 512 RTX image from structured
+OpenCL regions, with uncompressed TIFF, PNG, source, dependency pins and
+observed cold/resident timing logs. Reproduce with just ray-render-regions
+--width 1280 --height 512 after just build. The first adapter traces each
+RGB component separately; shared RayTrace math is unchanged. A same-source
+8 by 4 render passed the pinned CPU evaluator comparison; the high-resolution
+CPU still uses another library snapshot and is not a matched timing baseline.
+See ray-performance.md for counts, timings and remaining work.

@@ -283,3 +283,73 @@ Measure cold preparation and repeated warm render calls separately.
 Frame-ring/export overlap follows the first correct region; it must not
 hold up a visible still. No native renderer or extra language syntax is
 part of this plan.
+
+## Structured region prototype: RTX results
+
+The opt-in OpenCL path now retains fixed-shape p_ower bodies in XIR.
+Scalar e_ach maps independent items to work-items; nested loops and small
+vectors/reductions stay inside that work-item. Immutable captures remain
+shared device arrays. Total expressions independent of local state may
+be hoisted; guards and potentially failing indexing/division stay ordered.
+Each lane stops on its first failed check. One region-boundary read of
+lane error codes selects the first failing lane, preserving mapped order.
+This first version downloads the lane flags; compact device reduction is
+still pending. Existing top-level guards retain their earlier behavior.
+
+The actual shared nearest-hit function was tested with 2, 44 and 322
+triangles: 10 launches in every case, with generated source sizes of
+44,559, 44,572 and 44,585 bytes. Hit IDs agree exactly with the interpreter;
+invalid directions fail and valid rebinding recovers. Full shared shading
+also agrees with the CPU batch implementation. Generic checks cover
+nested loops, capture changes, empty maps, zero iterations, partial work
+groups and failure ordering. Source serialization round trips regions.
+
+A native 1280 by 512 logo now renders on RTX 5060 Ti through the same
+RayTrace functions. The complete scene plan has 196 launches, 142 kernel
+definitions, 191,125 source bytes and 107,560,988 planned buffer bytes.
+The previous 4 by 2 unrolled logo had 129,916 launches and approximately
+40 MB of source. These are structural comparisons at different image
+sizes, not a matched speedup measurement. Buffers exclude driver/private
+memory. The full scene includes geometry/camera preparation and 24 guard
+boundaries, beyond the single mapped tracing kernel.
+
+| Observation | Time |
+| --- | --- |
+| Initial GPU setup | 5003.902 ms |
+| Initial upload | 22.333 ms |
+| First device execution | 738.948 ms |
+| First total GPU call | 5851.123 ms |
+| Second resident device execution | 890.943 ms |
+| Second resident total, including output readback | 1213.376 ms |
+| Second input upload | 0 ms |
+
+These are individual observations, not a statistical benchmark. The CLI
+process including load and ASCII output took 10.032 seconds for two runs.
+An 8 by 4 image from the exact generated source passed against the pinned
+X_eTaL evaluator (maximum display-RGB error 1.6812e-7). That evaluator
+process took 43.082 seconds including load/output. No full-resolution
+matched CPU speedup is claimed: the published CPU still uses a different
+library snapshot and parallel strips.
+
+Run just ray-render-regions --width 1280 --height 512 after just build.
+For the smaller matched-source check, add --width 8 --height 4
+--compare-cpu. Output includes uncompressed TIFF, PNG, generated source,
+plan, memory report and cold/resident timings under work/ray-regions/.
+The gallery preserves the observed frame, logs and small comparison.
+
+The backend flag is --regions; ordinary lowering and Mojo are unchanged.
+Mojo explicitly refuses a structured region until its emitter supports
+one. Local matmul/top-k are currently refused; this is a bounded prototype,
+not complete nested-array support. The GPU adapter returns scalar RGB
+components because current e_ach results must be scalar. It traces each
+pixel three times; removing that duplication requires a validated mapped
+cell/multiple-result design. Standalone repeat owns one work-item's whole
+state; the outer each supplies ray parallelism. Do not interpret standalone
+repeat over a full-frame state as a parallel ray schedule.
+
+Queued optimizations are channel duplication, compact error reduction,
+bounded tiles, resident output/frame-ring/export APIs and matched
+useful-size timings. Glass and Cornell still integration comes first now
+that the GPU path is fast enough for stills. The longer animation remains
+pending.
+No new language syntax or renderer-native implementation was introduced.

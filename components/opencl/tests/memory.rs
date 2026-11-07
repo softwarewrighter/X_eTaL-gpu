@@ -77,6 +77,7 @@ fn deferred_guard_reads_keep_the_condition_alive() {
         before_launch: p.launches.len(),
         buffer: a,
         message: "late check".into(),
+        codes: vec![],
     });
     let m = layout(&p);
     assert_ne!(m.assignments[a.0], m.assignments[d.0]);

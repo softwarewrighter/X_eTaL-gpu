@@ -113,6 +113,46 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
     for (i, v) in program.values.iter().enumerate() {
         let ty = checked.ty(ValueId(i));
         let array = match &v.op {
+            Op::Region { kind, args, body } => {
+                let inner = crate::check::check((**body).clone())?;
+                let ins = body.inputs();
+                let mut bound: HashMap<String, Array> = ins
+                    .iter()
+                    .zip(args)
+                    .skip(1)
+                    .map(|(id, arg)| (body.value(*id).name.clone(), values[arg.0].clone()))
+                    .collect();
+                let first = body.value(ins[0]).name.clone();
+                match kind {
+                    RegionKind::Repeat(n) => {
+                        let mut state = values[args[0].0].clone();
+                        for _ in 0..*n {
+                            bound.insert(first.clone(), state);
+                            state = run(&inner, &bound)?.remove(0);
+                        }
+                        state
+                    }
+                    RegionKind::Each => {
+                        let source = &values[args[0].0];
+                        let mut result = Vec::new();
+                        for j in 0..source.shape.len() {
+                            let data = match source.at(j) {
+                                Item::Int(x) => Data::Int(vec![x]),
+                                Item::Float(x) => Data::Float(vec![x]),
+                                Item::Bool(x) => Data::Bool(vec![x]),
+                            };
+                            bound.insert(first.clone(), Array::new(source.scalar, Shape::scalar(), data)?);
+                            result.push(run(&inner, &bound)?.remove(0));
+                        }
+                        let data = match ty.scalar {
+                            Scalar::I32 | Scalar::I64 => Data::Int(result.iter().map(|a| a.at(0).int()).collect()),
+                            Scalar::F32 | Scalar::F64 => Data::Float(result.iter().map(|a| a.at(0).float()).collect()),
+                            Scalar::Bool => Data::Bool(result.iter().map(|a| a.at(0).boolean()).collect()),
+                        };
+                        Array::new(ty.scalar, ty.shape.clone(), data)?
+                    }
+                }
+            }
             Op::Input => {
                 let Some(given) = inputs.get(&v.name) else {
                     return err(format!("input %{} ({}) is not bound", v.name, ty));

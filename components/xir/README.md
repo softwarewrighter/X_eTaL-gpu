@@ -128,3 +128,15 @@ point for loaded programs.
 
 The text reader indexes SSA names while parsing, preserving duplicate and
 forward-reference refusals without scanning the growing program per operand.
+
+## Structured local regions
+
+Region operations retain a body program with one state/item input followed
+by immutable captures and one result. Repeat preserves its input type and
+shape. Each takes a vector, invokes the body on scalar items in order in
+the interpreter, and returns a vector of scalar results. Nested scopes use
+their own value IDs. The checker validates inputs, captures and state types;
+the interpreter preserves ordered guard failures and zero-count behavior.
+The text form uses region each or region repeat:COUNT, argument references,
+and a body token encoding the nested program. The OpenCL prototype currently
+refuses local matmul/top-k. No device schedule is part of the IR semantics.

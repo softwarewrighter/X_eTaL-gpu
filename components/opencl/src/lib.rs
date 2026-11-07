@@ -354,6 +354,8 @@ pub struct GuardCheck {
     pub before_launch: usize,
     pub buffer: BufferId,
     pub message: String,
+    /// Empty for a scalar Bool; otherwise lane flags index these messages (1-based).
+    pub codes: Vec<String>,
 }
 
 /// The whole plan: source, buffers, launches, outputs.

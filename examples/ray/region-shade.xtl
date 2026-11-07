@@ -1,0 +1,16 @@
+## GPU execution adapter over shared RayTrace math. The scalar each result
+## keeps the current flat-array subset: each item is one RGB component.
+## Geometry and material queries remain ordinary shared X_eTaL functions.
+## This first adapter traces each pixel three times; a mapped cell result
+## can remove that duplication after the scalar region is validated.
+"rt:" u_se< "RayTrace"
+u:s_hadeChannels := { clip triangles materialids materials lights environment origins directions indices ->
+  '{ index ->
+    pixel := 1 + (index - 1) d_iv 3
+    channel := 1 + (index - 1) m_od 3
+    o := 1 3 r_eshape pixel s_elect origins
+    d := 1 3 r_eshape pixel s_elect directions
+    color := (((((((clip rt:s_hade triangles)_ materialids)_ materials)_ lights)_ environment)_ o)_ d)
+    channel s_elect r_avel color
+  } e_ach indices
+}

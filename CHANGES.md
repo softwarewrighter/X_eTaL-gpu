@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 22:47 `feat` Retain opt-in structured loops and scalar mapped regions in XIR/OpenCL, preserve ordered device validation and input recovery, and render a native 1280 by 512 RTX logo. Verify constant query launches across geometry sizes, shared shading and matched small CPU pixels; publish uncompressed masters and cold/resident observations while recording remaining residency and channel optimizations.
+
 - 22:23 `chore` Record completed native CPU still publication and public byte verification; advance to the generic GPU loop/fusion implementation.
 
 - 22:46 `fix` Include the native still gallery template and responsive image styling in the published source commit; Chromium and full gate checks pass.

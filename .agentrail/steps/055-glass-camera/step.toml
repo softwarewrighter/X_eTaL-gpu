@@ -1,4 +1,4 @@
-number = 54
+number = 55
 slug = "glass-camera"
 status = "pending"
 description = "Follow docs/glass-scene-plan.md and RL7: pin deterministic pixel/lens/emitter..."

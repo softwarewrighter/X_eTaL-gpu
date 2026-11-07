@@ -349,9 +349,23 @@ impl Const {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ValueId(pub usize);
 
+/// A structured region applies a body to each scalar item, or repeats a
+/// fixed-shape state transition. Body inputs are state/item first, then
+/// immutable captures in argument order. A region has one array result.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RegionKind {
+    Each,
+    Repeat(usize),
+}
+
 /// How a value is computed.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Op {
+    Region {
+        kind: RegionKind,
+        args: Vec<ValueId>,
+        body: Box<Program>,
+    },
     /// Bound by the host when the program runs.
     Input,
     /// Items written in the program.
@@ -415,11 +429,44 @@ pub enum Op {
 }
 
 impl Op {
+    /// Rewrite references in this scope; nested region bodies have their own IDs.
+    pub fn remap(&self, mut f: impl FnMut(ValueId) -> ValueId) -> Op {
+        let mut op = self.clone();
+        match &mut op {
+            Op::Input | Op::Const(_) => {}
+            Op::Region { args, .. } | Op::Map { args, .. } => args.iter_mut().for_each(|id| *id = f(*id)),
+            Op::Select { cond, a, b } => {
+                *cond = f(*cond);
+                *a = f(*a);
+                *b = f(*b);
+            }
+            Op::Guard { cond, .. } => *cond = f(*cond),
+            Op::Reduce { arg, .. }
+            | Op::Cast { arg, .. }
+            | Op::Take { arg, .. }
+            | Op::Drop { arg, .. }
+            | Op::Ravel { arg }
+            | Op::Rotate { arg, .. }
+            | Op::Reshape { arg, .. }
+            | Op::TopK { arg, .. }
+            | Op::Transpose { arg, .. } => *arg = f(*arg),
+            Op::Matmul { a, b } | Op::Table { a, b, .. } | Op::Concat { a, b, .. } => {
+                *a = f(*a);
+                *b = f(*b);
+            }
+            Op::Lookup { idx, arg, .. } => {
+                *idx = f(*idx);
+                *arg = f(*arg);
+            }
+        }
+        op
+    }
+
     /// The values this operation reads.
     pub fn args(&self) -> Vec<ValueId> {
         match self {
             Op::Input | Op::Const(_) => Vec::new(),
-            Op::Map { args, .. } => args.clone(),
+            Op::Map { args, .. } | Op::Region { args, .. } => args.clone(),
             Op::Select { cond, a, b } => vec![*cond, *a, *b],
             Op::Guard { cond, .. } => vec![*cond],
             Op::Reduce { arg, .. } | Op::Cast { arg, .. } => vec![*arg],

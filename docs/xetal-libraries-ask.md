@@ -640,3 +640,14 @@ comparison. Scene notation remains independent of backend scheduling.
 GPU loop lowering, validation error propagation, tile scheduling, resident
 frame buffers and asynchronous export belong in this GPU repo. See
 ray-performance.md for the execution contract and acceptance checks.
+
+## Structured GPU checkpoint
+
+The GPU repository now executes the existing 8bd438d RayTrace nearest
+query inside retained device loops, with a GPU-specific scalar channel
+adapter over the shared shading function. It does not require a new
+library delivery to produce the first native GPU logo. RL10 remains a
+useful general portable-query request, not a blocker for this backend
+checkpoint. The sibling committed head is still a2d4de1 on this check;
+no compatible newer delivery was adopted. Mapped-cell execution, error
+reduction, scheduling and frame residency remain GPU repository work.

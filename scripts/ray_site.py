@@ -1,6 +1,7 @@
 """Build the ray-tracing gallery from curated, actually rendered media."""
 import html
 import json
+import re
 from pathlib import Path
 import shutil
 
@@ -16,6 +17,9 @@ def cards():
     high = still_manifest.is_file()
     poster = "logo-still/still.png" if high else "logo/poster.png"
     label = f"Native {json.loads(still_manifest.read_text())['width']}-pixel CPU still + preview video" if high else "CPU animation &middot; first low-resolution preview"
+    if (ROOT / "site-assets/ray/logo-gpu/manifest.json").is_file():
+        poster = "logo-gpu/still.png"
+        label = "Native 1280-pixel RTX still + CPU preview video"
     return f'''<section id="ray-tracing" aria-labelledby="ray-title">
 <h2 id="ray-title">Ray tracing</h2>
 <p class="cap">Recorded X_eTaL renders. Open a thumbnail for demos, videos, settings and downloadable frames.</p>
@@ -44,8 +48,20 @@ def build():
 <figcaption><strong>{m['width']} &times; {m['height']} native CPU still</strong> &middot; {m['samples_per_pixel']} sample(s) per pixel. This is newly traced at this native resolution. GPU timing comparisons are pending.</figcaption></figure>
 <div class="links"><a href="media/logo-still/still.png">Open full-resolution PNG</a><a href="media/logo-still/still.tif" download>Uncompressed TIFF</a><a href="media/logo-still/masters.zip" download>Master + exact strip sources</a><a href="media/logo-still/manifest.json">Still settings</a></div>
 <p class="muted">CPU library snapshot <code>{m['libraries'][:7]}</code>; language <code>{m['xetal'][:7]}</code>. Reproduce with <code>just ray-hires-cpu --libraries-ref {m['libraries']}</code>. The video below is the earlier low-resolution recording.</p>'''
+    gpu_dir = ROOT / "site-assets/ray/logo-gpu"
+    gpu = ""
+    if (gpu_dir / "manifest.json").is_file():
+        m = json.loads((gpu_dir / "manifest.json").read_text())
+        shutil.copytree(gpu_dir, out / "media/logo-gpu", dirs_exist_ok=True)
+        timing = next(line for line in m["timings"] if line.startswith("repeat 2 time:"))
+        device_ms = float(re.search(r"kernels ([0-9.]+) ms", timing)[1])
+        total_ms = float(re.search(r"total ([0-9.]+) ms", timing)[1])
+        gpu = f'''<figure id="gpu-still"><img class="native-still" src="media/logo-gpu/still.png" width="{m['width']}" height="{m['height']}" alt="Native-resolution RTX ray-traced X_eTaL logo">
+<figcaption><strong>{m['width']} &times; {m['height']} RTX GPU still</strong> &middot; one sample per pixel. Second resident run: {device_ms / 1000:.2f} s device work, {total_ms / 1000:.2f} s total including output readback. Initial GPU setup: 5.00 s.</figcaption></figure>
+<div class="links"><a href="media/logo-gpu/still.png">Open GPU PNG</a><a href="media/logo-gpu/still.tif" download>GPU uncompressed TIFF</a><a href="media/logo-gpu/masters.zip" download>GPU masters + sources</a><a href="media/logo-gpu/manifest.json">Settings and timings</a></div>
+<p class="muted">Shared X_eTaL math on RTX 5060 Ti; {m['execution_metrics']['launches']} launches for the complete scene. The experimental scalar-channel adapter traces each pixel three times. The same program passed CPU validation at 8 &times; 4; the CPU still below uses a different library snapshot and is not a matched timing baseline. These timings are individual observations. Reproduce with <code>just ray-render-regions --width 1280 --height 512</code>.</p>'''
     values = {
-        "HIRES": still, "WIDTH": str(manifest["width"]), "HEIGHT": str(manifest["height"]),
+        "GPU": gpu, "HIRES": still, "WIDTH": str(manifest["width"]), "HEIGHT": str(manifest["height"]),
         "FRAMES": str(manifest["frame_count"]), "FPS": str(manifest["fps"]),
         "LAST": str(manifest["frame_count"] - 1), "REPO": REPO,
         "XETAL": html.escape(manifest["xetal"][:7]), "LIBRARIES": html.escape(manifest["libraries"][:7]),
@@ -55,4 +71,4 @@ def build():
     for name, value in values.items():
         text = text.replace("@@" + name + "@@", value)
     (out / "index.html").write_text(text)
-    print("pages: ray-tracing/index.html (recorded CPU logo; glass and benchmark planned)")
+    print("pages: ray-tracing/index.html (native GPU/CPU logo; glass and benchmark planned)")

@@ -33,6 +33,9 @@ pub fn check(program: Program) -> Result<Checked> {
     for (i, v) in program.values.iter().enumerate() {
         types.push(check_value(v, &types, &program.values[..i])?);
     }
+    if program.outputs.iter().any(|id| id.0 >= types.len()) {
+        return err("program output is not a defined value");
+    }
     if program.outputs.is_empty() {
         return err("the program has no output");
     }
@@ -51,6 +54,46 @@ pub fn check_value(v: &Value, types: &[Ty], preceding: &[Value]) -> Result<Ty> {
     let name = &v.name;
     let ty_of = |id: ValueId| -> &Ty { &types[id.0] };
     let ty = match &v.op {
+        Op::Region { kind, args, body } => {
+            if args.is_empty() {
+                return err(format!("%{name}: region requires a state/item argument"));
+            }
+            for value in &body.values {
+                if matches!(value.op, Op::Matmul { .. } | Op::TopK { .. }) {
+                    return err(format!("%{name}: local region does not support {:?}", value.op));
+                }
+            }
+            let inner = check((**body).clone())?;
+            let ins = body.inputs();
+            if ins.len() != args.len() || body.outputs.len() != 1 {
+                return err(format!("%{name}: region inputs must match arguments and have one output"));
+            }
+            let mut first = ty_of(args[0]).clone();
+            if *kind == RegionKind::Each {
+                if first.shape.rank() != 1 {
+                    return err(format!("%{name}: each requires a vector"));
+                }
+                first.shape = Shape::scalar();
+            }
+            for (i, (&input, &arg)) in ins.iter().zip(args).enumerate() {
+                let expected = if i == 0 { &first } else { ty_of(arg) };
+                if inner.ty(input) != expected {
+                    return err(format!("%{name}: region input {i} must be {expected}"));
+                }
+            }
+            let result = inner.ty(body.outputs[0]);
+            match kind {
+                RegionKind::Repeat(_) if result != &first => {
+                    return err(format!("%{name}: repeated state must keep type {first}, got {result}"))
+                }
+                RegionKind::Each if !result.shape.is_scalar() => return err(format!("%{name}: each body must return a scalar")),
+                _ => {}
+            }
+            Ty {
+                scalar: result.scalar,
+                shape: ty_of(args[0]).shape.clone(),
+            }
+        }
         Op::Input => v.ty.clone().expect("an input declares its type"),
         Op::Const(c) => {
             let ty = v.ty.clone().expect("a const declares its type");

@@ -548,12 +548,20 @@ impl Prepared {
                 let DevBuf::I32(buffer) = &bufs[allocations[guard.buffer.0]] else {
                     unreachable!("guard Bool is i32");
                 };
-                let mut flag = [0i32];
+                let mut flag = vec![0i32; if guard.codes.is_empty() { 1 } else { plan.buffer(guard.buffer).len }];
                 unsafe {
                     queue.enqueue_read_buffer(buffer, CL_BLOCKING, 0, &mut flag, &[]).map_err(cl)?;
                 }
-                if flag[0] != 0 {
-                    return Err(Error(guard.message.clone()));
+                if let Some(&code) = flag.iter().find(|&&code| code != 0) {
+                    let message = if guard.codes.is_empty() {
+                        &guard.message
+                    } else {
+                        guard
+                            .codes
+                            .get(code as usize - 1)
+                            .ok_or_else(|| Error("invalid region error code".into()))?
+                    };
+                    return Err(Error(message.clone()));
                 }
             }
             let Some(l) = plan.launches.get(index) else {

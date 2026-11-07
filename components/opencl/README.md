@@ -180,3 +180,21 @@ resident inputs and constants are never reused as transient storage.
 The runtime consumes this map without changing generated kernels or
 logical buffer IDs. Shared kernel names are indexed during emission,
 so growing source strings are not repeatedly searched for definitions.
+
+## Experimental structured regions
+
+The --regions CLI flag enables fixed-shape loops and scalar mapped bodies
+from source. The OpenCL emitter executes each mapped item in one work-item,
+with nested state loops and small vectors in private storage and immutable
+captures read from shared device buffers. Local guards stop the lane before
+later unsafe operations; a boundary read reports the first failed lane.
+Top-level guards are unchanged. Region flags currently cost one Int per
+lane and one bulk read; device reduction is the next optimization.
+
+Use just ray-test-regions for generic loops, actual shared RayTrace queries
+at several geometry sizes and shared shading checks. Use just
+ray-render-regions --width 1280 --height 512 for the native logo experiment.
+See docs/ray-performance.md for observed times and limitations. Structured
+regions are opt-in; local matmul/top-k and the Mojo region emitter are not
+implemented. A standalone repeat is sequential over its local state;
+parallelism comes from the surrounding mapped region.

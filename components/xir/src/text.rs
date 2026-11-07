@@ -124,6 +124,16 @@ fn shape<'a>(toks: &'a [&'a str]) -> Result<(Shape, &'a [&'a str])> {
 
 fn operation(names: &HashMap<String, ValueId>, kind: &str, rest: &[&str]) -> Result<(Option<Ty>, Op)> {
     match kind {
+        "region" => {
+            let split = rest.iter().position(|s| *s == "body").ok_or_else(|| crate::Error("region requires body token".into()))?;
+            if split < 2 || rest.len() != split+2 { return err("region MODE %arg ... body ENCODED"); }
+            let kind = if rest[0] == "each" { RegionKind::Each } else {
+                RegionKind::Repeat(rest[0].strip_prefix("repeat:").and_then(|s| s.parse().ok()).ok_or_else(|| crate::Error("region mode is each or repeat:COUNT".into()))?)
+            };
+            let args = rest[1..split].iter().map(|s| reference(names,s)).collect::<Result<Vec<_>>>()?;
+            let body = Box::new(parse(&decode_message(rest[split+1])?)?);
+            Ok((None, Op::Region { kind, args, body }))
+        }
         "input" => {
             let (sc, rest) = typed(rest)?;
             if !rest.is_empty() {
@@ -468,6 +478,17 @@ pub fn print(program: &Program) -> String {
     for v in &program.values {
         out.push_str(&format!("%{} = ", v.name));
         match &v.op {
+            Op::Region { kind, args, body } => {
+                let mode = match kind {
+                    RegionKind::Each => "each".into(),
+                    RegionKind::Repeat(n) => format!("repeat:{n}"),
+                };
+                out.push_str(&format!(
+                    "region {mode} {} body {}",
+                    args.iter().map(|id| name(*id)).collect::<Vec<_>>().join(" "),
+                    encode_message(&print(body))
+                ));
+            }
             Op::Input => out.push_str(&format!("input {}", v.ty.as_ref().expect("an input declares its type"))),
             Op::Const(c) => {
                 out.push_str(&format!("const {}", v.ty.as_ref().expect("a const declares its type")));

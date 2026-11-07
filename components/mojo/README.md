@@ -180,3 +180,7 @@ kernels. A distinct return code maps back to the original message on the
 host. Unused/constant guards remain active. Constant/guard-only programs
 probe DeviceContext at runtime because they may compile no GPU kernel;
 materialized Bool constants use Int32 buffer values.
+
+The opt-in structured regions introduced for OpenCL are explicitly refused
+by Mojo until a corresponding emitter is validated. Ordinary lowering keeps
+the existing operation set and behavior; --regions is not a Mojo option.

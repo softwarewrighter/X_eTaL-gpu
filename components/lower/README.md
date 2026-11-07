@@ -171,3 +171,15 @@ Numeric 0/1 boolean inputs are validated before conversion, including
 all/any reductions. f_irst removes its selected axis (default 1), so a
 vector returns a scalar and f_irst_2 of a matrix returns its first column.
 Empty axes return the evaluator prototype rather than an invalid take.
+
+## Opt-in structured lowering
+
+The lower_source_regions and lower_function_regions APIs enable retained
+fixed-shape p_ower bodies and scalar e_ach over device vectors. The CLI
+selects this with --regions. Ordinary lowering remains compatible with the
+existing OpenCL/Mojo baselines. A symbolic state traces the body once;
+external values become captures, with total invariant calculations hoisted
+while guards and potentially failing operations retain their order.
+The first GPU-specific channel adapter is examples/ray/region-shade.xtl;
+all ray math remains in the shared general libraries. See
+docs/ray-performance.md for the tested scope and remaining optimizations.

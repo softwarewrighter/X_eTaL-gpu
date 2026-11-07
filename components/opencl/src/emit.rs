@@ -2,6 +2,9 @@
 //! elementwise values into fused kernels, laying out the reductions,
 //! and writing the OpenCL C.
 
+#[path = "region.rs"]
+mod region;
+
 use std::collections::{HashMap, HashSet};
 
 use xetal_gpu_xir::interp::Slice;
@@ -12,7 +15,7 @@ use crate::{Arg, Buffer, BufferId, Elem, GuardCheck, Init, KernelInfo, Launch, P
 
 /// Where a value lives while the plan is built.
 #[derive(Debug, Clone)]
-enum Place {
+pub(super) enum Place {
     /// A buffer on the device.
     Buffer(BufferId),
     /// A single-value constant, written as a literal.
@@ -21,7 +24,7 @@ enum Place {
     Register(String),
 }
 
-struct Builder<'a> {
+pub(super) struct Builder<'a> {
     checked: &'a Checked,
     schedule: &'a Schedule,
     buffers: Vec<Buffer>,
@@ -72,6 +75,10 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         let id = ValueId(i);
         let ty = checked.ty(id);
         match &v.op {
+            Op::Region { kind, args, body } => {
+                b.flush(&outputs);
+                b.region(id, *kind, args, body);
+            }
             Op::Input => {
                 let buf = b.buffer(Some(id), b.schedule.elem(ty.scalar), ty.shape.len(), Init::Input(v.name.clone()));
                 b.places.insert(id, Place::Buffer(buf));
@@ -111,6 +118,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
                     before_launch: b.launches.len(),
                     buffer: buf,
                     message: message.clone(),
+                    codes: vec![],
                 });
             }
             Op::Map { .. } | Op::Select { .. } | Op::Cast { .. } => {
@@ -213,7 +221,7 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         })
         .collect();
     let mut source = String::new();
-    if b.buffers.iter().any(|x| x.elem == Elem::F64) {
+    if b.buffers.iter().any(|x| x.elem == Elem::F64) || b.source.contains("double") {
         source.push_str("#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n");
     }
     source.push_str(HELPERS);

@@ -620,3 +620,16 @@ milestone. The reviewed primary-source architecture and acceptance checks
 are recorded in ray-performance.md; the generic backend remains next.
 A 4-8 active-development-hour estimate for a first validated prototype is
 provisional and must be revised after the initial region/loop experiment.
+
+The first structured GPU checkpoint now renders the 1280 by 512 logo on
+RTX in a measured 1.213-second second resident call (0.891-second device
+work), with 196 complete-scene launches. The retained nearest query stays
+at 10 launches across 2/44/322 triangles. A queued performance step
+removes channel retracing, reduces errors on device and adds bounded
+frame/tile residency/export; those features are not marked complete by
+the first visible GPU still. Other scene integrations remain queued.
+
+With the first GPU still now fast enough to use, the glass and Cornell
+still integrations remain ahead of further residency/channel optimization.
+The performance follow-up is queued before the longer animation rather
+than holding the other two visible scenes behind more compiler tuning.

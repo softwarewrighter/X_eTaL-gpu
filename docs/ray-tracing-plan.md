@@ -222,3 +222,11 @@ GPU backend work. It uses one sample per pixel, with exact strip sources,
 PNG and uncompressed TIFF. Antialiased strip rendering is tested; a
 four-sample refinement and L/arrow-junction geometry cleanup remain.
 It is not a high-resolution video or a paired performance benchmark.
+
+The structured OpenCL checkpoint now produces a native 1280 by 512 GPU
+logo, with shared ray math retained inside device loops. The observed
+second resident call took 1.21 seconds including output readback. An
+8 by 4 image from the same generated program passed against the pinned
+CPU evaluator. The scalar channel adapter traces each pixel three times;
+full-resolution paired timing, frame-ring/export support and the other
+scene renders remain pending. See ray-performance.md for exact evidence.
