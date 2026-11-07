@@ -18,10 +18,10 @@ sampling, accumulation and optional image effects run in X_eTaL. The host
 selects the device, transfers arrays, launches work and encodes pixels as
 uncompressed TIFF. No Blender, native rendering engine or GPL/AGPL code.
 
-Current RL1-RL4 requests provide 3D math, opaque rendering, extrusion and
-scene macros. They do not yet provide glass. General library additions
-RL5-RL7 below are required for the glass milestone; RL8/RL9 are deferred
-refinements. See [library asks](xetal-libraries-ask.md) for contracts,
+RL1-RL4 provide 3D math, opaque rendering, extrusion and scene macros.
+The pinned RL5/RL6 libraries provide dielectric transport, spheres and
+closed crystal geometry. RL7 camera/sampling integration remains a later
+refinement here; RL8/RL9 are deferred proposals. See [library asks](xetal-libraries-ask.md) for contracts,
 acceptance tests and required delivery points. Do not expand the original
 logo's requirements or silently change its v1 arrays.
 
@@ -75,6 +75,66 @@ three times. Primitive scans and sampling retain device loops; there is
 no branching ray tree. Measure a larger image before projecting a render
 ETA or claiming an end-to-end CPU/GPU speedup. Step 048 produces the
 first visible glass still; step 049 publishes it in the gallery.
+
+## First native transport preview (2026-11-07)
+
+A native **1024 by 768 RTX image** is now saved at
+[PNG](../site-assets/ray/glass-rtx/still.png),
+[uncompressed TIFF](../site-assets/ray/glass-rtx/still.tif) and
+[stored master archive](../site-assets/ray/glass-rtx/masters.zip).
+The gallery integration remains the next step. This image is a transport
+preview, not the final quality milestone.
+
+The original three-sphere/three-octahedron composition uses the same pinned
+Glass/Scene libraries as the prior transport tests. Settings are pinhole
+camera, vertical FOV 0.6, seed 123, one sample per pixel, interaction cap 4,
+f64, NVIDIA GeForce RTX 5060 Ti and driver 615.78.08. Reflected panels,
+transmitted/distorted background detail and faceted crystal boundaries are
+visible. Some paths remain black at this low cap. Antialiasing, soft
+shadows, depth of field, dispersion, caustics and transparent shadows are
+not included.
+
+Inspection also found pronounced diagonal/banded patterns. Treat them as
+an unresolved sampling-quality issue, not as fine glass detail or merely
+low image resolution. Upstream already records correlated legacy LCG
+sample identities in X_eTaL-libraries step 017-legacy-glass-sampling at
+0ee4382. Its canonical Philox camera/area path is newer than this pin.
+Adopt the committed correction or validated sampling API at a clean pin
+boundary, compare a central sphere crop, then increase samples/cap before
+a polished rerender. Do not repair the reusable sampler inside this repo.
+
+The native frame planned 342 launches, 3,375,378 bytes of C source and
+188,795,216 bytes of reusable device buffers. Its observed second run was
+7.819 seconds of device work and 8.445 seconds total including readback;
+cold setup was 500.171 seconds. Other shader-build jobs overlapped setup,
+so these are observations, not an isolated benchmark or CPU/GPU speedup.
+The buffer plan excludes driver/compiler and private scratch allocations.
+
+A fresh independent 2 by 2 narrow-camera program from the same committed
+executable ran on both CPU and GPU. Linear output matched exactly, maximum
+display error was 2.78e-17 and RGB8 pixels matched. This does not establish
+full-resolution CPU equivalence. Exact source, raw native linear/display
+Float arrays, timing logs, device/pins/executable provenance and the small
+validation source/results are preserved in the master archive. Float
+radiance remains unclamped; the shared sRGB display conversion and host
+RGB8 quantization produce the TIFF/PNG pixels.
+
+Reproduce and curate:
+
+```sh
+just build
+just ray-render-regions --scene glass --width 1024 --height 768 --cap 4 --output work/ray-glass-still/native
+just ray-render-regions --scene glass --width 2 --height 2 --fov .18 --cap 4 --compare-cpu --output work/ray-glass-still/validation
+just ray-stage-glass --input work/ray-glass-still/native --validation work/ray-glass-still/validation --device-name "NVIDIA GeForce RTX 5060 Ti" --driver 615.78.08
+just ray-test-glass-still
+```
+
+RTX assets are namespaced under `site-assets/ray/glass-rtx/`; the curator
+accepts --output for another device. This checkpoint changes no
+compiler/backend code or dependency pins,
+so parallel Apple Silicon work can build on the prior compiler checkpoint.
+Device results must remain separate; the f64 RTX image is not evidence of
+Apple GPU support or performance.
 
 ## Scene to build
 

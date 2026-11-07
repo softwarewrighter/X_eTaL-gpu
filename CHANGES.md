@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-07
 
+- `feat` Preserve the first native glass sphere/crystal still with raw linear/display Float data, uncompressed TIFF masters and independent matched CPU/GPU validation. Add reproducible curation and artifact checks; keep RTX observations separate from parallel Apple Silicon work.
+
 - `chore` Record completed shared glass transport validation and advance to the larger glass still; retain cold compilation and tuple-loop optimization limits.
 
 - `feat` Integrate shared Scene v2/Glass transport through opt-in GPU regions with lazy tuple branches, bounded ID queries, device sampling loops and pure immutable preflight folding. Validate optics and medium transitions on GPU and preserve matched cap-2/cap-4 CPU/GPU TIFF/Float fixtures; document cold shader compilation and larger-render work remaining.

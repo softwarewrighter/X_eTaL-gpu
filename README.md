@@ -380,7 +380,10 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   libraries and macros versus GPU-specific integration
 - [Glass scene plan](docs/glass-scene-plan.md) -- RL5/RL6 adopted;
   shared dielectric transport now runs on CPU/OpenCL; tiny matched cap-2/cap-4
-  fixtures establish correctness. The larger glass still remains next.
+  fixtures establish correctness. A [native 1024 by 768 glass transport
+  preview](site-assets/ray/glass-rtx/still.png) is now available, with
+  [uncompressed TIFF](site-assets/ray/glass-rtx/still.tif). Structured
+  sampling bands and low-cap black paths remain; polished quality is pending.
   Composition diagnostics use `just ray-glass-composition`.
   Transparent materials and paired CPU/GPU still rendering follow.
 - [Ray tracing plan](docs/ray-tracing-plan.md) -- planned shared X_eTaL

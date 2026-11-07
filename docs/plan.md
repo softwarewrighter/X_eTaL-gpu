@@ -654,3 +654,16 @@ limits are in docs/glass-scene-plan.md. Step 048 must produce the first
 visible larger glass still; the gallery remains planned until then.
 Cold shader compile cost and linearly expanded tuple recurrence remain
 local GPU compiler work, not a new library or language ask.
+
+
+### First native RTX glass transport still
+
+Step 048 preserves a 1024 by 768, cap-4, one-sample dielectric frame and
+fresh small CPU/GPU validation with the committed 6d4ce92 executable.
+It adds only artifact curation/checks and documentation; compiler/backend
+and pins stay unchanged for parallel Apple Silicon work. Step 049 should
+publish it explicitly as a transport preview. The native frame exposes
+structured sampling bands; upstream 017-legacy-glass-sampling is already
+queued. Adopt that correction or the canonical RL7 sampling path before
+claiming polished quality. Keep the final matched 1024-square validation,
+higher sampling/cap and isolated timings in the later quality steps.

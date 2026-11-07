@@ -279,6 +279,14 @@ ray-render-regions *args:
 ray-test-regions:
     cd components && cargo test -p xetal-gpu-cli --test regions -- --nocapture
 
+# Curate a completed native glass still with raw Float and matched-source evidence
+ray-stage-glass *args:
+    python3 scripts/stage-glass-still.py {{args}}
+
+# Verify the curated glass still and uncompressed masters
+ray-test-glass-still:
+    python3 scripts/test-glass-still.py
+
 # Shared dielectric optics, medium transitions and GPU refusal/recovery checks
 ray-test-glass:
     cd components && cargo test -p xetal-gpu-cli --test glass -- --nocapture

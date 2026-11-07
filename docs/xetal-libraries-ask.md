@@ -658,3 +658,21 @@ first glass still. RL5/RL6 run through the experimental OpenCL path.
 Large shader compilation and retained tuple transport loops are local GPU
 compiler work. RL7 remains a later camera/sampling integration, not a
 requirement for the first pinhole still. See docs/glass-scene-plan.md.
+
+
+## Native glass preview sampling follow-up (2026-11-07)
+
+No new language feature is requested. The first native 1024 by 768 RTX
+transport preview exposes pronounced structured diagonal/banded patterns
+with sequential sample IDs through the pinned legacy Glass LCG path.
+The newer upstream 0ee4382 already tracks correlated legacy sampling in
+step 017-legacy-glass-sampling, while the canonical presentation uses
+Philox. This is a known upstream follow-up, not a duplicate API request.
+
+Before the polished glass milestone, adopt a committed correction or the
+validated RL7 sampling API at a clean pin boundary. Require deterministic
+per-pixel/sample identities independent of chunks, no new structured bands
+in a central sphere crop, unchanged documented numeric contracts and an
+executed CPU/GPU comparison of the chosen path. GPU lowering gaps belong
+here. The current one-sample/cap-4 TIFF remains labeled a transport preview;
+increasing image dimensions alone does not solve this quality issue.
