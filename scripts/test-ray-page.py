@@ -72,6 +72,7 @@ def main():
                 wait("const i=document.querySelector('#gpu-still img');return i&&i.complete&&i.naturalWidth>=1024")
                 script("document.getElementById('gpu-still').scrollIntoView({block:'center'})")
                 (screenshots / "gpu-desktop.png").write_bytes(base64.b64decode(request(session + "/screenshot")))
+                assert script("return document.querySelectorAll('#image-pair a[download]').length") == 3
                 script("document.getElementById('cpu-still').open=true")
                 wait("const i=document.querySelector('#native-still img');return i&&i.complete&&i.naturalWidth>=1024")
                 script("document.getElementById('native-still').scrollIntoView({block:'center'})")

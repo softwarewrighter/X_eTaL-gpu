@@ -361,7 +361,10 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   second resident call took 1.21 seconds including output readback.
   Structured loops keep the actual shared nearest query at 10 launches
   across 2/44/322 triangles; a small image from the exact generated program
-  agrees with the pinned CPU evaluator. The scalar channel prototype
+  agrees with the pinned CPU evaluator. `just ray-image-pair` produces
+  paired CPU/GPU TIFFs and raw linear/display arrays from identical source;
+  the 16 by 8 validation fixture has identical RGB8 pixels.
+  The scalar channel prototype
   still traces each pixel three times. Full-resolution matched CPU timing,
   compact error reduction and frame-ring/export overlap remain pending.
   Temporary device storage is reused; `just ray-memory` reports costs.

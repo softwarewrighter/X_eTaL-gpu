@@ -1,4 +1,4 @@
-number = 49
+number = 47
 slug = "glass-transport"
 status = "pending"
 description = "Follow docs/glass-scene-plan.md; integrate committed RL5 dielectric transport..."

@@ -467,3 +467,28 @@ RGB component separately; shared RayTrace math is unchanged. A same-source
 8 by 4 render passed the pinned CPU evaluator comparison; the high-resolution
 CPU still uses another library snapshot and is not a matched timing baseline.
 See ray-performance.md for counts, timings and remaining work.
+
+## Paired image output contract
+
+Run just ray-image-pair for the same generated X_eTaL program on the
+pinned evaluator and OpenCL. Both backends now emit uncompressed RGB8
+TIFF and lossless PNG. The program returns raw linear RGB first and
+shared-library sRGB second; the host preserves both Float arrays and only
+quantizes the display array. HDR linear values remain unclamped.
+
+The driver keeps .linear.out and .out for GPU linear/display data,
+.cpu.linear.out and .cpu.out for CPU data, and .all.out/.cpu.all.out for
+the complete returned streams. CPU images use the -cpu filename stem.
+The manifest records separate linear/display errors, quantized differences,
+source hash and pins. Generic ray-render-regions --compare-cpu uses the
+same contract at other sizes; it is not necessary to rerender the CPU
+for each GPU resident timing repetition.
+
+The committed 16 by 8 logo pair has maximum linear error 3.4462e-7,
+maximum display error 1.8325e-7 and identical RGB8 pixels. Independent
+checks validate TIFF tags/uncompressed payload and PNG pixels against
+both returned display arrays, then compare pre-display Float arrays.
+Use just ray-stage-pair to curate the completed run and just ray-test-pair
+to verify it. The gallery exposes both TIFFs and the uncompressed archive;
+this correctness fixture does not replace the larger GPU still or supply
+a representative CPU/GPU performance benchmark.

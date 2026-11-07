@@ -60,8 +60,19 @@ def build():
 <figcaption><strong>{m['width']} &times; {m['height']} RTX GPU still</strong> &middot; one sample per pixel. Second resident run: {device_ms / 1000:.2f} s device work, {total_ms / 1000:.2f} s total including output readback. Initial GPU setup: 5.00 s.</figcaption></figure>
 <div class="links"><a href="media/logo-gpu/still.png">Open GPU PNG</a><a href="media/logo-gpu/still.tif" download>GPU uncompressed TIFF</a><a href="media/logo-gpu/masters.zip" download>GPU masters + sources</a><a href="media/logo-gpu/manifest.json">Settings and timings</a></div>
 <p class="muted">Shared X_eTaL math on RTX 5060 Ti; {m['execution_metrics']['launches']} launches for the complete scene. The experimental scalar-channel adapter traces each pixel three times. The same program passed CPU validation at 8 &times; 4; the CPU still below uses a different library snapshot and is not a matched timing baseline. These timings are individual observations. Reproduce with <code>just ray-render-regions --width 1280 --height 512</code>.</p>'''
+    pair_dir = ROOT / "site-assets/ray/image-pair"
+    pair = ""
+    if (pair_dir / "manifest.json").is_file():
+        m = json.loads((pair_dir / "manifest.json").read_text())
+        shutil.copytree(pair_dir, out / "media/image-pair", dirs_exist_ok=True)
+        comparison = m["cpu_comparison"]
+        pixels = "RGB8 pixels are identical." if comparison["rgb8_different_channels"] == 0 else f"{comparison['rgb8_different_channels']} RGB8 channels differ; maximum byte difference {comparison['rgb8_max_absolute_difference']}."
+        pair = f'''<details id="image-pair"><summary>CPU/GPU image validation downloads ({m['width']} &times; {m['height']})</summary>
+<p>The exact same X_eTaL program produced both TIFFs. These small images test correctness, rather than presentation quality or performance. Maximum raw linear RGB error: {comparison['linear_max_absolute_error']:.3g}; maximum display RGB error: {comparison['display_max_absolute_error']:.3g}. {pixels}</p>
+<div class="links"><a href="media/image-pair/cpu.png">CPU PNG</a><a href="media/image-pair/gpu.png">GPU PNG</a><a href="media/image-pair/cpu.tif" download>CPU TIFF</a><a href="media/image-pair/gpu.tif" download>GPU TIFF</a><a href="media/image-pair/masters.zip" download>Paired masters, raw Float arrays and source</a><a href="media/image-pair/manifest.json">Validation settings</a></div>
+<p>Linear radiance is preserved before the shared X_eTaL display conversion. The host only quantizes RGB8 and encodes the images. Reproduce with <code>just ray-image-pair</code>.</p></details>'''
     values = {
-        "GPU": gpu, "HIRES": still, "WIDTH": str(manifest["width"]), "HEIGHT": str(manifest["height"]),
+        "GPU": gpu, "PAIR": pair, "HIRES": still, "WIDTH": str(manifest["width"]), "HEIGHT": str(manifest["height"]),
         "FRAMES": str(manifest["frame_count"]), "FPS": str(manifest["fps"]),
         "LAST": str(manifest["frame_count"] - 1), "REPO": REPO,
         "XETAL": html.escape(manifest["xetal"][:7]), "LIBRARIES": html.escape(manifest["libraries"][:7]),

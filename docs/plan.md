@@ -633,3 +633,11 @@ With the first GPU still now fast enough to use, the glass and Cornell
 still integrations remain ahead of further residency/channel optimization.
 The performance follow-up is queued before the longer animation rather
 than holding the other two visible scenes behind more compiler tuning.
+
+The image-contract checkpoint preserves linear/display Float arrays and
+CPU/GPU TIFF masters from one generated program. Independent tag/payload
+checks and the 16 by 8 comparison pass. With native GPU logo output already
+visible, glass transport/render/gallery and Cornell gallery integration
+now precede further logo polish and performance measurements in the
+recorded queue. This makes the three requested scene results the next
+visible priority; it does not mark those remaining scenes complete.

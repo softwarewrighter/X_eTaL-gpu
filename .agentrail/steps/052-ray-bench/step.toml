@@ -1,4 +1,4 @@
-number = 48
+number = 52
 slug = "ray-bench"
 status = "pending"
 description = "Benchmark the same X_eTaL ray tracer and matched scene/settings on CPU and RT..."

@@ -21,6 +21,7 @@ check "" "Ray tracing"
 check "ray-tracing/" "recorded CPU animation"
 check "ray-tracing/" "native CPU still"
 check "ray-tracing/" "RTX GPU still"
+check "ray-tracing/" "CPU/GPU image validation downloads"
 check "ray-tracing/" "media/logo/logo.webm"
 check "doc/index.html" "Accel"
 check "doc/libs-Accel-src-Accel.xtl.html" "The sum, item by item"
@@ -37,6 +38,10 @@ PY_HASH
   then echo "ok: live $1 (verified bytes)"; else echo "FAIL: live $1 does not match built media"; fail=1; fi
   rm -f "$remote_file"
 }
+check_binary "ray-tracing/media/image-pair/cpu.tif" "site-assets/ray/image-pair/cpu.tif"
+check_binary "ray-tracing/media/image-pair/gpu.tif" "site-assets/ray/image-pair/gpu.tif"
+check_binary "ray-tracing/media/image-pair/masters.zip" "site-assets/ray/image-pair/masters.zip"
+check_binary "ray-tracing/media/image-pair/manifest.json" "site-assets/ray/image-pair/manifest.json"
 check_binary "ray-tracing/media/logo-gpu/still.png" "site-assets/ray/logo-gpu/still.png"
 check_binary "ray-tracing/media/logo-gpu/still.tif" "site-assets/ray/logo-gpu/still.tif"
 check_binary "ray-tracing/media/logo-gpu/manifest.json" "site-assets/ray/logo-gpu/manifest.json"

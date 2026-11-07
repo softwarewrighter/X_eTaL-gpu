@@ -24,6 +24,7 @@ python3 "$root/scripts/test-ray-media.py"
 python3 "$root/scripts/test-ray-cpu-tiles.py"
 python3 "$root/scripts/test-ray-still.py"
 python3 "$root/scripts/test-ray-gpu-still.py"
+python3 "$root/scripts/test-ray-pair.py"
 "$root/scripts/ray-check-cpu.sh"
 if [ -f "$root/components/Cargo.toml" ]; then
   (cd "$root/components" && cargo fmt --all --check) || { echo "FAIL: cargo fmt (run: cd components && cargo fmt --all)"; exit 1; }

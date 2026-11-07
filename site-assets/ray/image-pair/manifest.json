@@ -1,0 +1,70 @@
+{
+  "width": 16,
+  "height": 8,
+  "angle_radians": 0.0,
+  "backend": "opencl:0",
+  "repeats": 2,
+  "source_sha256": "5a660e875140b14609d34a3981c9f06849c19a00bbe1b8d6e25edcd814c6cff3",
+  "xetal": "abdd371dd4ae644f00e04d04e09d67576056f031",
+  "libraries": "8bd438d21cce133ddcfced36b0e243b8377c7b8d",
+  "process_seconds": 7.229138265829533,
+  "timings": [
+    "21 warnings generated.",
+    "repeat 1 time: setup 5064.632 ms, upload 3.159 ms, kernels 2.126 ms (device), launches 4.161 ms (host), download 0.042 ms, total 5074.754 ms",
+    "repeat 2 time: setup 0.000 ms, upload 0.000 ms, kernels 1.656 ms (device), launches 3.920 ms (host), download 0.030 ms, total 4.084 ms"
+  ],
+  "execution_metrics": {
+    "logical_buffers": 234,
+    "physical_buffers": 58,
+    "logical_bytes": 120284,
+    "physical_bytes": 78364,
+    "kernels": 142,
+    "kernel_source_bytes": 190897,
+    "launches": 189,
+    "guards": 24
+  },
+  "cpu_comparison": {
+    "cpu_process_seconds": 168.69530284102075,
+    "linear_max_absolute_error": 3.4461402376173567e-07,
+    "display_max_absolute_error": 1.83249907248495e-07,
+    "rgb8_different_channels": 0,
+    "rgb8_max_absolute_difference": 0,
+    "tolerance": "1e-5 * (1 + abs(reference))",
+    "same_source": true,
+    "cpu_tiff": "logo-cpu.tif",
+    "cpu_png": "logo-cpu.png"
+  },
+  "samples_per_pixel": 1,
+  "compression": "None (TIFF)",
+  "host_geometry_fallbacks": [
+    "shaft",
+    "head",
+    "post",
+    "transforms",
+    "triangles"
+  ],
+  "algorithm": "Shared RayTrace direct diffuse and hard shadows; scalar RGB channel adapter traces each pixel three times",
+  "outputs": "linear RGB Float array followed by shared X_eTaL sRGB Float array; TIFF/PNG encode display only",
+  "display_transfer": "Shared RayTrace s_rgb, exposure 1; host RGB8 quantization only",
+  "timing_scope": "CLI process includes load/setup/ASCII; resident run phase times recorded separately; CPU evaluator process timing includes load/ASCII",
+  "role": "Small correctness fixture, not a resolution or performance showcase",
+  "gpu_tiff": "gpu.tif",
+  "cpu_tiff": "cpu.tif",
+  "gpu_png": "gpu.png",
+  "cpu_png": "cpu.png",
+  "float_outputs": "linear-*.txt are pre-display radiance; display-*.txt are shared sRGB before RGB8 quantization",
+  "artifact_sha256": {
+    "scene.xtl": "5a660e875140b14609d34a3981c9f06849c19a00bbe1b8d6e25edcd814c6cff3",
+    "gpu.tif": "3f6578e29ef60dde6c5c4131d348bb132d4d7bb8ef5580109c7d9b2aa358a869",
+    "gpu.png": "c01db886cc40782d213438d6db260db8b5c9ea2ea19544512e0db40492921e6b",
+    "cpu.tif": "3f6578e29ef60dde6c5c4131d348bb132d4d7bb8ef5580109c7d9b2aa358a869",
+    "cpu.png": "c01db886cc40782d213438d6db260db8b5c9ea2ea19544512e0db40492921e6b",
+    "linear-gpu.txt": "725b004b87e49a4ef1bf2e6b300684a99342928fd7fc808a70c1d63f87763965",
+    "linear-cpu.txt": "f9a6e90fa3f5cc46521606a33c490f7460d3c66bb0ce1f5373c93ceab6f93d08",
+    "display-gpu.txt": "ba810d5b4b7e2d1a949e78bdb3dceeea02650ffb1db0b5b46d631c93ddd89f82",
+    "display-cpu.txt": "31f17c5d8d10adb94a738df2b552a4e271d1b785247a901e9d4d23b924328055",
+    "timings.txt": "c5d3766b44f08a6bbe1b1b5967e8776bc5e82e3fec1c62bf3d37b0dde1e5c058"
+  },
+  "renderer_git_base": "fe3eddb6a5109fd9f107071a506417540768fe11",
+  "renderer_binary_sha256": "772dc38b53061160320f69e3fcc7313a64427a80f76752f29c507edf5287f331"
+}

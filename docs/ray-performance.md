@@ -353,3 +353,13 @@ useful-size timings. Glass and Cornell still integration comes first now
 that the GPU path is fast enough for stills. The longer animation remains
 pending.
 No new language syntax or renderer-native implementation was introduced.
+
+The current image driver additionally returns raw linear RGB and display
+RGB from the same program, and --compare-cpu writes TIFF/PNG for both
+backends. The preserved 16 by 8 pair agrees to 3.4462e-7 in linear RGB
+and 1.8325e-7 in display RGB, with identical quantized pixels. Its CPU
+process took 168.695 seconds including setup/text; its second GPU call
+was 4.084 ms including readback. These tiny-image observations validate
+execution/output only and are not a full-resolution speedup benchmark.
+Exporting raw linear data adds an output readback; the earlier published
+1280 by 512 timings remain tied to their archived display-only program.

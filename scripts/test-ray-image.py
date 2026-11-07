@@ -12,6 +12,10 @@ spec = importlib.util.spec_from_file_location("ray_image", Path(__file__).with_n
 image = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(image)
 
+spec = importlib.util.spec_from_file_location("ray_regions", Path(__file__).with_name("ray-render-regions.py"))
+regions = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(regions)
+
 
 class ImageTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("ppm2tiff"), "libtiff ppm2tiff not installed")
@@ -52,6 +56,25 @@ class ImageTests(unittest.TestCase):
                 compressed += payload
             pos += 12 + size
         self.assertEqual(zlib.decompress(compressed), b"\0\xff\0\0\0\0\x80\xff")
+
+    def test_linear_hdr_is_retained_and_display_is_validated_separately(self):
+        linear, display = regions.split_outputs("4.0 .5 0.0 1.0 .735 0.0", 1, 1)
+        self.assertEqual([float(x) for x in linear.split()], [4.0, .5, 0.0])
+        self.assertEqual(image.rgb8(display, 1, 1), bytes([255, 187, 0]))
+        for text in ["1 0 0", "nan 0 0 1 0 0", "1 0 0 2 0 0"]:
+            with self.assertRaises(ValueError):
+                regions.split_outputs(text, 1, 1)
+
+    def test_raw_comparison_precedes_rgb8_rounding(self):
+        actual = (".5 0 0", ".500001 0 0")
+        expected = (".5 0 0", ".499999 0 0")
+        compared = regions.compare_outputs(actual, expected, 1, 1)
+        self.assertEqual(compared["rgb8_different_channels"], 1)
+        self.assertEqual(compared["rgb8_max_absolute_difference"], 1)
+        with self.assertRaises(ValueError):
+            regions.compare_outputs((".6 0 0", ".5 0 0"), expected, 1, 1)
+        with self.assertRaises(ValueError):
+            regions.compare_outputs((".5 0", ".5 0 0"), expected, 1, 1)
 
     def test_bad_rgb_is_refused(self):
         for text in ["1 0", "nan 0 0", "inf 0 0", "-.01 0 0", "1.01 0 0"]:

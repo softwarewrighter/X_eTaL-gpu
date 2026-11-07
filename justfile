@@ -278,3 +278,15 @@ ray-render-regions *args:
 # Generic region, shared ray-query and shading CPU/GPU checks
 ray-test-regions:
     cd components && cargo test -p xetal-gpu-cli --test regions -- --nocapture
+
+# Render both backends from identical source and retain paired TIFF/Float output
+ray-image-pair *args:
+    python3 scripts/ray-render-regions.py --width 16 --height 8 --compare-cpu --output work/ray-pair/logo {{args}}
+
+# Freeze a completed pair with exact source, Float data and uncompressed masters
+ray-stage-pair *args:
+    python3 scripts/stage-ray-pair.py {{args}}
+
+# Independent CPU/GPU Float and TIFF pixel/tag checks on curated evidence
+ray-test-pair:
+    python3 scripts/test-ray-pair.py

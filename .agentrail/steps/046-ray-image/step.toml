@@ -1,6 +1,6 @@
 number = 46
 slug = "ray-image"
-status = "pending"
+status = "in-progress"
 description = "Deliver uncompressed RGB TIFF from CPU and GPU rendering of the same X_eTaL s..."
 role = "production"
 context_files = []

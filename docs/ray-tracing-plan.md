@@ -230,3 +230,10 @@ second resident call took 1.21 seconds including output readback. An
 CPU evaluator. The scalar channel adapter traces each pixel three times;
 full-resolution paired timing, frame-ring/export support and the other
 scene renders remain pending. See ray-performance.md for exact evidence.
+
+The image output contract is now validated on an exact-program CPU/GPU
+pair: both preserve linear/display Float arrays and write uncompressed
+RGB8 TIFFs with independent tag/pixel checks. The curated 16 by 8 fixture
+has identical quantized pixels and small Float differences within the
+stated tolerance. This completes image encoding/validation; it does not
+complete the glass, benchmark, antialiasing or matched performance work.

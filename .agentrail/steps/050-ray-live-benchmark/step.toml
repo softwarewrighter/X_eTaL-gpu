@@ -1,4 +1,4 @@
-number = 52
+number = 50
 slug = "ray-live-benchmark"
 status = "pending"
 description = "Deliver the benchmark/test entry in the live ray-tracing demo: convert a smal..."

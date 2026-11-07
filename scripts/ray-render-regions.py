@@ -27,8 +27,47 @@ def prepare(width, height, angle):
 indices := f_loor f_loat r_ange {width * height * 3}
 channels := ((((((((clip u:s_hadeChannels triangles)_ materials)_ logomaterials)_ logolights)_ environment)_ origins)_ directions)_ indices)
 linear := {width * height} 3 r_eshape channels
-1.0 rt:s_rgb linear
+display := 1.0 rt:s_rgb linear
+r_avel linear
+r_avel display
 """
+
+
+def split_outputs(text, width, height):
+    """Separate returned linear/display arrays without doing rendering math."""
+    count = width * height * 3
+    tokens = text.split()
+    if len(tokens) != count * 2:
+        raise ValueError(f"expected two {count}-item RGB arrays, got {len(tokens)} values")
+    linear = [float(token) for token in tokens[:count]]
+    if any(not math.isfinite(value) for value in linear):
+        raise ValueError("linear RGB must be finite; HDR values are preserved")
+    display = " ".join(tokens[count:]) + "\n"
+    codec.rgb8(display, width, height)
+    return " ".join(tokens[:count]) + "\n", display
+
+
+def compare_outputs(actual, expected, width, height):
+    """Compare raw Float arrays first; report quantization separately."""
+    result = {}
+    for kind, a_text, e_text in zip(["linear", "display"], actual, expected):
+        a, e = [float(x) for x in a_text.split()], [float(x) for x in e_text.split()]
+        if len(a) != width*height*3 or len(e) != width*height*3:
+            raise ValueError("CPU/GPU comparison arrays must match image dimensions")
+        worst = max(abs(x-y) for x,y in zip(a,e))
+        if not all(abs(x-y) <= 1e-5*(1+abs(y)) for x,y in zip(a,e)):
+            raise ValueError(f"CPU/GPU {kind} mismatch: maximum absolute error {worst}")
+        result[kind + "_max_absolute_error"] = worst
+    a, e = codec.rgb8(actual[1], width, height), codec.rgb8(expected[1], width, height)
+    result.update(rgb8_different_channels=sum(x != y for x,y in zip(a,e)),
+                  rgb8_max_absolute_difference=max(abs(x-y) for x,y in zip(a,e)))
+    return result
+
+
+def write_images(prefix, text, width, height):
+    pixels = codec.rgb8(text, width, height)
+    codec.write_tiff(Path(str(prefix) + ".tif"), width, height, pixels)
+    Path(str(prefix) + ".png").write_bytes(codec.png(width, height, pixels))
 
 
 def main():
@@ -64,33 +103,40 @@ def main():
     memory = subprocess.run([str(tool), "memory", str(src), "--regions"], env=env, text=True, capture_output=True, check=True)
     metrics = {key:int(value) for key,value in (line.split() for line in memory.stdout.splitlines())}
     out.with_suffix(".memory").write_text(memory.stdout)
-    print(f"RTX region render {a.width}x{a.height}: starting {a.repeat} resident runs", flush=True)
+    print(f"OpenCL region render {a.width}x{a.height}: starting {a.repeat} resident runs", flush=True)
     start = time.monotonic()
     run = subprocess.run([str(tool), "run", str(src), "--regions", "--device", a.device, "--time", "--repeat", str(a.repeat)], env=env, text=True, capture_output=True, check=True)
     elapsed = time.monotonic() - start
-    out.with_suffix(".out").write_text(run.stdout)
+    out.with_suffix(".all.out").write_text(run.stdout)
+    actual = split_outputs(run.stdout, a.width, a.height)
+    out.with_suffix(".linear.out").write_text(actual[0])
+    out.with_suffix(".out").write_text(actual[1])
     out.with_suffix(".timings").write_text(run.stderr)
-    pixels = codec.rgb8(run.stdout, a.width, a.height)
-    codec.write_tiff(out.with_suffix(".tif"), a.width, a.height, pixels)
-    out.with_suffix(".png").write_bytes(codec.png(a.width, a.height, pixels))
+    write_images(out.with_suffix(""), actual[1], a.width, a.height)
     comparison = None
     if a.compare_cpu:
         cpu = ROOT / "bin/xetal"
         start = time.monotonic()
         reference = subprocess.run([str(cpu), "run", "--seed", "1", "--ascii", str(src)], env=env, text=True, capture_output=True, check=True)
         cpu_seconds = time.monotonic() - start
-        out.with_suffix(".cpu.out").write_text(reference.stdout)
-        actual = [float(x) for x in run.stdout.split()]
-        expected = [float(x) for x in reference.stdout.split()]
-        assert len(actual) == len(expected) == a.width*a.height*3
-        worst = max(abs(x-y) for x,y in zip(actual, expected))
-        assert all(abs(x-y) <= 1e-5*(1+abs(y)) for x,y in zip(actual, expected)), f"CPU/GPU mismatch: {worst}"
-        comparison = dict(cpu_process_seconds=cpu_seconds, max_absolute_rgb_error=worst, tolerance="1e-5 * (1 + abs(reference))", same_source=True)
+        expected = split_outputs(reference.stdout, a.width, a.height)
+        out.with_suffix(".cpu.all.out").write_text(reference.stdout)
+        out.with_suffix(".cpu.linear.out").write_text(expected[0])
+        out.with_suffix(".cpu.out").write_text(expected[1])
+        # Path.with_suffix replaces an extension, so preserve the .cpu stem.
+        cpu_prefix = out.with_suffix("").with_name(out.stem + "-cpu")
+        write_images(cpu_prefix, expected[1], a.width, a.height)
+        comparison = dict(cpu_process_seconds=cpu_seconds, **compare_outputs(actual, expected, a.width, a.height),
+                          tolerance="1e-5 * (1 + abs(reference))", same_source=True,
+                          cpu_tiff=Path(str(cpu_prefix) + ".tif").name,
+                          cpu_png=Path(str(cpu_prefix) + ".png").name)
     meta = dict(width=a.width, height=a.height, angle_radians=a.angle, backend=a.device, repeats=a.repeat,
                 source_sha256=hashlib.sha256(source.encode()).hexdigest(), xetal=(ROOT/"XETAL_COMMIT").read_text().strip(),
                 libraries=(ROOT/"XETAL_LIBRARIES_COMMIT").read_text().strip(), process_seconds=elapsed,
                 timings=run.stderr.splitlines(), execution_metrics=metrics, cpu_comparison=comparison, samples_per_pixel=1,
                 compression="None (TIFF)", host_geometry_fallbacks=fallback, algorithm="Shared RayTrace direct diffuse and hard shadows; scalar RGB channel adapter traces each pixel three times",
+                outputs="linear RGB Float array followed by shared X_eTaL sRGB Float array; TIFF/PNG encode display only",
+                display_transfer="Shared RayTrace s_rgb, exposure 1; host RGB8 quantization only",
                 timing_scope="CLI process includes load/setup/ASCII; resident run phase times recorded separately; CPU evaluator process timing includes load/ASCII")
     out.with_suffix(".json").write_text(json.dumps(meta, indent=2)+"\n")
     print(run.stderr, end="")
