@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>extensions/gpu/demos/accelerate.xtl - X_eTaL doc</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script defer src="search-index.js"></script>
+<script defer src="search.js"></script>
+</head>
+<body>
+<nav class="side">
+<a class="home" href="index.html">X_eTaL doc</a>
+<input id="search" type="search" autocomplete="off" placeholder="Search: a name, or a type" title="A name (mean finds m_ean), or a type: Num a =&gt; a -&gt; a -&gt; a finds +, m_ax ...">
+<h2>Files</h2>
+<h3>extensions/gpu/demos/</h3>
+<ul>
+<li><a href="extensions-gpu-demos-accelerate.xtl.html">accelerate.xtl</a></li>
+<li><a href="extensions-gpu-demos-offload.xtl.html">offload.xtl</a></li>
+</ul>
+<h3>extensions/gpu/lib/</h3>
+<ul>
+<li><a href="extensions-gpu-lib-Gpu.xtl.html">Gpu.xtl</a></li>
+<li><a href="extensions-gpu-lib-Gpu.xtlm.html">Gpu.xtlm</a></li>
+</ul>
+<h3>libs/Accel/demos/</h3>
+<ul>
+<li><a href="libs-Accel-demos-axis-reduce.xtl.html">axis-reduce.xtl</a></li>
+<li><a href="libs-Accel-demos-host-data.xtl.html">host-data.xtl</a></li>
+<li><a href="libs-Accel-demos-lookup.xtl.html">lookup.xtl</a></li>
+<li><a href="libs-Accel-demos-matmul.xtl.html">matmul.xtl</a></li>
+<li><a href="libs-Accel-demos-pipeline.xtl.html">pipeline.xtl</a></li>
+<li><a href="libs-Accel-demos-reduce-sum.xtl.html">reduce-sum.xtl</a></li>
+<li><a href="libs-Accel-demos-saxpy.xtl.html">saxpy.xtl</a></li>
+<li><a href="libs-Accel-demos-threshold.xtl.html">threshold.xtl</a></li>
+<li><a href="libs-Accel-demos-tiny-net.xtl.html">tiny-net.xtl</a></li>
+<li><a href="libs-Accel-demos-topk.xtl.html">topk.xtl</a></li>
+<li><a href="libs-Accel-demos-transpose.xtl.html">transpose.xtl</a></li>
+<li><a href="libs-Accel-demos-vector-add.xtl.html">vector-add.xtl</a></li>
+<li><a href="libs-Accel-demos-windows.xtl.html">windows.xtl</a></li>
+</ul>
+<h3>libs/Accel/src/</h3>
+<ul>
+<li><a href="libs-Accel-src-Accel.xtl.html">Accel.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/extensions/clock/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-extensions-clock-lib-Clock.xtl.html">Clock.xtl</a></li>
+</ul>
+<h3>work/xetal-extensions/lib/</h3>
+<ul>
+<li><a href="work-xetal-extensions-lib-Ffi.xtlm.html">Ffi.xtlm</a></li>
+</ul>
+<ul>
+<li><a href="builtins.html">built-ins</a></li>
+</ul>
+<h2>On this page</h2>
+<ul>
+<li><a href="#section-1">A layer: a dense product with its bias, then ReLU</a></li>
+<li class="item"><a href="#u.l_ayer"><span class="c-userfunc">ᵘl̲ayer</span></a></li>
+<li class="item"><a href="#x">x</a></li>
+<li class="item"><a href="#wb">wb</a></li>
+<li class="item"><a href="#h">h</a></li>
+<li><a href="#section-2">Attention scores of a batch of queries against the keys, as probabilities</a></li>
+<li class="item"><a href="#u.a_ttend"><span class="c-userfunc">ᵘa̲ttend</span></a></li>
+<li class="item"><a href="#q">q</a></li>
+<li class="item"><a href="#k">k</a></li>
+<li class="item"><a href="#p">p</a></li>
+<li><a href="#section-3">An embedding lookup: the table resident, the ids the only upload</a></li>
+<li class="item"><a href="#u.e_mbed"><span class="c-userfunc">ᵘe̲mbed</span></a></li>
+<li class="item"><a href="#t">t</a></li>
+<li class="item"><a href="#ids">ids</a></li>
+<li class="item"><a href="#e">e</a></li>
+</ul>
+</nav>
+<main>
+<button class="theme" title="Light or dark">theme</button>
+<section id="results"></section>
+<h1><span class="kind">program</span>extensions/gpu/demos/accelerate.xtl</h1>
+<p class="meta"><a href="extensions-gpu-demos-accelerate.xtl.src.html">source</a> &middot; imports <code><span class="c-error">gp:</span></code> <a href="extensions-gpu-lib-Gpu.xtl.html">extensions/gpu/lib/Gpu.xtl</a> <a href="extensions-gpu-lib-Gpu.xtlm.html">extensions/gpu/lib/Gpu.xtlm</a>; <code><span class="c-error">ac:</span></code> <a href="libs-Accel-src-Accel.xtl.html">libs/Accel/src/Accel.xtl</a></p>
+<h2 class="section" id="section-1">A layer: a dense product with its bias, then ReLU</h2>
+<div class="item" id="u.l_ayer">
+<h3><a href="#u.l_ayer"><span class="c-userfunc">ᵘl̲ayer</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L14">line 14</a></div>
+<pre class="code"><span class="c-userfunc">ᵘl̲ayer</span> ← <span class="c-string">&quot;float float&quot;</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#m.a_ccel-3c" class="c-macro">ᵍᵖa̲ccel&lt;</a> <span class="c-string">&quot;{ x wb -&gt; ac:r_elu x ac:d_ense wb }&quot;</span></pre>
+<details class="expansion"><summary><code><a href="extensions-gpu-lib-Gpu.xtlm.html#m.a_ccel-3c" class="c-macro">ᵍᵖa̲ccel&lt;</a></code> expands to</summary><pre class="code">({ x wb → <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ᵍᵖo̲utput</a> <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ᵍᵖr̲un</a> <span class="c-number">0</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> wb <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> x <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-string">&quot;{ x wb -&gt; ac:r_elu x ac:d_ense wb }&quot;</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_ower" class="c-libfunc">ᵍᵖl̲ower</a> <span class="c-string">&quot;extensions/gpu/demos/accelerate.xtl|float float&quot;</span> })</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#h">h</a></div>
+</div>
+<div class="item" id="x">
+<h3><a href="#x">x</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L15">line 15</a></div>
+<pre class="code">x ← <span class="c-number">4</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.5</span> <span class="c-number">-1.0</span> <span class="c-number">0.25</span> <span class="c-number">1.0</span> <span class="c-number">0.0</span> <span class="c-number">-0.5</span> <span class="c-number">-0.75</span> <span class="c-number">0.5</span> <span class="c-number">1.0</span> <span class="c-number">0.2</span> <span class="c-number">0.4</span> <span class="c-number">-0.6</span></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#h">h</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L19">extensions/gpu/demos/accelerate.xtl:19</a></div>
+</div>
+<div class="item" id="wb">
+<h3><a href="#wb">wb</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L16">line 16</a></div>
+<pre class="code">wb ← <span class="c-number">4</span> <span class="c-number">5</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.5</span> <span class="c-number">-0.25</span> <span class="c-number">0.75</span> <span class="c-number">0.1</span> <span class="c-number">-0.6</span> <span class="c-number">-0.3</span> <span class="c-number">0.8</span> <span class="c-number">0.2</span> <span class="c-number">-0.5</span> <span class="c-number">0.4</span> <span class="c-number">0.6</span> <span class="c-number">0.1</span> <span class="c-number">-0.7</span> <span class="c-number">0.3</span> <span class="c-number">0.2</span> <span class="c-number">0.05</span> <span class="c-number">-0.1</span> <span class="c-number">0.2</span> <span class="c-number">0.0</span> <span class="c-number">0.1</span></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#h">h</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L19">extensions/gpu/demos/accelerate.xtl:19</a></div>
+</div>
+<div class="item" id="h">
+<h3><a href="#h">h</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L17">line 17</a></div>
+<pre class="code">h ← <a href="extensions-gpu-demos-accelerate.xtl.html#x">x</a> <a href="extensions-gpu-demos-accelerate.xtl.html#u.l_ayer" class="c-userfunc">ᵘl̲ayer</a> <a href="extensions-gpu-demos-accelerate.xtl.html#wb">wb</a></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.src.html#L18">extensions/gpu/demos/accelerate.xtl:18</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L19">extensions/gpu/demos/accelerate.xtl:19</a></div>
+</div>
+<h2 class="section" id="section-2">Attention scores of a batch of queries against the keys, as probabilities</h2>
+<div class="item" id="u.a_ttend">
+<h3><a href="#u.a_ttend"><span class="c-userfunc">ᵘa̲ttend</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L22">line 22</a></div>
+<pre class="code"><span class="c-userfunc">ᵘa̲ttend</span> ← <span class="c-string">&quot;float float&quot;</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#m.a_ccel-3c" class="c-macro">ᵍᵖa̲ccel&lt;</a> <span class="c-string">&quot;{ q k -&gt; ac:s_oftmax q ac:s_cores k }&quot;</span></pre>
+<details class="expansion"><summary><code><a href="extensions-gpu-lib-Gpu.xtlm.html#m.a_ccel-3c" class="c-macro">ᵍᵖa̲ccel&lt;</a></code> expands to</summary><pre class="code">({ q k → <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ᵍᵖo̲utput</a> <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ᵍᵖr̲un</a> <span class="c-number">0</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> k <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> q <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-string">&quot;{ q k -&gt; ac:s_oftmax q ac:s_cores k }&quot;</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_ower" class="c-libfunc">ᵍᵖl̲ower</a> <span class="c-string">&quot;extensions/gpu/demos/accelerate.xtl|float float&quot;</span> })</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#p">p</a></div>
+</div>
+<div class="item" id="q">
+<h3><a href="#q">q</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L23">line 23</a></div>
+<pre class="code">q ← <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1.0</span> <span class="c-number">0.5</span> <span class="c-number">-1.0</span> <span class="c-number">0.0</span> <span class="c-number">2.0</span> <span class="c-number">0.25</span></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#p">p</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L27">extensions/gpu/demos/accelerate.xtl:27</a></div>
+</div>
+<div class="item" id="k">
+<h3><a href="#k">k</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L24">line 24</a></div>
+<pre class="code">k ← <span class="c-number">4</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.5</span> <span class="c-number">1.0</span> <span class="c-number">0.0</span> <span class="c-number">-1.0</span> <span class="c-number">0.5</span> <span class="c-number">2.0</span> <span class="c-number">1.5</span> <span class="c-number">-0.5</span> <span class="c-number">1.0</span> <span class="c-number">0.0</span> <span class="c-number">0.0</span> <span class="c-number">1.0</span></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#p">p</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L27">extensions/gpu/demos/accelerate.xtl:27</a></div>
+</div>
+<div class="item" id="p">
+<h3><a href="#p">p</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L25">line 25</a></div>
+<pre class="code">p ← <a href="extensions-gpu-demos-accelerate.xtl.html#q">q</a> <a href="extensions-gpu-demos-accelerate.xtl.html#u.a_ttend" class="c-userfunc">ᵘa̲ttend</a> <a href="extensions-gpu-demos-accelerate.xtl.html#k">k</a></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.src.html#L26">extensions/gpu/demos/accelerate.xtl:26</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L27">extensions/gpu/demos/accelerate.xtl:27</a></div>
+</div>
+<h2 class="section" id="section-3">An embedding lookup: the table resident, the ids the only upload</h2>
+<div class="item" id="u.e_mbed">
+<h3><a href="#u.e_mbed"><span class="c-userfunc">ᵘe̲mbed</span></a> <span class="type">: (Num a, Num b) =&gt; a -&gt; b -&gt; Float</span></h3>
+<div class="meta">function &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L30">line 30</a></div>
+<pre class="code"><span class="c-userfunc">ᵘe̲mbed</span> ← <span class="c-string">&quot;float int&quot;</span> <a href="extensions-gpu-lib-Gpu.xtlm.html#m.a_ccel-3c" class="c-macro">ᵍᵖa̲ccel&lt;</a> <span class="c-string">&quot;{ t ids -&gt; t ac:e_mbed ids }&quot;</span></pre>
+<details class="expansion"><summary><code><a href="extensions-gpu-lib-Gpu.xtlm.html#m.a_ccel-3c" class="c-macro">ᵍᵖa̲ccel&lt;</a></code> expands to</summary><pre class="code">({ t ids → <a href="extensions-gpu-lib-Gpu.xtl.html#l.o_utput" class="c-libfunc">ᵍᵖo̲utput</a> <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <a href="extensions-gpu-lib-Gpu.xtl.html#l.r_un" class="c-libfunc">ᵍᵖr̲un</a> <span class="c-number">0</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-number">2</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> ids <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-number">1</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.b_ind" class="c-libfunc">ᵍᵖb̲ind</a> t <a href="extensions-gpu-lib-Gpu.xtl.html#l.a_fter" class="c-libfunc">ᵍᵖa̲fter</a> <span class="c-string">&quot;{ t ids -&gt; t ac:e_mbed ids }&quot;</span> <a href="extensions-gpu-lib-Gpu.xtl.html#l.l_ower" class="c-libfunc">ᵍᵖl̲ower</a> <span class="c-string">&quot;extensions/gpu/demos/accelerate.xtl|float int&quot;</span> })</pre></details>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#e">e</a></div>
+</div>
+<div class="item" id="t">
+<h3><a href="#t">t</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L31">line 31</a></div>
+<pre class="code">t ← <span class="c-number">5</span> <span class="c-number">4</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">0.0</span> <span class="c-number">0.1</span> <span class="c-number">0.2</span> <span class="c-number">0.3</span> <span class="c-number">1.0</span> <span class="c-number">1.1</span> <span class="c-number">1.2</span> <span class="c-number">1.3</span> <span class="c-number">2.0</span> <span class="c-number">2.1</span> <span class="c-number">2.2</span> <span class="c-number">2.3</span> <span class="c-number">3.0</span> <span class="c-number">3.1</span> <span class="c-number">3.2</span> <span class="c-number">3.3</span> <span class="c-number">4.0</span> <span class="c-number">4.1</span> <span class="c-number">4.2</span> <span class="c-number">4.3</span></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#e">e</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L35">extensions/gpu/demos/accelerate.xtl:35</a></div>
+</div>
+<div class="item" id="ids">
+<h3><a href="#ids">ids</a> <span class="type">: Int</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L32">line 32</a></div>
+<pre class="code">ids ← <span class="c-number">2</span> <span class="c-number">3</span> <a href="builtins.html#r_eshape" class="c-builtin">r̲eshape</a> <span class="c-number">1</span> <span class="c-number">5</span> <span class="c-number">2</span> <span class="c-number">4</span> <span class="c-number">4</span> <span class="c-number">3</span></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.html#e">e</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L35">extensions/gpu/demos/accelerate.xtl:35</a></div>
+</div>
+<div class="item" id="e">
+<h3><a href="#e">e</a> <span class="type">: Float</span></h3>
+<div class="meta">value &middot; <a href="extensions-gpu-demos-accelerate.xtl.src.html#L33">line 33</a></div>
+<pre class="code">e ← <a href="extensions-gpu-demos-accelerate.xtl.html#t">t</a> <a href="extensions-gpu-demos-accelerate.xtl.html#u.e_mbed" class="c-userfunc">ᵘe̲mbed</a> <a href="extensions-gpu-demos-accelerate.xtl.html#ids">ids</a></pre>
+<div class="uses">Used in: <a href="extensions-gpu-demos-accelerate.xtl.src.html#L34">extensions/gpu/demos/accelerate.xtl:34</a>, <a href="extensions-gpu-demos-accelerate.xtl.src.html#L35">extensions/gpu/demos/accelerate.xtl:35</a></div>
+</div>
+</main>
+</body>
+</html>

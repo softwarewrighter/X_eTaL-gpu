@@ -1,0 +1,57 @@
+{
+  "width": 1280,
+  "height": 512,
+  "angle_radians": 0.0,
+  "backend": "opencl:0",
+  "repeats": 2,
+  "source_sha256": "7ca67ae200261225a64bd8ff77b5665d311f10b9a3174930bb0e019d14c8df7f",
+  "xetal": "abdd371dd4ae644f00e04d04e09d67576056f031",
+  "libraries": "8bd438d21cce133ddcfced36b0e243b8377c7b8d",
+  "process_seconds": 10.03236341685988,
+  "timings": [
+    "21 warnings generated.",
+    "repeat 1 time: setup 5003.902 ms, upload 22.333 ms, kernels 738.948 ms (device), launches 757.133 ms (host), download 50.018 ms, total 5851.123 ms",
+    "repeat 2 time: setup 0.000 ms, upload 0.000 ms, kernels 890.943 ms (device), launches 1125.647 ms (host), download 87.446 ms, total 1213.376 ms"
+  ],
+  "execution_metrics": {
+    "logical_buffers": 241,
+    "physical_buffers": 64,
+    "logical_bytes": 293890332,
+    "physical_bytes": 107560988,
+    "kernels": 142,
+    "kernel_source_bytes": 191125,
+    "launches": 196,
+    "guards": 24
+  },
+  "cpu_comparison": null,
+  "samples_per_pixel": 1,
+  "compression": "None (TIFF)",
+  "host_geometry_fallbacks": [
+    "shaft",
+    "head",
+    "post",
+    "transforms",
+    "triangles"
+  ],
+  "algorithm": "Shared RayTrace direct diffuse and hard shadows; scalar RGB channel adapter traces each pixel three times",
+  "timing_scope": "CLI process includes load/setup/ASCII; resident run phase times recorded separately; CPU evaluator process timing includes load/ASCII",
+  "renderer_binary_sha256": "d024f4399b2ac70c384acbe77fb0c56a806346a4b03dcfc300edeb5d70da03d6",
+  "backend_git_base": "97cad8100e62c8202f5ce7c1531c96039cb5de40",
+  "backend_worktree_modified": true,
+  "backend_source_note": "Structured region implementation committed with this artifact; executable digest records the rendered prototype build.",
+  "small_same_source_validation": {
+    "width": 8,
+    "height": 4,
+    "cpu_process_seconds": 43.08169720112346,
+    "max_absolute_rgb_error": 1.6811554470752554e-07,
+    "tolerance": "1e-5 * (1 + abs(reference))",
+    "same_source": true
+  },
+  "device_name": "NVIDIA GeForce RTX 5060 Ti",
+  "driver_version": "615.78.08",
+  "gpu_memory_total_mib": 16311,
+  "float_width": "f32",
+  "int_width": "i64",
+  "work_group": 256,
+  "validation_source_sha256": "8fb5df7c077cf8985dbd300157734d0bd57326aae6f71b94a19973fc358b8ee6"
+}

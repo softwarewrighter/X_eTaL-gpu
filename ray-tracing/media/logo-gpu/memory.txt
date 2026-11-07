@@ -1,0 +1,8 @@
+logical_buffers 241
+physical_buffers 64
+logical_bytes 293890332
+physical_bytes 107560988
+kernels 142
+kernel_source_bytes 191125
+launches 196
+guards 24
