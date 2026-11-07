@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 16:04 `chore` Record completed sphere/crystal composition checkpoint and prioritize GPU source/scaling for native high-resolution logo output with matched CPU/GPU timing.
+
 - 15:57 `feat` Assemble an original Scene v2 sphere/crystal composition with closed-volume checks, bounded opaque/mirror CPU diagnostics, uncompressed TIFF and settings metadata; extend the committed library checks from eleven to twenty and preserve the published logo recording pins. Record the preview pixelation limit and prioritize native high-resolution logo output with matched CPU/GPU timing before further glass rendering.
 
 - 15:53 `build` Adopt committed X_eTaL-libraries 8bd438d for RL6 Scene v2/analytic geometry and RL5 bounded glass transport at the composition step boundary; eleven existing and nine new CPU baselines pass unchanged. Published logo recordings retain their original pins.
