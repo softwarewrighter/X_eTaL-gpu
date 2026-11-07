@@ -1,8 +1,9 @@
 number = 43
 slug = "ray-buffer-reuse"
-status = "in-progress"
+status = "completed"
 description = "Resolve discovered GPU allocation and large-graph preparation costs before co..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T21:34:02"
-commits = []
+completed_at = "2026-11-06T21:47:06"
+commits = ["2054bb3a8fa727de9eef09ba7a4ba4dd669620c2"]
