@@ -198,3 +198,12 @@ See docs/ray-performance.md for observed times and limitations. Structured
 regions are opt-in; local matmul/top-k and the Mojo region emitter are not
 implemented. A standalone repeat is sequential over its local state;
 parallelism comes from the surrounding mapped region.
+
+
+Predicated region operations initialize inactive results without executing
+unsafe branch work or guards. Scalar device repeat counts are validated
+before the loop; repeat loops request no compiler unrolling. Empty setup
+groups have distinct kernel names so they cannot alias later real kernels.
+Glass transport currently emits a large shader because tuple state repeats
+are expanded by lowering; cached execution and cold compilation must be
+reported separately.

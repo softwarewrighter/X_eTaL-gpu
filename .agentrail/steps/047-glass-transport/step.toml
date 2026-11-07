@@ -1,6 +1,6 @@
 number = 47
 slug = "glass-transport"
-status = "pending"
+status = "in-progress"
 description = "Follow docs/glass-scene-plan.md; integrate committed RL5 dielectric transport..."
 role = "production"
 context_files = []

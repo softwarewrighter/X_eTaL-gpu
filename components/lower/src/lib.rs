@@ -20,6 +20,7 @@
 //! which reproduces the evaluator (its tests say so).
 
 pub mod cache;
+mod constant;
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -30,6 +31,17 @@ use xetal_gpu_xir::{check, interp, Array, Data, Error, Result};
 
 fn err<T>(message: impl Into<String>) -> Result<T> {
     Err(Error(message.into()))
+}
+fn region_stack<T: Send>(work: impl FnOnce() -> Result<T> + Send) -> Result<T> {
+    std::thread::scope(|scope| {
+        std::thread::Builder::new()
+            .name("xetal-region-lower".into())
+            .stack_size(64 * 1024 * 1024)
+            .spawn_scoped(scope, work)
+            .map_err(|e| Error(format!("cannot start region lowering: {e}")))?
+            .join()
+            .map_err(|_| Error("region lowering failed".into()))?
+    })
 }
 use xetal_ir::{Expr, Item, Kind, Param};
 use xetal_lex::Number;
@@ -84,6 +96,13 @@ pub fn lower_source(name: &str, src: &str, dir: &Path) -> Result<Lowered> {
 /// Opt-in structured local regions for the OpenCL prototype. Region cache
 /// entries are kept separate from legacy lowering and Mojo programs.
 pub fn lower_source_regions(name: &str, src: &str, dir: &Path, regions: bool) -> Result<Lowered> {
+    if regions {
+        region_stack(|| lower_source_regions_inner(name, src, dir, regions))
+    } else {
+        lower_source_regions_inner(name, src, dir, regions)
+    }
+}
+fn lower_source_regions_inner(name: &str, src: &str, dir: &Path, regions: bool) -> Result<Lowered> {
     let loaded = xetal_program::load(name, src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
     let cache_dir = cache::dir();
     // The files []N_GET reads are part of the key; they are known only after
@@ -104,6 +123,7 @@ pub fn lower_source_regions(name: &str, src: &str, dir: &Path, regions: bool) ->
     }
     let mut t = Translator {
         regions,
+        predicate: None,
         program: Program::default(),
         types: Vec::new(),
         expressions: HashMap::new(),
@@ -231,10 +251,18 @@ pub fn lower_function(function: &str, params: &[(String, Ty)], dir: &Path, uses:
 
 /// Lower an array function with structured device loops and dynamic each.
 pub fn lower_function_regions(function: &str, params: &[(String, Ty)], dir: &Path, uses: &str, regions: bool) -> Result<Lowered> {
+    if regions {
+        region_stack(|| lower_function_regions_inner(function, params, dir, uses, regions))
+    } else {
+        lower_function_regions_inner(function, params, dir, uses, regions)
+    }
+}
+fn lower_function_regions_inner(function: &str, params: &[(String, Ty)], dir: &Path, uses: &str, regions: bool) -> Result<Lowered> {
     let src = format!("{uses}\nu:a_ccel := {function}\n");
     let loaded = xetal_program::load("gp:a_ccel<", &src).map_err(|d| Error(format!("{}: {}", d.code, d.message)))?;
     let mut t = Translator {
         regions,
+        predicate: None,
         program: Program::default(),
         types: Vec::new(),
         expressions: HashMap::new(),
@@ -457,11 +485,12 @@ enum V {
     /// `'f p_ower`, then with its count: waits for the data.
     Power {
         f: Box<V>,
-        count: Option<i64>,
+        count: Option<Box<V>>,
     },
     Str(String),
     Unit,
     Tuple(Vec<V>),
+    Where(ValueId),
 }
 
 #[derive(Clone)]
@@ -491,6 +520,7 @@ impl V {
             V::Str(_) => "text".into(),
             V::Unit => "unit".into(),
             V::Tuple(_) => "tuple".into(),
+            V::Where(_) => "bounded Boolean positions (count/first only)".into(),
         }
     }
 }
@@ -518,6 +548,7 @@ impl Env {
 
 struct Translator {
     regions: bool,
+    predicate: Option<ValueId>,
     program: Program,
     /// The type of every value of `program`, as the checker gives them.
     types: Vec<Ty>,
@@ -570,7 +601,12 @@ impl Translator {
     }
 
     /// Push a value and learn its type from the checker.
-    fn push(&mut self, base: &str, ty: Option<Ty>, op: Op) -> Result<ValueId> {
+    fn push(&mut self, base: &str, ty: Option<Ty>, mut op: Op) -> Result<ValueId> {
+        if let Some(cond) = self.predicate {
+            if !matches!(op, Op::Input | Op::Const(_)) {
+                op = Op::Predicated { cond, op: Box::new(op) };
+            }
+        }
         // Inputs remain distinct named bindings. Debug includes Float signed
         // zero; equality additionally prevents merging NaNs.
         let key = (!matches!(op, Op::Input)).then(|| format!("{ty:?}:{op:?}"));
@@ -643,10 +679,113 @@ impl Translator {
         }
     }
 
+    fn where_count(&mut self, mask: ValueId) -> Result<V> {
+        if self.ty(mask).shape.is_empty() {
+            return Ok(V::Static(Array::ints(Shape::scalar(), vec![0]), true));
+        }
+        let arg = self.push(
+            "countmask",
+            None,
+            Op::Cast {
+                op: xetal_gpu_xir::CastOp { to: Scalar::I64 },
+                arg: mask,
+            },
+        )?;
+        Ok(V::Node(self.push(
+            "count",
+            None,
+            Op::Reduce {
+                op: ReduceOp::Add,
+                arg,
+                axis: None,
+            },
+        )?))
+    }
+    fn primitive_constant(&self, p: &Prim, args: &[V]) -> Option<V> {
+        let mut env = Env::default();
+        let mut e = Expr {
+            id: xetal_base::NodeId(0),
+            span: xetal_base::Span::default(),
+            kind: Kind::Prim(p.name.clone()),
+        };
+        for (i, v) in args.iter().enumerate() {
+            let name = format!("arg{i}");
+            env = env.bind(&name, v.clone());
+            let arg = Expr {
+                id: e.id,
+                span: e.span,
+                kind: Kind::Var(name),
+            };
+            e = Expr {
+                id: e.id,
+                span: e.span,
+                kind: Kind::App(Box::new(e), Box::new(arg)),
+            };
+        }
+        let hint = match p.name.as_str() {
+            "w_here" => Some(Scalar::I64),
+            "u_nique" => args.first().and_then(|v| self.known(v)).map(|a| a.scalar),
+            "r_eplicate" => args.get(1).and_then(|v| self.known(v)).map(|a| a.scalar),
+            _ => None,
+        };
+        self.constant_body_hint(&e, &env, hint)
+    }
+
+    fn branch_predicate(&mut self, cond: ValueId, negate: bool, parent: Option<ValueId>) -> Result<ValueId> {
+        let saved = self.predicate;
+        self.predicate = None;
+        let cond = if negate {
+            self.push(
+                "else",
+                None,
+                Op::Map {
+                    op: MapOp::Not,
+                    args: vec![cond],
+                },
+            )?
+        } else {
+            cond
+        };
+        let result = if let Some(p) = parent {
+            self.push(
+                "scope",
+                None,
+                Op::Map {
+                    op: MapOp::And,
+                    args: vec![p, cond],
+                },
+            )
+        } else {
+            Ok(cond)
+        };
+        self.predicate = saved;
+        result
+    }
+    fn merge_branch(&mut self, cond: ValueId, a: V, b: V) -> Result<V> {
+        if let (V::Tuple(a), V::Tuple(b)) = (&a, &b) {
+            if a.len() != b.len() {
+                return err("dynamic branches must return matching tuple structures");
+            }
+            return Ok(V::Tuple(
+                a.iter()
+                    .zip(b)
+                    .map(|(a, b)| self.merge_branch(cond, a.clone(), b.clone()))
+                    .collect::<Result<_>>()?,
+            ));
+        }
+        let (a, b) = self.adapt_literal(a, b)?;
+        let a = self.node(a, "branch")?;
+        let b = self.node(b, "branch")?;
+        Ok(V::Node(self.push("branch", None, Op::Select { cond, a, b })?))
+    }
+
     /// Trace one body using a symbolic argument; move its graph into a local
     /// scope and capture every external SSA value explicitly. Array constants
     /// are hoisted, so scene data is shared rather than copied per work-item.
     fn region(&mut self, f: V, x: V, kind: RegionKind) -> Result<V> {
+        self.region_count(f, x, kind, None)
+    }
+    fn region_count(&mut self, f: V, x: V, kind: RegionKind, count: Option<ValueId>) -> Result<V> {
         let initial = self.node(x, "state")?;
         let mut input_ty = self.ty(initial).clone();
         if kind == RegionKind::Each {
@@ -661,7 +800,9 @@ impl Translator {
         let result = self.apply(f, V::Node(state))?;
         let output = self.node(result, "region_result")?;
         let out_ty = self.ty(output).clone();
-        if (kind == RegionKind::Each && !out_ty.shape.is_scalar()) || (matches!(kind, RegionKind::Repeat(_)) && out_ty != input_ty) {
+        if (kind == RegionKind::Each && !out_ty.shape.is_scalar())
+            || (matches!(kind, RegionKind::Repeat(_) | RegionKind::RepeatDynamic) && out_ty != input_ty)
+        {
             self.rollback(mark);
             return err("region body must preserve state type or return a scalar from each");
         }
@@ -740,6 +881,13 @@ impl Translator {
                 mapping.insert(arg, ValueId(i + 1));
             }
         }
+        if let Some(count) = count {
+            body.values.push(Value {
+                name: "iteration_count".into(),
+                ty: Some(self.ty(count).clone()),
+                op: Op::Input,
+            });
+        }
         for (&old, &parent) in &ids {
             if let Some(i) = captures.iter().position(|a| *a == parent) {
                 mapping.insert(old, ValueId(1 + i));
@@ -762,6 +910,9 @@ impl Translator {
         body.outputs.push(mapping[&output]);
         let mut args = vec![initial];
         args.extend(captures);
+        if let Some(count) = count {
+            args.push(count);
+        }
         Ok(V::Node(self.push(
             "region",
             None,
@@ -910,6 +1061,19 @@ impl Translator {
                             _ => None,
                         };
                         let Some(message_expr) = message_expr else {
+                            if self.regions {
+                                let parent = self.predicate;
+                                let a_pred = self.branch_predicate(cond, false, parent)?;
+                                self.predicate = Some(a_pred);
+                                let a = self.eval(then, env);
+                                self.predicate = parent;
+                                let a = a?;
+                                let b_pred = self.branch_predicate(cond, true, parent)?;
+                                self.predicate = Some(b_pred);
+                                let b = self.eval(other, env);
+                                self.predicate = parent;
+                                return self.merge_branch(cond, a, b?);
+                            }
                             return err(
                                 "a device guard requires a static-message panic branch (general dynamic branches are outside the subset)",
                             );
@@ -934,15 +1098,35 @@ impl Translator {
                     Param::Name(n) => c.env.bind(n, x),
                     Param::Unit => c.env.clone(),
                 };
-                self.eval(&c.body, &env)
+                let mark = self.mark();
+                match self.eval(&c.body, &env) {
+                    Ok(value) => Ok(value),
+                    Err(reason) if self.regions && !matches!(c.body.kind, Kind::Lam { .. }) => {
+                        self.rollback(mark);
+                        let value = self.constant_body(&c.body, &env);
+                        value.ok_or(reason)
+                    }
+                    Err(reason) => Err(reason),
+                }
             }
             V::Prim(p) => self.prim(p, x),
             V::Waiting { prim, left } => self.dyadic(&prim, *left, x),
-            V::Power { f, count: None } => {
-                let count = self.int_of(&x, "p_ower")?;
-                Ok(V::Power { f, count: Some(count) })
-            }
+            V::Power { f, count: None } => Ok(V::Power {
+                f,
+                count: Some(Box::new(x)),
+            }),
             V::Power { f, count: Some(count) } => {
+                let count = match self.int_of(&count, "p_ower") {
+                    Ok(n) => n,
+                    Err(reason) if self.regions => {
+                        let count = self.node(*count, "iterations")?;
+                        if !self.ty(count).scalar.is_int() || !self.ty(count).shape.is_scalar() {
+                            return Err(reason);
+                        }
+                        return self.region_count(*f, x, RegionKind::RepeatDynamic, Some(count));
+                    }
+                    Err(reason) => return Err(reason),
+                };
                 if count < 0 {
                     return err("p_ower requires a nonnegative count");
                 }
@@ -1007,7 +1191,7 @@ impl Translator {
                 count: None,
             });
         }
-        if is_dyadic(&p.name) {
+        if is_dyadic(&p.name) || (self.regions && matches!(p.name.as_str(), "r_eplicate" | "m_ember?")) {
             // The left argument arrives first: wait for the right one.
             return Ok(V::Waiting {
                 prim: p,
@@ -1018,7 +1202,71 @@ impl Translator {
     }
 
     fn monadic(&mut self, p: &Prim, x: V) -> Result<V> {
+        if self.regions && matches!(p.name.as_str(), "u_nique" | "w_here") {
+            if let Some(v) = self.primitive_constant(p, std::slice::from_ref(&x)) {
+                return Ok(v);
+            }
+        }
         match p.name.as_str() {
+            "w_here" if self.regions => {
+                let mask = self.node(x, "positions")?;
+                if self.ty(mask).scalar != Scalar::Bool || self.ty(mask).shape.rank() != 1 {
+                    return err("dynamic w_here requires a Bool vector; only count/first are supported");
+                }
+                Ok(V::Where(mask))
+            }
+            "t_ally" if matches!(x, V::Where(_)) => {
+                let V::Where(mask) = x else { unreachable!() };
+                self.where_count(mask)
+            }
+            "r_avel" if matches!(x, V::Where(_)) => Ok(x),
+            "f_irst" if matches!(x, V::Where(_)) => {
+                let V::Where(mask) = x else { unreachable!() };
+                let n = self.ty(mask).shape.len();
+                if n == 0 {
+                    return Ok(V::Static(Array::ints(Shape::scalar(), vec![0]), true));
+                }
+                let count = self.where_count(mask)?;
+                let count = self.node(count, "count")?;
+                let zero = self.constant(Array::ints(Shape::scalar(), vec![0]), None);
+                let empty = self.push(
+                    "empty",
+                    None,
+                    Op::Map {
+                        op: MapOp::Eq,
+                        args: vec![count, zero],
+                    },
+                )?;
+                let indices = self.constant(Array::ints(Shape(vec![n]), (1..=n as i64).collect()), None);
+                let sentinel = self.constant(Array::ints(Shape::scalar(), vec![n as i64 + 1]), None);
+                let selected = self.push(
+                    "position",
+                    None,
+                    Op::Select {
+                        cond: mask,
+                        a: indices,
+                        b: sentinel,
+                    },
+                )?;
+                let first = self.push(
+                    "firstposition",
+                    None,
+                    Op::Reduce {
+                        op: ReduceOp::Min,
+                        arg: selected,
+                        axis: None,
+                    },
+                )?;
+                Ok(V::Node(self.push(
+                    "firstposition",
+                    None,
+                    Op::Select {
+                        cond: empty,
+                        a: zero,
+                        b: first,
+                    },
+                )?))
+            }
             "u_se<" => Ok(V::Unit),
             "[]P_ANIC" => match x {
                 V::Str(message) => err(message),
@@ -1299,7 +1547,61 @@ impl Translator {
     /// A dyadic primitive with both arguments.
     fn dyadic(&mut self, p: &Prim, l: V, r: V) -> Result<V> {
         let axis = p.axes.first().map(|a| *a as usize);
+        if self.regions && p.name == "r_eplicate" {
+            if let Some(v) = self.primitive_constant(p, &[l.clone(), r.clone()]) {
+                return Ok(v);
+            }
+        }
         match p.name.as_str() {
+            "m_ember?" if self.regions => {
+                let (a, b) = self.adapt_literal(l, r)?;
+                let a = self.node(a, "members")?;
+                let b = self.node(b, "set")?;
+                let shape = self.ty(a).shape.clone();
+                if self.ty(b).shape.is_empty() {
+                    return Ok(V::Node(self.constant(
+                        Array::new(Scalar::Bool, shape.clone(), Data::Bool(vec![false; shape.len()]))?,
+                        None,
+                    )));
+                }
+                let a = self.push("members", None, Op::Ravel { arg: a })?;
+                let b = self.push("set", None, Op::Ravel { arg: b })?;
+                let pairs = self.push(
+                    "membership",
+                    None,
+                    Op::Table {
+                        op: TableOp::Map(MapOp::Eq),
+                        a,
+                        b,
+                    },
+                )?;
+                let ints = self.push(
+                    "membership",
+                    None,
+                    Op::Cast {
+                        op: xetal_gpu_xir::CastOp { to: Scalar::I64 },
+                        arg: pairs,
+                    },
+                )?;
+                let any = self.push(
+                    "membership",
+                    None,
+                    Op::Reduce {
+                        op: ReduceOp::Max,
+                        arg: ints,
+                        axis: Some(2),
+                    },
+                )?;
+                let truth = self.push(
+                    "membership",
+                    None,
+                    Op::Cast {
+                        op: xetal_gpu_xir::CastOp { to: Scalar::Bool },
+                        arg: any,
+                    },
+                )?;
+                Ok(V::Node(self.push("membership", None, Op::Reshape { shape, arg: truth })?))
+            }
             "m_atch" => {
                 if let (V::Str(a), V::Str(b)) = (&l, &r) {
                     return Ok(V::Static(
@@ -1633,6 +1935,15 @@ impl Translator {
     }
 
     fn int_of(&self, v: &V, what: &str) -> Result<i64> {
+        if self.regions {
+            if let Some(a) = self.known(v) {
+                if a.shape.is_scalar() {
+                    if let Data::Int(values) = a.data {
+                        return Ok(values[0]);
+                    }
+                }
+            }
+        }
         match v {
             V::Static(a, _) if a.shape.len() == 1 => match &a.data {
                 Data::Int(x) => Ok(x[0]),

@@ -17,3 +17,6 @@ xetal-core = { path = "../../work/xetal/components/core/crates/xetal-core" }
 xetal-ir = { path = "../../work/xetal/components/core/crates/xetal-ir" }
 xetal-base = { path = "../../work/xetal/components/base/crates/xetal-base" }
 xetal-lex = { path = "../../work/xetal/components/syntax/crates/xetal-lex" }
+xetal-step = { path = "../../work/xetal/components/step/crates/xetal-step" }
+xetal-value = { path = "../../work/xetal/components/eval/crates/xetal-value" }
+xetal-arith = { path = "../../work/xetal/components/eval/crates/xetal-arith" }

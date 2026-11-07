@@ -363,3 +363,20 @@ was 4.084 ms including readback. These tiny-image observations validate
 execution/output only and are not a full-resolution speedup benchmark.
 Exporting raw linear data adds an output readback; the earlier published
 1280 by 512 timings remain tied to their archived display-only program.
+
+
+## Glass transport checkpoint
+
+The shared Scene v2/Glass path now runs through opt-in OpenCL regions.
+See [glass transport evidence](glass-scene-plan.md#transport-checkpoint-2026-11-07).
+The four-interaction 2 by 2 f64 fixture planned 244 kernels, 322 launches,
+38 guards, about 24 KB of reusable buffers and 3.34 MB of generated C.
+Resident execution was about 7 ms device / 10 ms total; an uncached build
+took about 424 seconds. A later cached setup took about 800 ms. These are
+correctness experiments, not representative throughput measurements.
+
+The next optimization target is retaining tuple transport state in a
+single bounded device loop, followed by vector RGB results from one trace.
+Both address shader size and duplicate work; more host batching alone does
+not remove cold compilation. Neither optimization requires a new language
+primitive or changing the reusable optics library.

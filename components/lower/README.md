@@ -183,3 +183,21 @@ while guards and potentially failing operations retain their order.
 The first GPU-specific channel adapter is examples/ray/region-shade.xtl;
 all ray math remains in the shared general libraries. See
 docs/ray-performance.md for the tested scope and remaining optimizations.
+
+
+With --regions, dynamic scalar branches preserve lazy evaluation through
+predicated operations and recursively merged tuple components. Bounded
+positions support count and first-match queries, including the evaluator's
+zero prototype for an empty first. General dynamic-size arrays remain
+unsupported. Membership lowers to ordinary comparison/reduction operations.
+Device-dependent scalar repeat counts stay device loops with negative-count
+validation. Tuple recurrence still expands linearly in a static cap.
+
+Immutable closed validations may fall back to the pinned evaluator after
+ordinary lowering refuses them. This requires pure expressions, no bound
+inputs or effects, and at most one million evaluator transitions. Immutable
+SSA dependencies are checked before evaluating; guarded operations and
+regions are ineligible. Empty primitive results require a known scalar type.
+This validates static geometry without replacing device ray calculations
+with a host-rendered image. Glass uses the same shared implementation as
+CPU; see docs/glass-scene-plan.md for evidence and remaining limits.

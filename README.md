@@ -379,7 +379,9 @@ example programs the GPU runs) and `docs/README.md` (the reference).
 - [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
   libraries and macros versus GPU-specific integration
 - [Glass scene plan](docs/glass-scene-plan.md) -- RL5/RL6 adopted;
-  sphere/crystal composition diagnostics use `just ray-glass-composition`.
+  shared dielectric transport now runs on CPU/OpenCL; tiny matched cap-2/cap-4
+  fixtures establish correctness. The larger glass still remains next.
+  Composition diagnostics use `just ray-glass-composition`.
   Transparent materials and paired CPU/GPU still rendering follow.
 - [Ray tracing plan](docs/ray-tracing-plan.md) -- planned shared X_eTaL
   CPU/GPU renderer, uncompressed TIFF output and rotating logo

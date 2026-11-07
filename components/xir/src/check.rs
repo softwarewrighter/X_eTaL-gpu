@@ -54,12 +54,38 @@ pub fn check_value(v: &Value, types: &[Ty], preceding: &[Value]) -> Result<Ty> {
     let name = &v.name;
     let ty_of = |id: ValueId| -> &Ty { &types[id.0] };
     let ty = match &v.op {
+        Op::Predicated { cond, op } => {
+            if ty_of(*cond)
+                != &(Ty {
+                    scalar: Scalar::Bool,
+                    shape: Shape::scalar(),
+                })
+            {
+                return err(format!("%{name}: predicate must be a scalar Bool"));
+            }
+            if matches!(**op, Op::Input | Op::Const(_)) {
+                return err("inputs/constants cannot be predicated");
+            }
+            check_value(
+                &Value {
+                    name: v.name.clone(),
+                    ty: v.ty.clone(),
+                    op: (**op).clone(),
+                },
+                types,
+                preceding,
+            )?
+        }
         Op::Region { kind, args, body } => {
             if args.is_empty() {
                 return err(format!("%{name}: region requires a state/item argument"));
             }
             for value in &body.values {
-                if matches!(value.op, Op::Matmul { .. } | Op::TopK { .. }) {
+                let mut op = &value.op;
+                while let Op::Predicated { op: inner, .. } = op {
+                    op = inner;
+                }
+                if matches!(op, Op::Matmul { .. } | Op::TopK { .. }) {
                     return err(format!("%{name}: local region does not support {:?}", value.op));
                 }
             }
@@ -81,9 +107,15 @@ pub fn check_value(v: &Value, types: &[Ty], preceding: &[Value]) -> Result<Ty> {
                     return err(format!("%{name}: region input {i} must be {expected}"));
                 }
             }
+            if *kind == RegionKind::RepeatDynamic {
+                let count = ty_of(*args.last().unwrap());
+                if args.len() < 2 || !count.scalar.is_int() || !count.shape.is_scalar() {
+                    return err("dynamic repeat requires a final scalar Int count");
+                }
+            }
             let result = inner.ty(body.outputs[0]);
             match kind {
-                RegionKind::Repeat(_) if result != &first => {
+                RegionKind::Repeat(_) | RegionKind::RepeatDynamic if result != &first => {
                     return err(format!("%{name}: repeated state must keep type {first}, got {result}"))
                 }
                 RegionKind::Each if !result.shape.is_scalar() => return err(format!("%{name}: each body must return a scalar")),
@@ -91,7 +123,11 @@ pub fn check_value(v: &Value, types: &[Ty], preceding: &[Value]) -> Result<Ty> {
             }
             Ty {
                 scalar: result.scalar,
-                shape: ty_of(args[0]).shape.clone(),
+                shape: if *kind == RegionKind::Once {
+                    result.shape.clone()
+                } else {
+                    ty_of(args[0]).shape.clone()
+                },
             }
         }
         Op::Input => v.ty.clone().expect("an input declares its type"),

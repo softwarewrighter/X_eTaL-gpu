@@ -25,6 +25,57 @@ refinements. See [library asks](xetal-libraries-ask.md) for contracts,
 acceptance tests and required delivery points. Do not expand the original
 logo's requirements or silently change its v1 arrays.
 
+## Transport checkpoint (2026-11-07)
+
+The pinned MIT Glass and Scene libraries now lower through the experimental
+OpenCL region path. `examples/ray/glass-transport.xtl` uses the Scene v2
+sphere/crystal composition with explicit dielectric material data, shared
+preflight, initial medium detection and shared bounded transport. The
+original opaque diagnostic and v1 baselines remain available.
+
+Run a matched tiny test with:
+
+```sh
+just ray-render-regions --scene glass --width 2 --height 2 --fov .18 --cap 4 --compare-cpu --output work/glass-check
+```
+
+Glass defaults to f64 to preserve its strict unit-vector validation.
+The camera is pinhole, the seed is 123, and shadows remain conservative
+opaque visibility. This checkpoint has no depth of field, dispersion,
+caustic solver or transparent shadow integration. It is not a quality still.
+
+Frozen correctness data lives in `site-assets/ray/glass-transport/cap2`
+and `cap4`: exact X_eTaL source, raw linear/display Float arrays, matched
+uncompressed CPU/GPU TIFFs, PNGs, timing logs and stored ZIP archives.
+The narrow camera intentionally intersects the central glass sphere.
+At cap 2 all four pixels are unresolved black; at cap 4 transmitted light
+appears. RGB8 pixels match exactly on CPU and RTX, with maximum display
+Float error below 3e-17. These 2 by 2 fixtures must not be enlarged and
+presented as a high-resolution result.
+
+The observations used an experimental compiler worktree over 2107140;
+manifests record the executable hash, base commit, dirty tracked paths
+and pinned dependencies. Later compiler fixes in this checkpoint are
+covered by current-source regression tests, rather than claiming the
+frozen images came from the final committed executable.
+
+Tests exercise Snell refraction, normal-incidence Fresnel, total internal
+reflection, Beer-Lambert absorption, invalid normals and recovery, sphere
+entry/exit, medium IDs, clipping/rebinding recovery and bounded interaction
+counts on actual shared
+library functions. Tiny scene runs also validate the closed octahedra
+through shared preflight. A larger sphere/crystal image, closer visual
+inspection of crystal transmission and camera refinement remain next.
+
+Cold compilation is the current risk: the four-interaction shader took
+about 424 seconds to compile uncached, despite resident GPU execution
+around 7 ms for four pixels. Tuple transport recurrence is still expanded
+linearly in the interaction cap, and scalar RGB mapping repeats the trace
+three times. Primitive scans and sampling retain device loops; there is
+no branching ray tree. Measure a larger image before projecting a render
+ETA or claiming an end-to-end CPU/GPU speedup. Step 048 produces the
+first visible glass still; step 049 publishes it in the gallery.
+
 ## Scene to build
 
 Use right-handed coordinates, y up, and scene units near an object's

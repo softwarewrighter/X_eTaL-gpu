@@ -376,8 +376,8 @@ RL8/RL9 remain deferred.
 
 | ID | Library change | Needed before | Status |
 | -- | -------------- | ------------- | ------ |
-| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Adopted at 8bd438d; integration in progress |
-| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Adopted at 8bd438d; composition in progress |
+| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Adopted at 8bd438d; tiny CPU/GPU transport fixtures pass; larger still next |
+| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Adopted at 8bd438d; Scene v2 composition and closed preflight integrated |
 | RL7 | Deterministic pixel/lens/emitter sampling, thin-lens camera and emissive/area lights | glass-camera and final glass-render | Upstream step 014 in progress; not committed |
 | RL8 | Optional floor caustics via bounded photon transport and radiance estimation | Only a separately approved caustic refinement | Deferred proposal; not a first-render blocker |
 | RL9 | Optional RGB dispersion and linear-image bloom | Only an optional finishing pass | Deferred proposal; not a first-render blocker |
@@ -651,3 +651,10 @@ useful general portable-query request, not a blocker for this backend
 checkpoint. The sibling committed head is still a2d4de1 on this check;
 no compatible newer delivery was adopted. Mapped-cell execution, error
 reduction, scheduling and frame residency remain GPU repository work.
+
+
+2026-11-07 integration check: no new library or language ask blocks the
+first glass still. RL5/RL6 run through the experimental OpenCL path.
+Large shader compilation and retained tuple transport loops are local GPU
+compiler work. RL7 remains a later camera/sampling integration, not a
+requirement for the first pinhole still. See docs/glass-scene-plan.md.

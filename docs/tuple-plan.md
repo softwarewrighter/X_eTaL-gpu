@@ -112,3 +112,14 @@ setting or a second call, as with macros and extensions
    new `xetal-x`.
 4. When X-2 lands: T2.
 5. When G1 and G2 land: T5 in the adapter from X_eTaL's IR.
+
+
+## Ray transport update (2026-11-07)
+
+The opt-in region frontend now handles Scene/Glass tuple bundles and lazy
+dynamic tuple branches by flattening numeric components into ordinary SSA
+values. This does not add tuple values to the extension ABI or XIR. A
+static tuple transport recurrence still expands linearly in its cap;
+retaining all state components in one device loop remains compiler work.
+Scalar mapped results also mean three independent traces per RGB pixel.
+See docs/ray-performance.md for the current implementation limits.

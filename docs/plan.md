@@ -641,3 +641,16 @@ visible, glass transport/render/gallery and Cornell gallery integration
 now precede further logo polish and performance measurements in the
 recorded queue. This makes the three requested scene results the next
 visible priority; it does not mark those remaining scenes complete.
+
+
+### Glass transport integration checkpoint
+
+Step 047 adds shared Scene v2/Glass lowering, lazy tuple branches, bounded
+ID queries and device sampling counts. Static immutable preflight uses a
+bounded pure pinned-evaluator fallback; device inputs never become static
+constants. Analytic and actual-path GPU regressions plus cap-2/cap-4 matched
+image fixtures establish the transport checkpoint. Details and explicit
+limits are in docs/glass-scene-plan.md. Step 048 must produce the first
+visible larger glass still; the gallery remains planned until then.
+Cold shader compile cost and linearly expanded tuple recurrence remain
+local GPU compiler work, not a new library or language ask.

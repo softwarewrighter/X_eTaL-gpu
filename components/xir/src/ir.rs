@@ -355,12 +355,18 @@ pub struct ValueId(pub usize);
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RegionKind {
     Each,
+    Once,
     Repeat(usize),
+    /// Iteration count is the final scalar Int argument (also a body capture).
+    RepeatDynamic,
 }
 
 /// How a value is computed.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Op {
+    /// Execute only when the scalar predicate is true. Inactive results are
+    /// typed zero placeholders, consumed only by a subsequent branch merge.
+    Predicated { cond: ValueId, op: Box<Op> },
     Region {
         kind: RegionKind,
         args: Vec<ValueId>,
@@ -431,8 +437,15 @@ pub enum Op {
 impl Op {
     /// Rewrite references in this scope; nested region bodies have their own IDs.
     pub fn remap(&self, mut f: impl FnMut(ValueId) -> ValueId) -> Op {
+        self.remap_with(&mut f)
+    }
+    fn remap_with(&self, f: &mut dyn FnMut(ValueId) -> ValueId) -> Op {
         let mut op = self.clone();
         match &mut op {
+            Op::Predicated { cond, op } => {
+                *cond = f(*cond);
+                **op = op.remap_with(f);
+            }
             Op::Input | Op::Const(_) => {}
             Op::Region { args, .. } | Op::Map { args, .. } => args.iter_mut().for_each(|id| *id = f(*id)),
             Op::Select { cond, a, b } => {
@@ -465,6 +478,7 @@ impl Op {
     /// The values this operation reads.
     pub fn args(&self) -> Vec<ValueId> {
         match self {
+            Op::Predicated { cond, op } => std::iter::once(*cond).chain(op.args()).collect(),
             Op::Input | Op::Const(_) => Vec::new(),
             Op::Map { args, .. } | Op::Region { args, .. } => args.clone(),
             Op::Select { cond, a, b } => vec![*cond, *a, *b],

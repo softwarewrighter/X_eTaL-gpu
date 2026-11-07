@@ -279,6 +279,10 @@ ray-render-regions *args:
 ray-test-regions:
     cd components && cargo test -p xetal-gpu-cli --test regions -- --nocapture
 
+# Shared dielectric optics, medium transitions and GPU refusal/recovery checks
+ray-test-glass:
+    cd components && cargo test -p xetal-gpu-cli --test glass -- --nocapture
+
 # Render both backends from identical source and retain paired TIFF/Float output
 ray-image-pair *args:
     python3 scripts/ray-render-regions.py --width 16 --height 8 --compare-cpu --output work/ray-pair/logo {{args}}

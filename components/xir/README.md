@@ -140,3 +140,12 @@ the interpreter preserves ordered guard failures and zero-count behavior.
 The text form uses region each or region repeat:COUNT, argument references,
 and a body token encoding the nested program. The OpenCL prototype currently
 refuses local matmul/top-k. No device schedule is part of the IR semantics.
+
+
+Once regions execute a body once and may change the state shape. Dynamic
+repeat regions take a final scalar Int count capture; negative counts fail
+before execution. Predicated operations require a scalar Bool, execute the
+inner operation only when true, and otherwise return typed zeros. A later
+branch merge selects the active values. Predication preserves guard order
+and prevents invalid work in inactive branches. Text serialization retains
+these operations and is covered by round-trip checks.

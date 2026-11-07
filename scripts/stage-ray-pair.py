@@ -35,6 +35,7 @@ def main():
              gpu_tiff="gpu.tif", cpu_tiff="cpu.tif", gpu_png="gpu.png", cpu_png="cpu.png",
              float_outputs="linear-*.txt are pre-display radiance; display-*.txt are shared sRGB before RGB8 quantization",
              artifact_sha256={name: hashlib.sha256((dst/name).read_bytes()).hexdigest() for name in files},
+             renderer_worktree_status=subprocess.check_output(["git", "-C", str(ROOT), "status", "--short", "--untracked-files=no"], text=True).strip(),
              renderer_git_base=subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip(),
              renderer_binary_sha256=hashlib.sha256((ROOT/"target/release/xetal-gpu").read_bytes()).hexdigest())
     (dst / "manifest.json").write_text(json.dumps(m, indent=2)+"\n")

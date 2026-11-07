@@ -124,10 +124,20 @@ fn shape<'a>(toks: &'a [&'a str]) -> Result<(Shape, &'a [&'a str])> {
 
 fn operation(names: &HashMap<String, ValueId>, kind: &str, rest: &[&str]) -> Result<(Option<Ty>, Op)> {
     match kind {
+        "predicated" => {
+            if rest.len()!=2 {return err("predicated takes a predicate and encoded operation");}
+            let cond=reference(names,rest[0])?;
+            let line=decode_message(rest[1])?;
+            let spaced=line.replace('['," [ ").replace(']'," ] ");
+            let tokens:Vec<&str>=spaced.split_whitespace().collect();
+            if tokens.is_empty() {return err("predicated operation is empty");}
+            let (ty,op)=operation(names,tokens[0],&tokens[1..])?;
+            Ok((ty,Op::Predicated {cond,op:Box::new(op)}))
+        }
         "region" => {
             let split = rest.iter().position(|s| *s == "body").ok_or_else(|| crate::Error("region requires body token".into()))?;
             if split < 2 || rest.len() != split+2 { return err("region MODE %arg ... body ENCODED"); }
-            let kind = if rest[0] == "each" { RegionKind::Each } else {
+            let kind = if rest[0] == "each" { RegionKind::Each } else if rest[0] == "once" { RegionKind::Once } else if rest[0] == "repeat-dynamic" {RegionKind::RepeatDynamic} else {
                 RegionKind::Repeat(rest[0].strip_prefix("repeat:").and_then(|s| s.parse().ok()).ok_or_else(|| crate::Error("region mode is each or repeat:COUNT".into()))?)
             };
             let args = rest[1..split].iter().map(|s| reference(names,s)).collect::<Result<Vec<_>>>()?;
@@ -476,76 +486,94 @@ pub fn print(program: &Program) -> String {
     let mut out = String::new();
     let name = |id: ValueId| format!("%{}", program.value(id).name);
     for v in &program.values {
-        out.push_str(&format!("%{} = ", v.name));
-        match &v.op {
-            Op::Region { kind, args, body } => {
-                let mode = match kind {
-                    RegionKind::Each => "each".into(),
-                    RegionKind::Repeat(n) => format!("repeat:{n}"),
-                };
-                out.push_str(&format!(
-                    "region {mode} {} body {}",
-                    args.iter().map(|id| name(*id)).collect::<Vec<_>>().join(" "),
-                    encode_message(&print(body))
-                ));
-            }
-            Op::Input => out.push_str(&format!("input {}", v.ty.as_ref().expect("an input declares its type"))),
-            Op::Const(c) => {
-                out.push_str(&format!("const {}", v.ty.as_ref().expect("a const declares its type")));
-                match c {
-                    Const::Int(items) => items.iter().for_each(|x| out.push_str(&format!(" {x}"))),
-                    Const::Float(items) => items.iter().for_each(|x| out.push_str(&format!(" {}", crate::format::float(*x)))),
-                    Const::Bool(items) => items.iter().for_each(|x| out.push_str(if *x { " 1" } else { " 0" })),
-                }
-            }
-            Op::Map { op, args } => {
-                out.push_str(&format!("map {op}"));
-                args.iter().for_each(|a| out.push_str(&format!(" {}", name(*a))));
-            }
-            Op::Guard { cond, message } => out.push_str(&format!("guard {} {}", name(*cond), encode_message(message))),
-            Op::Select { cond, a, b } => out.push_str(&format!("select {} {} {}", name(*cond), name(*a), name(*b))),
-            Op::Reduce { op, arg, axis } => match axis {
-                Some(a) => out.push_str(&format!("reduce {op} axis={a} {}", name(*arg))),
-                None => out.push_str(&format!("reduce {op} {}", name(*arg))),
-            },
-            Op::Cast { op, arg } => out.push_str(&format!("cast {} {}", op.to, name(*arg))),
-            Op::Matmul { a, b } => out.push_str(&format!("matmul {} {}", name(*a), name(*b))),
-            Op::Take { n, axis, arg } | Op::Drop { n, axis, arg } => {
-                let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
-                if *axis == 1 {
-                    out.push_str(&format!("{what} {n} {}", name(*arg)));
-                } else {
-                    out.push_str(&format!("{what} {n} axis={axis} {}", name(*arg)));
-                }
-            }
-            Op::Rotate { axis, amounts, arg } => {
-                let amounts = amounts.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" ");
-                if *axis == 1 {
-                    out.push_str(&format!("rotate {amounts} {}", name(*arg)));
-                } else {
-                    out.push_str(&format!("rotate axis={axis} {amounts} {}", name(*arg)));
-                }
-            }
-            Op::Reshape { shape, arg } => out.push_str(&format!("reshape {shape} {}", name(*arg))),
-            Op::Concat { axis: 1, a, b } => out.push_str(&format!("concat {} {}", name(*a), name(*b))),
-            Op::Concat { axis, a, b } => out.push_str(&format!("concat axis={axis} {} {}", name(*a), name(*b))),
-            Op::TopK { k, axis: 0, arg } => out.push_str(&format!("topk {k} {}", name(*arg))),
-            Op::TopK { k, axis, arg } => out.push_str(&format!("topk {k} axis={axis} {}", name(*arg))),
-            Op::Lookup { axis: 1, idx, arg } => out.push_str(&format!("lookup {} {}", name(*idx), name(*arg))),
-            Op::Lookup { axis, idx, arg } => out.push_str(&format!("lookup axis={axis} {} {}", name(*idx), name(*arg))),
-            Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
-            Op::Table { op, a, b } => out.push_str(&format!("table {op} {} {}", name(*a), name(*b))),
-            Op::Transpose { perm: None, arg } => out.push_str(&format!("transpose {}", name(*arg))),
-            Op::Transpose { perm: Some(p), arg } => out.push_str(&format!(
-                "transpose {} {}",
-                p.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "),
-                name(*arg)
-            )),
-        }
-        out.push('\n');
+        out.push_str(&format!("%{} = {}\n", v.name, print_operation(program, v)));
     }
     for o in &program.outputs {
         out.push_str(&format!("output {}\n", name(*o)));
+    }
+    out
+}
+
+fn print_operation(program: &Program, v: &Value) -> String {
+    let mut out = String::new();
+    let name = |id: ValueId| format!("%{}", program.value(id).name);
+    match &v.op {
+        Op::Predicated { cond, op } => {
+            let operation = print_operation(
+                program,
+                &Value {
+                    name: v.name.clone(),
+                    ty: v.ty.clone(),
+                    op: (**op).clone(),
+                },
+            );
+            out.push_str(&format!("predicated {} {}", name(*cond), encode_message(&operation)));
+        }
+        Op::Region { kind, args, body } => {
+            let mode = match kind {
+                RegionKind::Each => "each".into(),
+                RegionKind::Once => "once".into(),
+                RegionKind::RepeatDynamic => "repeat-dynamic".into(),
+                RegionKind::Repeat(n) => format!("repeat:{n}"),
+            };
+            out.push_str(&format!(
+                "region {mode} {} body {}",
+                args.iter().map(|id| name(*id)).collect::<Vec<_>>().join(" "),
+                encode_message(&print(body))
+            ));
+        }
+        Op::Input => out.push_str(&format!("input {}", v.ty.as_ref().expect("an input declares its type"))),
+        Op::Const(c) => {
+            out.push_str(&format!("const {}", v.ty.as_ref().expect("a const declares its type")));
+            match c {
+                Const::Int(items) => items.iter().for_each(|x| out.push_str(&format!(" {x}"))),
+                Const::Float(items) => items.iter().for_each(|x| out.push_str(&format!(" {}", crate::format::float(*x)))),
+                Const::Bool(items) => items.iter().for_each(|x| out.push_str(if *x { " 1" } else { " 0" })),
+            }
+        }
+        Op::Map { op, args } => {
+            out.push_str(&format!("map {op}"));
+            args.iter().for_each(|a| out.push_str(&format!(" {}", name(*a))));
+        }
+        Op::Guard { cond, message } => out.push_str(&format!("guard {} {}", name(*cond), encode_message(message))),
+        Op::Select { cond, a, b } => out.push_str(&format!("select {} {} {}", name(*cond), name(*a), name(*b))),
+        Op::Reduce { op, arg, axis } => match axis {
+            Some(a) => out.push_str(&format!("reduce {op} axis={a} {}", name(*arg))),
+            None => out.push_str(&format!("reduce {op} {}", name(*arg))),
+        },
+        Op::Cast { op, arg } => out.push_str(&format!("cast {} {}", op.to, name(*arg))),
+        Op::Matmul { a, b } => out.push_str(&format!("matmul {} {}", name(*a), name(*b))),
+        Op::Take { n, axis, arg } | Op::Drop { n, axis, arg } => {
+            let what = if matches!(v.op, Op::Take { .. }) { "take" } else { "drop" };
+            if *axis == 1 {
+                out.push_str(&format!("{what} {n} {}", name(*arg)));
+            } else {
+                out.push_str(&format!("{what} {n} axis={axis} {}", name(*arg)));
+            }
+        }
+        Op::Rotate { axis, amounts, arg } => {
+            let amounts = amounts.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" ");
+            if *axis == 1 {
+                out.push_str(&format!("rotate {amounts} {}", name(*arg)));
+            } else {
+                out.push_str(&format!("rotate axis={axis} {amounts} {}", name(*arg)));
+            }
+        }
+        Op::Reshape { shape, arg } => out.push_str(&format!("reshape {shape} {}", name(*arg))),
+        Op::Concat { axis: 1, a, b } => out.push_str(&format!("concat {} {}", name(*a), name(*b))),
+        Op::Concat { axis, a, b } => out.push_str(&format!("concat axis={axis} {} {}", name(*a), name(*b))),
+        Op::TopK { k, axis: 0, arg } => out.push_str(&format!("topk {k} {}", name(*arg))),
+        Op::TopK { k, axis, arg } => out.push_str(&format!("topk {k} axis={axis} {}", name(*arg))),
+        Op::Lookup { axis: 1, idx, arg } => out.push_str(&format!("lookup {} {}", name(*idx), name(*arg))),
+        Op::Lookup { axis, idx, arg } => out.push_str(&format!("lookup axis={axis} {} {}", name(*idx), name(*arg))),
+        Op::Ravel { arg } => out.push_str(&format!("ravel {}", name(*arg))),
+        Op::Table { op, a, b } => out.push_str(&format!("table {op} {} {}", name(*a), name(*b))),
+        Op::Transpose { perm: None, arg } => out.push_str(&format!("transpose {}", name(*arg))),
+        Op::Transpose { perm: Some(p), arg } => out.push_str(&format!(
+            "transpose {} {}",
+            p.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(" "),
+            name(*arg)
+        )),
     }
     out
 }

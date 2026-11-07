@@ -112,225 +112,266 @@ pub fn run(checked: &Checked, inputs: &HashMap<String, Array>) -> Result<Vec<Arr
     let mut values: Vec<Array> = Vec::with_capacity(program.values.len());
     for (i, v) in program.values.iter().enumerate() {
         let ty = checked.ty(ValueId(i));
-        let array = match &v.op {
-            Op::Region { kind, args, body } => {
-                let inner = crate::check::check((**body).clone())?;
-                let ins = body.inputs();
-                let mut bound: HashMap<String, Array> = ins
-                    .iter()
-                    .zip(args)
-                    .skip(1)
-                    .map(|(id, arg)| (body.value(*id).name.clone(), values[arg.0].clone()))
-                    .collect();
-                let first = body.value(ins[0]).name.clone();
-                match kind {
-                    RegionKind::Repeat(n) => {
-                        let mut state = values[args[0].0].clone();
-                        for _ in 0..*n {
-                            bound.insert(first.clone(), state);
-                            state = run(&inner, &bound)?.remove(0);
-                        }
-                        state
-                    }
-                    RegionKind::Each => {
-                        let source = &values[args[0].0];
-                        let mut result = Vec::new();
-                        for j in 0..source.shape.len() {
-                            let data = match source.at(j) {
-                                Item::Int(x) => Data::Int(vec![x]),
-                                Item::Float(x) => Data::Float(vec![x]),
-                                Item::Bool(x) => Data::Bool(vec![x]),
-                            };
-                            bound.insert(first.clone(), Array::new(source.scalar, Shape::scalar(), data)?);
-                            result.push(run(&inner, &bound)?.remove(0));
-                        }
-                        let data = match ty.scalar {
-                            Scalar::I32 | Scalar::I64 => Data::Int(result.iter().map(|a| a.at(0).int()).collect()),
-                            Scalar::F32 | Scalar::F64 => Data::Float(result.iter().map(|a| a.at(0).float()).collect()),
-                            Scalar::Bool => Data::Bool(result.iter().map(|a| a.at(0).boolean()).collect()),
-                        };
-                        Array::new(ty.scalar, ty.shape.clone(), data)?
-                    }
-                }
-            }
-            Op::Input => {
-                let Some(given) = inputs.get(&v.name) else {
-                    return err(format!("input %{} ({}) is not bound", v.name, ty));
-                };
-                if given.ty() != *ty {
-                    return err(format!("input %{} is {}, bound to {}", v.name, ty, given.ty()));
-                }
-                given.clone()
-            }
-            Op::Const(c) => {
-                let n = ty.shape.len();
-                let data = match c {
-                    Const::Int(items) => Data::Int(fill(items, n)),
-                    Const::Float(items) => Data::Float(fill(items, n)),
-                    Const::Bool(items) => Data::Bool(fill(items, n)),
-                };
-                Array::new(ty.scalar, ty.shape.clone(), data)?
-            }
-            Op::Map { op, args } => {
-                let args: Vec<&Array> = args.iter().map(|a| &values[a.0]).collect();
-                map(&v.name, *op, &args, ty)?
-            }
-            Op::Guard { cond, message } => {
-                if matches!(&values[cond.0].data, Data::Bool(v) if v[0]) {
-                    return err(message.clone());
-                }
-                values[cond.0].clone()
-            }
-            Op::Select { cond, a, b } => {
-                let (c, a, b) = (&values[cond.0], &values[a.0], &values[b.0]);
-                let n = ty.shape.len();
-                let data = match &a.data {
-                    Data::Int(_) => Data::Int((0..n).map(|i| pick(c.at(i), a.at(i), b.at(i)).int()).collect()),
-                    Data::Float(_) => Data::Float((0..n).map(|i| pick(c.at(i), a.at(i), b.at(i)).float()).collect()),
-                    Data::Bool(_) => Data::Bool((0..n).map(|i| pick(c.at(i), a.at(i), b.at(i)).boolean()).collect()),
-                };
-                Array::new(ty.scalar, ty.shape.clone(), data)?
-            }
-            Op::Reduce { op, arg, axis } => reduce(*op, &values[arg.0], *axis, ty)?,
-            Op::Cast { op, arg } => cast(&values[arg.0], op.to)?,
-            Op::Matmul { a, b } => matmul(&values[a.0], &values[b.0], ty)?,
-            Op::Take { arg, .. } | Op::Drop { arg, .. } => {
-                let a = &values[arg.0];
-                gather(a, &slice_of(&v.op, &a.shape).indices(), ty)?
-            }
-            Op::Rotate { axis, amounts, arg } => {
-                let a = &values[arg.0];
-                gather(a, &rotate_indices(&a.shape, *axis, amounts), ty)?
-            }
-            Op::Lookup { axis, idx, arg } => {
-                let (i, a) = (&values[idx.0], &values[arg.0]);
-                let Data::Int(positions) = &i.data else {
-                    unreachable!("checked: Int positions")
-                };
-                let (outer, len, inner) = axis_split(&a.shape, *axis);
-                if let Some(bad) = positions.iter().find(|p| **p < 1 || **p > len as i64) {
-                    return err(format!("%{}: lookup: index {bad} is outside 1..{len}", v.name));
-                }
-                let mut index = Vec::with_capacity(outer * positions.len() * inner);
-                for o in 0..outer {
-                    for p in positions {
-                        for k in 0..inner {
-                            index.push((o * len + (*p as usize - 1)) * inner + k);
-                        }
-                    }
-                }
-                gather(a, &index, ty)?
-            }
-            Op::Concat { axis, a, b } => {
-                let (x, y) = (&values[a.0], &values[b.0]);
-                let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
-                let (sx, sy) = (lift(&x.shape), lift(&y.shape));
-                let (outer, lx, inner) = axis_split(&sx, *axis);
-                let ly = sy.0[axis - 1];
-                let n = outer * (lx + ly) * inner;
-                let pick = |k: usize| -> (bool, usize) {
-                    let o = k / ((lx + ly) * inner);
-                    let r = k % ((lx + ly) * inner);
-                    let j = r / inner;
-                    let i = r % inner;
-                    if j < lx {
-                        (true, (o * lx + j) * inner + i)
-                    } else {
-                        (false, (o * ly + (j - lx)) * inner + i)
-                    }
-                };
-                let data = match (&x.data, &y.data) {
-                    (Data::Int(p), Data::Int(q)) => Data::Int(
-                        (0..n)
-                            .map(|k| {
-                                let (l, i) = pick(k);
-                                if l {
-                                    p[i]
-                                } else {
-                                    q[i]
-                                }
-                            })
-                            .collect(),
-                    ),
-                    (Data::Float(p), Data::Float(q)) => Data::Float(
-                        (0..n)
-                            .map(|k| {
-                                let (l, i) = pick(k);
-                                if l {
-                                    p[i]
-                                } else {
-                                    q[i]
-                                }
-                            })
-                            .collect(),
-                    ),
-                    (Data::Bool(p), Data::Bool(q)) => Data::Bool(
-                        (0..n)
-                            .map(|k| {
-                                let (l, i) = pick(k);
-                                if l {
-                                    p[i]
-                                } else {
-                                    q[i]
-                                }
-                            })
-                            .collect(),
-                    ),
-                    _ => unreachable!("checked: one scalar type"),
-                };
-                Array::new(ty.scalar, ty.shape.clone(), data)?
-            }
-            Op::TopK { k, axis, arg } => {
-                let a = &values[arg.0];
-                let axis = topk_axis(*axis, a.shape.rank());
-                let (outer, len, inner) = axis_split(&a.shape, axis);
-                let mut mask = vec![false; a.shape.len()];
-                for o in 0..outer {
-                    for i in 0..inner {
-                        let at = |j: usize| (o * len + j) * inner + i;
-                        // The line's k-th largest distinct value is the threshold.
-                        let threshold = match &a.data {
-                            Data::Int(x) => Item::Int(kth_distinct((0..len).map(|j| x[at(j)]), *k)),
-                            Data::Float(x) => Item::Float(kth_distinct((0..len).map(|j| x[at(j)]), *k)),
-                            Data::Bool(_) => unreachable!("checked: numbers"),
-                        };
-                        for j in 0..len {
-                            mask[at(j)] = match (a.at(at(j)), threshold) {
-                                (Item::Int(x), Item::Int(t)) => x >= t,
-                                (Item::Float(x), Item::Float(t)) => x >= t,
-                                _ => unreachable!(),
-                            };
-                        }
-                    }
-                }
-                Array::new(Scalar::Bool, ty.shape.clone(), Data::Bool(mask))?
-            }
-            Op::Reshape { arg, .. } => {
-                let a = &values[arg.0];
-                let n = a.shape.len();
-                let idx: Vec<usize> = (0..ty.shape.len()).map(|k| k % n.max(1)).collect();
-                gather(a, &idx, ty)?
-            }
-            Op::Ravel { arg } => {
-                let a = &values[arg.0];
-                Array::new(ty.scalar, ty.shape.clone(), a.data.clone())?
-            }
-            Op::Table { op, a, b } => table(*op, &values[a.0], &values[b.0], ty)?,
-            Op::Transpose { perm, arg } => {
-                let a = &values[arg.0];
-                let perm = permutation(a.shape.rank(), perm).expect("checked");
-                let idx = transpose_indices(&a.shape, &perm);
-                let data = match &a.data {
-                    Data::Int(x) => Data::Int(idx.iter().map(|&i| x[i]).collect()),
-                    Data::Float(x) => Data::Float(idx.iter().map(|&i| x[i]).collect()),
-                    Data::Bool(x) => Data::Bool(idx.iter().map(|&i| x[i]).collect()),
-                };
-                Array::new(ty.scalar, ty.shape.clone(), data)?
-            }
-        };
+        let array = evaluate(v, ty, &values, inputs)?;
         values.push(array);
     }
     Ok(program.outputs.iter().map(|o| values[o.0].clone()).collect())
+}
+
+fn evaluate(v: &Value, ty: &Ty, values: &[Array], inputs: &HashMap<String, Array>) -> Result<Array> {
+    Ok(match &v.op {
+        Op::Predicated { cond, op } => {
+            if matches!(&values[cond.0].data,Data::Bool(v) if v[0]) {
+                evaluate(
+                    &Value {
+                        name: v.name.clone(),
+                        ty: v.ty.clone(),
+                        op: (**op).clone(),
+                    },
+                    ty,
+                    values,
+                    inputs,
+                )?
+            } else {
+                let data = match ty.scalar {
+                    Scalar::I32 | Scalar::I64 => Data::Int(vec![0; ty.shape.len()]),
+                    Scalar::F32 | Scalar::F64 => Data::Float(vec![0.; ty.shape.len()]),
+                    Scalar::Bool => Data::Bool(vec![false; ty.shape.len()]),
+                };
+                Array::new(ty.scalar, ty.shape.clone(), data)?
+            }
+        }
+        Op::Region { kind, args, body } => {
+            let inner = crate::check::check((**body).clone())?;
+            let ins = body.inputs();
+            let mut bound: HashMap<String, Array> = ins
+                .iter()
+                .zip(args)
+                .skip(1)
+                .map(|(id, arg)| (body.value(*id).name.clone(), values[arg.0].clone()))
+                .collect();
+            let first = body.value(ins[0]).name.clone();
+            match kind {
+                RegionKind::Once => {
+                    bound.insert(first.clone(), values[args[0].0].clone());
+                    run(&inner, &bound)?.remove(0)
+                }
+                RegionKind::RepeatDynamic => {
+                    let count = values[args.last().unwrap().0].at(0).int();
+                    if count < 0 {
+                        return err("p_ower requires a nonnegative count");
+                    }
+                    let mut state = values[args[0].0].clone();
+                    for _ in 0..count {
+                        bound.insert(first.clone(), state);
+                        state = run(&inner, &bound)?.remove(0);
+                    }
+                    state
+                }
+                RegionKind::Repeat(n) => {
+                    let mut state = values[args[0].0].clone();
+                    for _ in 0..*n {
+                        bound.insert(first.clone(), state);
+                        state = run(&inner, &bound)?.remove(0);
+                    }
+                    state
+                }
+                RegionKind::Each => {
+                    let source = &values[args[0].0];
+                    let mut result = Vec::new();
+                    for j in 0..source.shape.len() {
+                        let data = match source.at(j) {
+                            Item::Int(x) => Data::Int(vec![x]),
+                            Item::Float(x) => Data::Float(vec![x]),
+                            Item::Bool(x) => Data::Bool(vec![x]),
+                        };
+                        bound.insert(first.clone(), Array::new(source.scalar, Shape::scalar(), data)?);
+                        result.push(run(&inner, &bound)?.remove(0));
+                    }
+                    let data = match ty.scalar {
+                        Scalar::I32 | Scalar::I64 => Data::Int(result.iter().map(|a| a.at(0).int()).collect()),
+                        Scalar::F32 | Scalar::F64 => Data::Float(result.iter().map(|a| a.at(0).float()).collect()),
+                        Scalar::Bool => Data::Bool(result.iter().map(|a| a.at(0).boolean()).collect()),
+                    };
+                    Array::new(ty.scalar, ty.shape.clone(), data)?
+                }
+            }
+        }
+        Op::Input => {
+            let Some(given) = inputs.get(&v.name) else {
+                return err(format!("input %{} ({}) is not bound", v.name, ty));
+            };
+            if given.ty() != *ty {
+                return err(format!("input %{} is {}, bound to {}", v.name, ty, given.ty()));
+            }
+            given.clone()
+        }
+        Op::Const(c) => {
+            let n = ty.shape.len();
+            let data = match c {
+                Const::Int(items) => Data::Int(fill(items, n)),
+                Const::Float(items) => Data::Float(fill(items, n)),
+                Const::Bool(items) => Data::Bool(fill(items, n)),
+            };
+            Array::new(ty.scalar, ty.shape.clone(), data)?
+        }
+        Op::Map { op, args } => {
+            let args: Vec<&Array> = args.iter().map(|a| &values[a.0]).collect();
+            map(&v.name, *op, &args, ty)?
+        }
+        Op::Guard { cond, message } => {
+            if matches!(&values[cond.0].data, Data::Bool(v) if v[0]) {
+                return err(message.clone());
+            }
+            values[cond.0].clone()
+        }
+        Op::Select { cond, a, b } => {
+            let (c, a, b) = (&values[cond.0], &values[a.0], &values[b.0]);
+            let n = ty.shape.len();
+            let data = match &a.data {
+                Data::Int(_) => Data::Int((0..n).map(|i| pick(c.at(i), a.at(i), b.at(i)).int()).collect()),
+                Data::Float(_) => Data::Float((0..n).map(|i| pick(c.at(i), a.at(i), b.at(i)).float()).collect()),
+                Data::Bool(_) => Data::Bool((0..n).map(|i| pick(c.at(i), a.at(i), b.at(i)).boolean()).collect()),
+            };
+            Array::new(ty.scalar, ty.shape.clone(), data)?
+        }
+        Op::Reduce { op, arg, axis } => reduce(*op, &values[arg.0], *axis, ty)?,
+        Op::Cast { op, arg } => cast(&values[arg.0], op.to)?,
+        Op::Matmul { a, b } => matmul(&values[a.0], &values[b.0], ty)?,
+        Op::Take { arg, .. } | Op::Drop { arg, .. } => {
+            let a = &values[arg.0];
+            gather(a, &slice_of(&v.op, &a.shape).indices(), ty)?
+        }
+        Op::Rotate { axis, amounts, arg } => {
+            let a = &values[arg.0];
+            gather(a, &rotate_indices(&a.shape, *axis, amounts), ty)?
+        }
+        Op::Lookup { axis, idx, arg } => {
+            let (i, a) = (&values[idx.0], &values[arg.0]);
+            let Data::Int(positions) = &i.data else {
+                unreachable!("checked: Int positions")
+            };
+            let (outer, len, inner) = axis_split(&a.shape, *axis);
+            if let Some(bad) = positions.iter().find(|p| **p < 1 || **p > len as i64) {
+                return err(format!("%{}: lookup: index {bad} is outside 1..{len}", v.name));
+            }
+            let mut index = Vec::with_capacity(outer * positions.len() * inner);
+            for o in 0..outer {
+                for p in positions {
+                    for k in 0..inner {
+                        index.push((o * len + (*p as usize - 1)) * inner + k);
+                    }
+                }
+            }
+            gather(a, &index, ty)?
+        }
+        Op::Concat { axis, a, b } => {
+            let (x, y) = (&values[a.0], &values[b.0]);
+            let lift = |s: &Shape| if s.is_scalar() { Shape(vec![1]) } else { s.clone() };
+            let (sx, sy) = (lift(&x.shape), lift(&y.shape));
+            let (outer, lx, inner) = axis_split(&sx, *axis);
+            let ly = sy.0[axis - 1];
+            let n = outer * (lx + ly) * inner;
+            let pick = |k: usize| -> (bool, usize) {
+                let o = k / ((lx + ly) * inner);
+                let r = k % ((lx + ly) * inner);
+                let j = r / inner;
+                let i = r % inner;
+                if j < lx {
+                    (true, (o * lx + j) * inner + i)
+                } else {
+                    (false, (o * ly + (j - lx)) * inner + i)
+                }
+            };
+            let data = match (&x.data, &y.data) {
+                (Data::Int(p), Data::Int(q)) => Data::Int(
+                    (0..n)
+                        .map(|k| {
+                            let (l, i) = pick(k);
+                            if l {
+                                p[i]
+                            } else {
+                                q[i]
+                            }
+                        })
+                        .collect(),
+                ),
+                (Data::Float(p), Data::Float(q)) => Data::Float(
+                    (0..n)
+                        .map(|k| {
+                            let (l, i) = pick(k);
+                            if l {
+                                p[i]
+                            } else {
+                                q[i]
+                            }
+                        })
+                        .collect(),
+                ),
+                (Data::Bool(p), Data::Bool(q)) => Data::Bool(
+                    (0..n)
+                        .map(|k| {
+                            let (l, i) = pick(k);
+                            if l {
+                                p[i]
+                            } else {
+                                q[i]
+                            }
+                        })
+                        .collect(),
+                ),
+                _ => unreachable!("checked: one scalar type"),
+            };
+            Array::new(ty.scalar, ty.shape.clone(), data)?
+        }
+        Op::TopK { k, axis, arg } => {
+            let a = &values[arg.0];
+            let axis = topk_axis(*axis, a.shape.rank());
+            let (outer, len, inner) = axis_split(&a.shape, axis);
+            let mut mask = vec![false; a.shape.len()];
+            for o in 0..outer {
+                for i in 0..inner {
+                    let at = |j: usize| (o * len + j) * inner + i;
+                    // The line's k-th largest distinct value is the threshold.
+                    let threshold = match &a.data {
+                        Data::Int(x) => Item::Int(kth_distinct((0..len).map(|j| x[at(j)]), *k)),
+                        Data::Float(x) => Item::Float(kth_distinct((0..len).map(|j| x[at(j)]), *k)),
+                        Data::Bool(_) => unreachable!("checked: numbers"),
+                    };
+                    for j in 0..len {
+                        mask[at(j)] = match (a.at(at(j)), threshold) {
+                            (Item::Int(x), Item::Int(t)) => x >= t,
+                            (Item::Float(x), Item::Float(t)) => x >= t,
+                            _ => unreachable!(),
+                        };
+                    }
+                }
+            }
+            Array::new(Scalar::Bool, ty.shape.clone(), Data::Bool(mask))?
+        }
+        Op::Reshape { arg, .. } => {
+            let a = &values[arg.0];
+            let n = a.shape.len();
+            let idx: Vec<usize> = (0..ty.shape.len()).map(|k| k % n.max(1)).collect();
+            gather(a, &idx, ty)?
+        }
+        Op::Ravel { arg } => {
+            let a = &values[arg.0];
+            Array::new(ty.scalar, ty.shape.clone(), a.data.clone())?
+        }
+        Op::Table { op, a, b } => table(*op, &values[a.0], &values[b.0], ty)?,
+        Op::Transpose { perm, arg } => {
+            let a = &values[arg.0];
+            let perm = permutation(a.shape.rank(), perm).expect("checked");
+            let idx = transpose_indices(&a.shape, &perm);
+            let data = match &a.data {
+                Data::Int(x) => Data::Int(idx.iter().map(|&i| x[i]).collect()),
+                Data::Float(x) => Data::Float(idx.iter().map(|&i| x[i]).collect()),
+                Data::Bool(x) => Data::Bool(idx.iter().map(|&i| x[i]).collect()),
+            };
+            Array::new(ty.scalar, ty.shape.clone(), data)?
+        }
+    })
 }
 
 fn fill<T: Clone>(items: &[T], n: usize) -> Vec<T> {

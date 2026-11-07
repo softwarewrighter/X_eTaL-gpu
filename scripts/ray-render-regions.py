@@ -17,7 +17,14 @@ codec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(codec)
 
 
-def prepare(width, height, angle):
+def prepare(width, height, angle, scene="logo", cap=4, fov=None):
+    if scene == "glass":
+        source = (ROOT / "examples/ray/glass-transport.xtl").read_text()
+        if fov is not None:
+            source=source.replace("fov .6",f"fov {fov}")
+        for name, value in [("width",width),("height",height),("cap",cap)]:
+            source="\n".join(f"{name} := {value}" if line.startswith(name+" := ") else line for line in source.splitlines())+"\n"
+        return source
     scene = (ROOT / "examples/ray/logo.xtl").read_text()
     scene = codec.prepare_source(scene, width, height, angle, 0, height, 1, "logo")
     head = scene[:scene.index("## Direct diffuse light")]
@@ -47,7 +54,7 @@ def split_outputs(text, width, height):
     return " ".join(tokens[:count]) + "\n", display
 
 
-def compare_outputs(actual, expected, width, height):
+def compare_outputs(actual, expected, width, height, tolerance=1e-5):
     """Compare raw Float arrays first; report quantization separately."""
     result = {}
     for kind, a_text, e_text in zip(["linear", "display"], actual, expected):
@@ -55,7 +62,7 @@ def compare_outputs(actual, expected, width, height):
         if len(a) != width*height*3 or len(e) != width*height*3:
             raise ValueError("CPU/GPU comparison arrays must match image dimensions")
         worst = max(abs(x-y) for x,y in zip(a,e))
-        if not all(abs(x-y) <= 1e-5*(1+abs(y)) for x,y in zip(a,e)):
+        if not all(abs(x-y) <= tolerance*(1+abs(y)) for x,y in zip(a,e)):
             raise ValueError(f"CPU/GPU {kind} mismatch: maximum absolute error {worst}")
         result[kind + "_max_absolute_error"] = worst
     a, e = codec.rgb8(actual[1], width, height), codec.rgb8(expected[1], width, height)
@@ -70,8 +77,19 @@ def write_images(prefix, text, width, height):
     Path(str(prefix) + ".png").write_bytes(codec.png(width, height, pixels))
 
 
+def invoke(command, env):
+    result = subprocess.run(command, env=env, text=True, capture_output=True)
+    if result.returncode:
+        raise RuntimeError(f"{command[1]} failed:\n{result.stderr}")
+    return result
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--scene",choices=["logo","glass"],default="logo")
+    p.add_argument("--fov",type=float,help="glass validation camera vertical FOV in radians")
+    p.add_argument("--cap",type=int,default=4)
+    p.add_argument("--float",choices=["f32","f64"],default=None)
     p.add_argument("--width", type=int, default=640)
     p.add_argument("--height", type=int, default=256)
     p.add_argument("--angle", type=float, default=0.0)
@@ -84,28 +102,35 @@ def main():
         p.error("positive dimensions/repeats and finite angle required")
     if not a.device.startswith("opencl:"):
         p.error("this prototype requires opencl:N")
+    if a.fov is not None and not 0 < a.fov < math.pi:
+        p.error("FOV must be between zero and pi")
+    if not 0 <= a.cap <= 64:
+        p.error("interaction cap must be in 0..64")
+    precision = a.float or ("f64" if a.scene == "glass" else "f32")
     libraries = Path(subprocess.check_output([str(ROOT / "scripts/xetal-libraries.sh")], text=True).strip())
     env = dict(os.environ, XETAL_PATH=":".join(str(p) for p in sorted(libraries.glob("libs/*/src"))))
     out = a.output.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
-    source = prepare(a.width, a.height, a.angle)
+    source = prepare(a.width, a.height, a.angle, a.scene, a.cap, a.fov)
     src = out.with_suffix(".xtl")
     src.write_text(source)
     tool = ROOT / "target/release/xetal-gpu"
-    checked = subprocess.run([str(tool), "lower", str(src), "--regions"], env=env, text=True, capture_output=True, check=True)
+    checked = invoke([str(tool), "lower", str(src), "--regions"], env)
     out.with_suffix(".check").write_text(checked.stdout + checked.stderr)
     fallback = re.findall(r"evaluated by xetal: ([^:]+):", checked.stderr)
     allowed = {"shaft", "head", "post", "transforms", "triangles", "base", "groups", "materials"}
     if any(name not in allowed for name in fallback):
         raise RuntimeError("non-geometry host fallback: " + repr(fallback))
-    explain = subprocess.run([str(tool), "explain", str(src), "--regions"], env=env, text=True, capture_output=True, check=True)
+    explain = invoke([str(tool), "explain", str(src), "--regions", "--float", precision], env)
+    if not re.search(r"region_[^:]+: \d+: (channels|linear) :=", explain.stdout):
+        raise RuntimeError("no mapped tracing kernel found; refusing a host-rendered image")
     out.with_suffix(".plan").write_text(explain.stdout)
-    memory = subprocess.run([str(tool), "memory", str(src), "--regions"], env=env, text=True, capture_output=True, check=True)
+    memory = invoke([str(tool), "memory", str(src), "--regions", "--float", precision], env)
     metrics = {key:int(value) for key,value in (line.split() for line in memory.stdout.splitlines())}
     out.with_suffix(".memory").write_text(memory.stdout)
     print(f"OpenCL region render {a.width}x{a.height}: starting {a.repeat} resident runs", flush=True)
     start = time.monotonic()
-    run = subprocess.run([str(tool), "run", str(src), "--regions", "--device", a.device, "--time", "--repeat", str(a.repeat)], env=env, text=True, capture_output=True, check=True)
+    run = invoke([str(tool), "run", str(src), "--regions", "--device", a.device, "--time", "--repeat", str(a.repeat), "--float", precision], env)
     elapsed = time.monotonic() - start
     out.with_suffix(".all.out").write_text(run.stdout)
     actual = split_outputs(run.stdout, a.width, a.height)
@@ -117,7 +142,7 @@ def main():
     if a.compare_cpu:
         cpu = ROOT / "bin/xetal"
         start = time.monotonic()
-        reference = subprocess.run([str(cpu), "run", "--seed", "1", "--ascii", str(src)], env=env, text=True, capture_output=True, check=True)
+        reference = invoke([str(cpu), "run", "--seed", "1", "--ascii", str(src)], env)
         cpu_seconds = time.monotonic() - start
         expected = split_outputs(reference.stdout, a.width, a.height)
         out.with_suffix(".cpu.all.out").write_text(reference.stdout)
@@ -126,15 +151,15 @@ def main():
         # Path.with_suffix replaces an extension, so preserve the .cpu stem.
         cpu_prefix = out.with_suffix("").with_name(out.stem + "-cpu")
         write_images(cpu_prefix, expected[1], a.width, a.height)
-        comparison = dict(cpu_process_seconds=cpu_seconds, **compare_outputs(actual, expected, a.width, a.height),
-                          tolerance="1e-5 * (1 + abs(reference))", same_source=True,
+        comparison = dict(cpu_process_seconds=cpu_seconds, **compare_outputs(actual, expected, a.width, a.height, 1e-12 if precision=="f64" else 1e-5),
+                          tolerance=("1e-12" if precision=="f64" else "1e-5") + " * (1 + abs(reference))", same_source=True,
                           cpu_tiff=Path(str(cpu_prefix) + ".tif").name,
                           cpu_png=Path(str(cpu_prefix) + ".png").name)
-    meta = dict(width=a.width, height=a.height, angle_radians=a.angle, backend=a.device, repeats=a.repeat,
+    meta = dict(camera_fov=a.fov if a.fov is not None else (0.6 if a.scene == "glass" else 0.30), renderer_binary_sha256=hashlib.sha256(tool.read_bytes()).hexdigest(), scene=a.scene, float_width=precision, interaction_cap=a.cap if a.scene == "glass" else None, seed=123 if a.scene == "glass" else None, width=a.width, height=a.height, angle_radians=a.angle, backend=a.device, repeats=a.repeat,
                 source_sha256=hashlib.sha256(source.encode()).hexdigest(), xetal=(ROOT/"XETAL_COMMIT").read_text().strip(),
                 libraries=(ROOT/"XETAL_LIBRARIES_COMMIT").read_text().strip(), process_seconds=elapsed,
                 timings=run.stderr.splitlines(), execution_metrics=metrics, cpu_comparison=comparison, samples_per_pixel=1,
-                compression="None (TIFF)", host_geometry_fallbacks=fallback, algorithm="Shared RayTrace direct diffuse and hard shadows; scalar RGB channel adapter traces each pixel three times",
+                compression="None (TIFF)", host_geometry_fallbacks=fallback, algorithm=("Shared Glass dielectric sampled transport; conservative opaque point-light shadows; no caustics/DOF" if a.scene == "glass" else "Shared RayTrace direct diffuse and hard shadows") + "; scalar RGB channel adapter traces each pixel three times",
                 outputs="linear RGB Float array followed by shared X_eTaL sRGB Float array; TIFF/PNG encode display only",
                 display_transfer="Shared RayTrace s_rgb, exposure 1; host RGB8 quantization only",
                 timing_scope="CLI process includes load/setup/ASCII; resident run phase times recorded separately; CPU evaluator process timing includes load/ASCII")

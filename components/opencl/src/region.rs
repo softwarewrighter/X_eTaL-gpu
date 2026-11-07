@@ -40,7 +40,7 @@ impl Local<'_> {
     }
     fn region(&mut self, kind: RegionKind, body: &Program, args: &[Read]) -> Read {
         let checked = check(body.clone()).expect("checked region");
-        if kind == RegionKind::Each {
+        if matches!(kind, RegionKind::Each | RegionKind::Once) {
             return self.body(&checked, args);
         }
         let first_ty = checked.ty(body.inputs()[0]);
@@ -55,8 +55,15 @@ impl Local<'_> {
             scalar: first_ty.shape.is_scalar(),
             literal: false,
         };
-        if let RegionKind::Repeat(count) = kind {
+        if kind == RegionKind::RepeatDynamic {
+            let count = args.last().unwrap().at("0");
+            self.fail(&format!("{count} < 0"), "p_ower requires a nonnegative count".into());
             let iter = self.fresh();
+            self.source.push_str("#pragma unroll 1\n");
+            let _ = writeln!(self.source, "for (size_t {iter}=0; {iter}<(size_t)({count}); ++{iter}) {{");
+        } else if let RegionKind::Repeat(count) = kind {
+            let iter = self.fresh();
+            self.source.push_str("#pragma unroll 1\n");
             let _ = writeln!(self.source, "for (size_t {iter}=0; {iter}<{count}; ++{iter}) {{");
         } else {
             self.source.push_str("{\n");
@@ -68,11 +75,51 @@ impl Local<'_> {
     }
     fn body(&mut self, checked: &Checked, inputs: &[Read]) -> Read {
         let p = &checked.program;
-        let mut refs = HashMap::new();
+        let mut refs: HashMap<ValueId, Read> = HashMap::new();
         let mut input = 0;
         for (offset, value) in p.values.iter().enumerate() {
             let id = ValueId(offset);
             let ty = checked.ty(id);
+            if let Op::Predicated { cond, op } = &value.op {
+                let result = self.fresh();
+                let elem = self.schedule.elem(ty.scalar);
+                let n = ty.shape.len();
+                let _ = writeln!(
+                    self.source,
+                    "{elem} {result}[{}] = {{0}};\nif ({}) {{",
+                    n.max(1),
+                    refs[cond].at("0")
+                );
+                let args = op.args();
+                let mut body = Program::default();
+                let mut inputs = Vec::new();
+                for (i, arg) in args.iter().enumerate() {
+                    body.values.push(xetal_gpu_xir::Value {
+                        name: format!("a{i}"),
+                        ty: Some(checked.ty(*arg).clone()),
+                        op: Op::Input,
+                    });
+                    inputs.push(refs[arg].clone());
+                }
+                let local = op.remap(|a| ValueId(args.iter().position(|v| *v == a).unwrap()));
+                body.outputs.push(ValueId(body.values.len()));
+                body.values.push(xetal_gpu_xir::Value {
+                    name: value.name.clone(),
+                    ty: value.ty.clone(),
+                    op: local,
+                });
+                let out = self.body(&check(body).expect("checked predicate body"), &inputs);
+                let _ = writeln!(self.source, "for (size_t j=0; j<{n}; ++j) {result}[j] = {};\n}}", out.at("j"));
+                refs.insert(
+                    id,
+                    Read {
+                        base: result,
+                        scalar: ty.shape.is_scalar(),
+                        literal: false,
+                    },
+                );
+                continue;
+            }
             if matches!(value.op, Op::Input) {
                 refs.insert(id, inputs[input].clone());
                 input += 1;

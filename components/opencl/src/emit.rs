@@ -75,6 +75,26 @@ pub fn plan(checked: &Checked, schedule: &Schedule) -> Plan {
         let id = ValueId(i);
         let ty = checked.ty(id);
         match &v.op {
+            Op::Predicated { .. } => {
+                b.flush(&outputs);
+                let args = v.op.args();
+                let mut body = xetal_gpu_xir::Program::default();
+                for (i, arg) in args.iter().enumerate() {
+                    body.values.push(xetal_gpu_xir::Value {
+                        name: format!("a{i}"),
+                        ty: Some(checked.ty(*arg).clone()),
+                        op: Op::Input,
+                    });
+                }
+                let op = v.op.remap(|a| ValueId(args.iter().position(|v| *v == a).unwrap()));
+                body.outputs.push(ValueId(body.values.len()));
+                body.values.push(xetal_gpu_xir::Value {
+                    name: v.name.clone(),
+                    ty: v.ty.clone(),
+                    op,
+                });
+                b.region(id, xetal_gpu_xir::RegionKind::Once, &args, &body);
+            }
             Op::Region { kind, args, body } => {
                 b.flush(&outputs);
                 b.region(id, *kind, args, body);
@@ -299,7 +319,13 @@ impl<'a> Builder<'a> {
         let shape = self.group_shape.take().expect("a group has a shape");
         let in_group: HashSet<ValueId> = group.iter().copied().collect();
         let n = shape.len();
-        let kname = format!("k{}", self.kernels.iter().filter(|k| k.elements > 0).count());
+        let kname = if n == 0 {
+            // Empty groups do not increment the nonempty-group count. Name
+            // them by SSA identity so subsequent kernels cannot collide.
+            format!("empty_k{}", group[0].0)
+        } else {
+            format!("k{}", self.kernels.iter().filter(|k| k.elements > 0).count())
+        };
         // The buffers the kernel reads: every argument that is not in the group and not a literal.
         let mut reads: Vec<BufferId> = Vec::new();
         for id in &group {

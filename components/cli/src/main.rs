@@ -492,6 +492,7 @@ fn describe(program: &Program, op: &Op) -> String {
     debug_assert!(line.is_empty());
     let name = |id| format!("%{}", program.value(id).name);
     match op {
+        Op::Predicated { op, .. } => format!("predicated {op:?}"),
         Op::Region { kind, .. } => format!("region {kind:?}"),
         Op::Input => "input".to_string(),
         Op::Const(c) => format!("const ({} item{})", c.len(), if c.len() == 1 { "" } else { "s" }),

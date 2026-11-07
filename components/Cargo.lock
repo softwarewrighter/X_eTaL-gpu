@@ -884,12 +884,15 @@ dependencies = [
 name = "xetal-gpu-lower"
 version = "0.1.0"
 dependencies = [
+ "xetal-arith",
  "xetal-base",
  "xetal-core",
  "xetal-gpu-xir",
  "xetal-ir",
  "xetal-lex",
  "xetal-program",
+ "xetal-step",
+ "xetal-value",
 ]
 
 [[package]]
