@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Check committed RayTrace/Vector3 CPU examples against their pinned baselines.
+# Check committed math/geometry/Scene/Glass CPU examples against their pinned baselines.
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
@@ -15,7 +15,7 @@ export XETAL_PATH
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 n=0
-for spec in Vector3:tests:basics Vector3:demos:pivot RayTrace:tests:camera RayTrace:tests:intersections RayTrace:tests:lighting RayTrace:tests:pixels RayTrace:demos:diagnostic Extrusion:tests:glyphs Scene:tests:arrays Scene:tests:animation Scene:tests:default; do
+for spec in Vector3:tests:basics Vector3:demos:pivot RayTrace:tests:camera RayTrace:tests:intersections RayTrace:tests:lighting RayTrace:tests:pixels RayTrace:demos:diagnostic Extrusion:tests:glyphs Scene:tests:arrays Scene:tests:animation Scene:tests:default Scene:tests:solids Scene:tests:v2 RayTrace:tests:spheres RayTrace:tests:mixed Glass:tests:basics Glass:tests:transport Glass:tests:paths Glass:tests:images Glass:tests:furnace; do
     n=$((n + 1))
     IFS=: read -r lib kind name <<<"$spec"
     stem="$name"

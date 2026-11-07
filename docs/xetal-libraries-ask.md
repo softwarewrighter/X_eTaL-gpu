@@ -75,7 +75,7 @@ with explicit dependencies and rerun baselines before adoption.
 
 RL1 is completed upstream in 202ed3e, RL2 in f28e7ca, RL3 in 6e58863
 and RL4 in 128e557. XETAL_LIBRARIES_COMMIT now pins their committed
-handoff plus the RL2a correction at e7140be. Eleven CPU baselines pass unchanged, including glyph,
+handoff through RL5/RL6 at 8bd438d. Twenty CPU baselines pass unchanged, including glyph,
 scene-array and fixed-X/pivot animation checks. A local CPU logo image
 uses the Scene macro and RayTrace directly; see
 [ray-integration.md](ray-integration.md). The original requested statuses
@@ -84,9 +84,9 @@ Runtime guards now execute on CPU/OpenCL/Mojo, and the tiny diagnostic
 colors/IDs agree on RTX OpenCL. Remaining scaling/input tests are GPU work, not a new
 library or language ask. RL6 geometry/Scene v2 is completed in 2c08dfd
 (handoff e172afe), and RL5 Glass transport in 30277f5 (handoff 8bd438d).
-RL7 sampling/lens/emitters is now in progress. Those new deliveries are
-available for adoption at the next relevant step boundary; the current
-logo release remains on tested e7140be. RL8/RL9 remain deferred.
+RL7 sampling/lens/emitters is now in progress and is not adopted.
+RL5/RL6 are adopted for glass composition. The published logo recording retains its
+tested e7140be pin. RL8/RL9 remain deferred.
 RL2a is adopted for this release with corrected a/e and visual regressions.
 
 
@@ -368,8 +368,8 @@ RL8/RL9 remain deferred.
 
 | ID | Library change | Needed before | Status |
 | -- | -------------- | ------------- | ------ |
-| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Committed 30277f5; adoption pending |
-| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Committed 2c08dfd; adoption pending |
+| RL5 | Dielectric materials, refraction/Fresnel, medium state, absorption and bounded multiple interactions | glass-transport can finish | Adopted at 8bd438d; integration in progress |
+| RL6 | Analytic spheres, closed crystal helpers, mixed nearest-hit IDs and v2 scene notation | glass-composition can finish; closed-glass checks before glass-transport | Adopted at 8bd438d; composition in progress |
 | RL7 | Deterministic pixel/lens/emitter sampling, thin-lens camera and emissive/area lights | glass-camera and final glass-render | Upstream step 014 in progress; not committed |
 | RL8 | Optional floor caustics via bounded photon transport and radiance estimation | Only a separately approved caustic refinement | Deferred proposal; not a first-render blocker |
 | RL9 | Optional RGB dispersion and linear-image bloom | Only an optional finishing pass | Deferred proposal; not a first-render blocker |

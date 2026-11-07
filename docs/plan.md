@@ -526,11 +526,36 @@ with just check-live. Glass and benchmark are planned.
 | Benchmark | Convert a licensed Cornell Box subset, match reference settings, show side-by-side supported-feature comparisons and publish | Geometry/direct-light baseline first; full Cornell color bleeding needs indirect diffuse transport |
 | Glass reference | Adopt committed geometry/transport, render original spheres/crystals/floor composition and publish | RL6 and RL5 delivered; RL7 in progress for area lighting and depth of field |
 
-The live-logo step is next after runtime guards, before the remaining
-source/device/image steps and unrelated Mojo/ML backlog. With RL6 and RL5 now committed, initial glass composition/transport/render
-and live publication follow the logo. The benchmark entry follows that
-initial glass release, before unrelated GPU/ML work. RL7 camera/sampling
-refinement and final matched CPU/GPU validation remain separate milestones.
-CPU previews can publish while GPU scaling is improved. The earlier live Pages deployment failure must be
-checked when publishing; a pushed gh-pages branch is not proof of a live
-successful deployment.
+The low-resolution live logo is complete and its Pages deployment passes.
+After the glass composition checkpoint, the user's high-resolution and
+paired-timing priority below supersedes the earlier preview-first order.
+Glass and benchmark remain required gallery entries. RL7 camera/sampling
+refinement and final matched glass CPU/GPU validation remain separate
+milestones. Publishing requires a successful deployment and public checks;
+a pushed gh-pages branch alone is not proof of a live result.
+
+The glass composition now pins 8bd438d: all twenty upstream CPU examples
+pass, including geometry/Scene v2 and Glass optics/transport. The original
+logo recording retains e7140be. Scene v2 composition and shared closed-
+volume checks precede transparent transport; initial CPU previews do not
+claim GPU validation or the final paired-resolution milestone.
+
+The composed one-pixel Scene v2 eligibility probe refuses u_nique and
+then exposes a tuple-valued host fallback shape assumption. Keep both
+issues in ray-source; do not delete shared preflight to bypass them.
+
+## High-resolution and paired timing priority, 2026-11-06
+
+The user requests a high-resolution image/video and CPU versus GPU
+render timing, after seeing the pixelated 160 by 64 preview. After the
+composition checkpoint, ray-source/device/image now precede a native
+1280 by 512 or larger antialiased logo still, matched ray-bench timings,
+and a higher-resolution animation. Glass transport/render/publication
+follow; retain all three gallery goals. Original preview recordings stay
+available with truthful dimensions and backend labels. A new still must
+pass visual and pixel validation before spending on the full sequence.
+Report matched scene, resolution, samples, seed, ray budget and precision;
+CPU implementation, cold setup, warm render wall time, GPU device time,
+transfers, and encoding are distinct. Measure speedup or slowdown rather
+than assuming the GPU wins. No timing at one resolution is presented as
+a measured result at a different resolution.

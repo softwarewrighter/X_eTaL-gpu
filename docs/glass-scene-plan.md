@@ -76,8 +76,11 @@ the library owner, with expansions and ordinary constructors agreeing.
 
 ## Render stages and local steps
 
-The four glass-prefixed steps are queued after the existing ray steps;
-this plan does not reprioritize Mojo/ML work or block the original logo.
+The composition follows the published CPU logo. The user now prioritizes
+a high-resolution logo and paired CPU/GPU timing before subsequent glass
+transport/render/publication. All precede unrelated Mojo/ML work. Camera refinement
+and the final paired CPU/GPU validation remain separate later steps.
+The current pin adopts committed RL5/RL6 at 8bd438d. RL7 is in progress.
 Pin committed library deliveries deliberately before using them.
 
 | Step | Work | Acceptance and upstream dependency |
@@ -87,10 +90,11 @@ Pin committed library deliveries deliberately before using them.
 | glass-camera | Integrate RL7 deterministic thin-lens, emitter and image sampling. Tune focus, broad highlights and shadows at 512 by 512. | Aperture-zero pinhole equivalence, fixed-seed sample checks and CPU/GPU raw-image agreement; record noise/convergence and lens settings. |
 | glass-render | Render a polished 1024 by 1024 still on RTX 5060 Ti, matching the CPU algorithm/settings; deliver raw arrays, uncompressed TIFF and benchmark report. | Reduced/full-resolution verification as practical, repeated timing and quality checks, reproducible scene/seed/library pins and commands; no assumption of GPU speedup. |
 
-The composition diagnostic uses v1 point lights and lit white triangles
-as provisional reflection panels; RL7 replaces them with emissive/area
-lighting before the polished render. RL6 opaque sphere support can land
-before RL5 glass transport.
+The composition diagnostic uses point lights and emissive triangles
+as reflection panels; RL7 replaces them with emissive/area
+lighting before the polished render. The first practical CPU diagnostic may precede the original 256 by 256
+and paired GPU acceptance checks; label its size and backend explicitly.
+Those larger paired requirements remain in final validation.
 
 Begin with one sample per pixel and the pinhole camera, then sweep
 4, 16 and 64 samples where useful. Start transport tests at two surface

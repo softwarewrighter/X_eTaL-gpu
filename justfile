@@ -27,6 +27,10 @@ ray-check-device device="opencl:0":
 ray-render-cpu *args:
     python3 scripts/ray-render-cpu.py {{args}}
 
+# Render the opaque/mirror sphere and crystal composition diagnostic
+ray-glass-composition *args:
+    python3 scripts/ray-render-cpu.py --scene glass --width 64 --height 64 --output work/ray-glass/composition {{args}}
+
 # Render a seamless low-resolution CPU vane recording and TIFF master frames
 ray-animate-cpu *args:
     python3 scripts/ray-animate-cpu.py {{args}}
@@ -34,6 +38,10 @@ ray-animate-cpu *args:
 # Curate completed rendered media as reproducible inputs to the published gallery
 ray-stage-media:
     python3 scripts/stage-ray-media.py
+
+# Validate the reference-inspired Scene v2 solids and glass preflight.
+ray-test-glass-scene:
+    python3 scripts/test-glass-scene.py
 
 # Verify stationary X, correct rotation pivot and a seamless full turn
 ray-test-scene:

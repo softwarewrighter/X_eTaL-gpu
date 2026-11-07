@@ -202,3 +202,17 @@ completes only its own step and pushes. Ignore generated images and timing
 scratch output; commit small numerical fixtures and reports. Publish and
 check the live site when its displayed content changes. The planning step
 creates this roadmap, not a working renderer or measured performance.
+
+## High-resolution demonstration requirement
+
+The 160 by 64 CPU animation is only the first preview. The user requests
+high-resolution images/video and measured CPU versus GPU render timing.
+Target a native 1280 by 512 or larger logo still, with shared X_eTaL
+antialiasing, before committing to a full revolution at that quality.
+Use the same scene, resolution, samples, seed, interaction budget and
+explicit precision on both devices; validate raw pixels first. Record
+warm render wall time, GPU device intervals, cold setup, transfers and
+image/video encoding separately. Show the CPU implementation and measured
+speedup or slowdown; do not infer timings from the existing tiny scenes.
+GPU source correctness/scaling, matched stills and timings now precede
+further glass rendering and the longer animation. Retain TIFF masters.

@@ -1,8 +1,0 @@
-number = 45
-slug = "ray-live-benchmark"
-status = "pending"
-description = "Deliver the benchmark/test entry in the live ray-tracing demo: convert a smal..."
-role = "production"
-context_files = []
-created_at = "2026-11-06T12:16:30"
-commits = []

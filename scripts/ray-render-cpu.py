@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the X_eTaL logo on CPU; encode its pixels as uncompressed TIFF and PNG."""
+"""Run an X_eTaL scene on CPU; encode its pixels as uncompressed TIFF and PNG."""
 import argparse
 import hashlib
 import json
@@ -43,6 +43,7 @@ def png(width, height, pixels):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--scene", choices=["logo", "glass"], default="logo")
     parser.add_argument("--width", type=int, default=96)
     parser.add_argument("--height", type=int, default=40)
     parser.add_argument("--angle", type=float, default=0.35, help="vane angle in radians")
@@ -56,7 +57,7 @@ def main():
     xetal = subprocess.check_output([str(ROOT / "scripts/xetal.sh")], text=True).strip()
     import os
     env = dict(os.environ, XETAL_PATH=":".join(str(p) for p in sorted(libraries.glob("libs/*/src"))))
-    source = (ROOT / "examples/ray/logo.xtl").read_text()
+    source = (ROOT / "examples/ray" / (args.scene + ".xtl")).read_text()
     scene_sha256 = hashlib.sha256(source.encode()).hexdigest()
     for name, value in [("width", args.width), ("height", args.height), ("angle", args.angle)]:
         source = "\n".join(f"{name} := {value}" if line.startswith(f"{name} := ") else line for line in source.splitlines()) + "\n"
@@ -64,7 +65,7 @@ def main():
     prefix.parent.mkdir(parents=True, exist_ok=True)
     source_path = Path(str(prefix) + ".xtl")
     source_path.write_text(source)
-    print(f"CPU evaluator: {args.width} x {args.height}, vane {args.angle} radians; rendering...", flush=True)
+    print(f"CPU evaluator: {args.width} x {args.height}, scene {args.scene}; rendering...", flush=True)
     start = time.monotonic()
     result = subprocess.run([xetal, "run", "--seed", "1", "--ascii", str(source_path)], env=env, text=True, capture_output=True)
     if result.returncode:
@@ -75,11 +76,15 @@ def main():
     Path(str(prefix) + ".out").write_text(result.stdout)
     write_tiff(Path(str(prefix) + ".tif"), args.width, args.height, pixels)
     Path(str(prefix) + ".png").write_bytes(png(args.width, args.height, pixels))
-    metadata = dict(backend="X_eTaL CPU evaluator", scene_sha256=scene_sha256,
+    metadata = dict(backend="X_eTaL CPU evaluator", scene=args.scene, scene_sha256=scene_sha256,
                     source_sha256=hashlib.sha256(source.encode()).hexdigest(), width=args.width, height=args.height,
-                    angle_radians=args.angle, render_seconds=elapsed, compression="None (TIFF)",
+                    render_seconds=elapsed, compression="None (TIFF)",
                     xetal=(ROOT / "XETAL_COMMIT").read_text().strip(),
                     libraries=(ROOT / "XETAL_LIBRARIES_COMMIT").read_text().strip())
+    if args.scene == "logo":
+        metadata["angle_radians"] = args.angle
+    if args.scene == "glass":
+        metadata.update(stage="Opaque/mirror composition diagnostic; no dielectric transport", samples_per_pixel=1, seed=123, interaction_cap=4, camera="pinhole", exposure=1.0, display_transfer="sRGB; exposed linear clamped to 0..1", point_light_shadows="opaque", effects="No depth of field, caustics, dispersion or bloom")
     Path(str(prefix) + ".json").write_text(json.dumps(metadata, indent=2) + "\n")
     print(f"Rendered in {elapsed:.2f} s: {prefix}.tif and {prefix}.png", flush=True)
 

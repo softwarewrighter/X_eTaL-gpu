@@ -2,10 +2,11 @@
 
 ## Committed dependencies
 
-XETAL_LIBRARIES_COMMIT pins X_eTaL-libraries e7140be, which includes
+XETAL_LIBRARIES_COMMIT pins X_eTaL-libraries 8bd438d, which includes
 Vector3 (RL1, 202ed3e), Extrusion (RL2, f28e7ca), Scene (RL3, 6e58863)
 and opaque RayTrace (RL4, 128e557), with readable a/e glyphs from
-RL2a (811cadd). scripts/xetal-libraries.sh clones a committed
+RL2a (811cadd), Scene v2/sphere geometry (RL6, 2c08dfd) and bounded
+Glass transport (RL5, 30277f5). scripts/xetal-libraries.sh clones a committed
 repository into work/xetal-libraries and refuses to replace a dirty clone.
 It never imports the sibling working tree. For an initial local clone,
 set XETAL_LIBRARIES_SOURCE to ../X_eTaL-libraries; the source still comes
@@ -28,7 +29,8 @@ absolute so any evaluator subprocess resolves the same libraries.
 
 ## CPU evidence, 2026-11-06
 
-Eleven committed examples give their upstream outputs exactly:
+Twenty committed examples give their upstream outputs exactly. The
+original eleven remain unchanged:
 
 | Example | Output lines |
 | ------- | ------------ |
@@ -43,6 +45,10 @@ Eleven committed examples give their upstream outputs exactly:
 | Scene arrays | 16 |
 | Scene animation | 11 |
 | Scene defaults | 5 |
+
+Nine additional examples cover Scene solids/v2, RayTrace spheres/mixed
+hits, and Glass basics/transport/paths/images/furnace. Each matches its
+committed baseline exactly; no outputs were reblessed.
 
 The diagnostic exercises a two-triangle, two-material scene with point
 lighting, shadows, a partly reflective material and display conversion.
@@ -308,3 +314,60 @@ uncompressed archive entries and the decoded WebM frame count. A local
 Chromium check exercises playback, frame selection and mobile layout.
 Actual publication is verified with just check-live after deploying;
 prepared files or a branch push alone do not establish live availability.
+
+## Sphere/crystal composition
+
+The library pin now includes RL5/RL6. The published logo recording keeps
+its original e7140be metadata and frozen scene. RL7 remains uncommitted
+upstream and is not used by this composition.
+
+examples/ray/glass.xtl uses the Scene v2 macro for three analytic
+spheres, three closed octahedra, a dark reflective floor and two bright
+panels. The fixed camera is (5,2.8,7), looking at (0,0.8,0). The current
+materials are opaque/mirror: this diagnostic checks placement, not
+transparent glass. Shared Glass transport supplies bounded sampled mirror
+paths and emission; no host ray tracer or new language feature is added.
+
+```sh
+just ray-test-glass-scene
+just ray-glass-composition
+just ray-render-cpu --scene glass --width 32 --height 32 --output work/ray-glass/composition-32
+```
+
+The scene test checks twelve invariants, including closed outward shells,
+floor contacts, mixed global/object/material IDs, and shared dielectric
+preflight with six separate, non-overlapping volumes. The diagnostic uses
+one sample per pixel, seed 123, interaction cap four, a pinhole camera,
+point lights and opaque point-light shadows. Output includes raw display
+RGB, generated source, PNG, uncompressed RGB8 TIFF and a settings manifest.
+Exposure is one, with clamping and the shared sRGB transfer before RGB8
+quantization. No depth of field, caustics, dispersion or bloom is claimed.
+
+Next, integrate transparent materials and validate entry/exit paths before
+publishing the glass gallery entry. This composition has not established
+GPU eligibility or a CPU/GPU speedup; those require the queued source and
+final paired-render checks.
+
+A one-pixel eligibility probe of the same composition currently refuses
+at u_nique in shared preflight. Its host fallback then attempts s_hape
+on the tuple scene bundle and reports expected array, found tuple.
+The generated probe and diagnostic are work/ray-glass/eligibility.xtl
+and eligibility.log. This is local lowering/fallback work for ray-source,
+not an upstream language/library ask; validation is kept intact.
+
+The user screenshot ~/pixelated.png shows the initial 160 by 64 logo
+recording enlarged to roughly 1300 pixels wide. The dominant quality
+limit is native render resolution, with no supersampling, rather than
+TIFF compression or a browser fault. The 320 by 128 poster improves the
+still only. A presentation-quality recording needs newly rendered frames
+at higher resolution and shared antialiasing; re-encoding/upscaling the
+same pixels does not recover missing detail. Validate an intended-size
+still before committing to a longer high-resolution sequence.
+
+Composition diagnostics completed at 32 by 32 in 39.55 seconds and 64 by
+64 in 155.63 seconds on the CPU evaluator. These are single observed
+render-call wall times during other work, not a paired benchmark. The
+64 by 64 TIFF decodes with Compression=None. Bright panels are visible
+in the framing and need adjustment for a darker presentation image.
+After this checkpoint the user prioritizes high-resolution logo output
+and paired CPU/GPU timings; transparent glass integration follows.

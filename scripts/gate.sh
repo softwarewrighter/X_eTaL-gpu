@@ -19,6 +19,7 @@ cd "$root"
 "$root/scripts/test-libs.sh"
 python3 "$root/scripts/test-ray-image.py"
 python3 "$root/scripts/test-ray-scene.py"
+python3 "$root/scripts/test-glass-scene.py"
 python3 "$root/scripts/test-ray-media.py"
 "$root/scripts/ray-check-cpu.sh"
 if [ -f "$root/components/Cargo.toml" ]; then

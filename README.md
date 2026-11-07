@@ -358,15 +358,17 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   and uncompressed TIFF masters. Glass and benchmark scenes remain planned.
   Reproduce with `just ray-animate-cpu`; `just ray-render-cpu` makes a still.
   The tiny diagnostic agrees on CPU and RTX OpenCL; larger GPU scenes
-  still need scaling and validation.
+  still need scaling and validation. The next quality target is a native
+  1280 by 512 or larger antialiased still/video with paired CPU/GPU timings.
 - [Ray integration status](docs/ray-integration.md) -- committed library
   adoption, CPU diagnostic evidence, tested GPU boolean maps and remaining
   renderer validation gaps; shape guards, boolean reductions and array
   matching and runtime guards now execute on both GPU backends
 - [Library asks and ownership](docs/xetal-libraries-ask.md) -- general
   libraries and macros versus GPU-specific integration
-- [Glass scene plan](docs/glass-scene-plan.md) -- planned glass spheres,
-  faceted crystals, optics/library extensions and CPU/GPU still rendering
+- [Glass scene plan](docs/glass-scene-plan.md) -- RL5/RL6 adopted;
+  sphere/crystal composition diagnostics use `just ray-glass-composition`.
+  Transparent materials and paired CPU/GPU still rendering follow.
 - [Ray tracing plan](docs/ray-tracing-plan.md) -- planned shared X_eTaL
   CPU/GPU renderer, uncompressed TIFF output and rotating logo
 - [`docs/plan.md`](docs/plan.md) -- architecture decisions, the
