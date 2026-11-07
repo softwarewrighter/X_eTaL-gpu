@@ -19,6 +19,7 @@ check() { # check PATH TEXT
 check "" "X_eTaL-gpu $head"
 check "" "Ray tracing"
 check "ray-tracing/" "Recorded CPU render"
+check "ray-tracing/" "native CPU still"
 check "ray-tracing/" "media/logo/logo.webm"
 check "doc/index.html" "Accel"
 check "doc/libs-Accel-src-Accel.xtl.html" "The sum, item by item"
@@ -35,6 +36,10 @@ PY_HASH
   then echo "ok: live $1 (verified bytes)"; else echo "FAIL: live $1 does not match built media"; fail=1; fi
   rm -f "$remote_file"
 }
+check_binary "ray-tracing/media/logo-still/still.png" "site-assets/ray/logo-still/still.png"
+check_binary "ray-tracing/media/logo-still/still.tif" "site-assets/ray/logo-still/still.tif"
+check_binary "ray-tracing/media/logo-still/manifest.json" "site-assets/ray/logo-still/manifest.json"
+check_binary "ray-tracing/media/logo-still/masters.zip" "site-assets/ray/logo-still/masters.zip"
 check_binary "ray-tracing/media/logo/poster.png" "site-assets/ray/logo/poster.png"
 check_binary "ray-tracing/media/logo/logo.webm" "site-assets/ray/logo/logo.webm"
 check_binary "ray-tracing/media/logo/masters.zip" "site-assets/ray/logo/masters.zip"

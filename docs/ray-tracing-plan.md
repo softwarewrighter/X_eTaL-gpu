@@ -216,3 +216,9 @@ image/video encoding separately. Show the CPU implementation and measured
 speedup or slowdown; do not infer timings from the existing tiny scenes.
 GPU source correctness/scaling, matched stills and timings now precede
 further glass rendering and the longer animation. Retain TIFF masters.
+
+The first native 1280 by 512 CPU logo still is available independently of
+GPU backend work. It uses one sample per pixel, with exact strip sources,
+PNG and uncompressed TIFF. Antialiased strip rendering is tested; a
+four-sample refinement and L/arrow-junction geometry cleanup remain.
+It is not a high-resolution video or a paired performance benchmark.

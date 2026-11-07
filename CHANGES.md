@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-06
 
+- 22:15 `feat` Render a native 1280 by 512 CPU logo still using parallel full-camera strips and an isolated committed library snapshot; add uncompressed masters/source provenance, exact strip/antialiasing checks and a prominent gallery image. Keep GPU/video claims separate and record reviewed primary compiler/rendering references for the next device-loop/fusion implementation.
+
 - 21:47 `chore` Record completed GPU storage/preparation prerequisite; next is the first-principles device-side loop/fusion execution fix, with tiled/frame residency and high-resolution validation still pending.
 
 - 21:32 `feat` Reuse temporary OpenCL device storage with input/constant/output/guard lifetimes preserved; add memory reports and index SSA names/shared kernels for large graphs. Verify resident GPU reruns and recovery, and document the RL7 candidate pin regression without adopting it. Record device-side fusion/loops, parallel tiles and a resident frame ring as the primary execution fix; a cold full-logo probe produced no pixels within its 180-second budget.

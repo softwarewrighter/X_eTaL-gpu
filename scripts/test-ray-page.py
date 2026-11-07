@@ -69,6 +69,10 @@ def main():
                 wait("const i=document.querySelector('#ray-tracing img');return i.complete&&i.naturalWidth>0")
                 (screenshots / "root-desktop.png").write_bytes(base64.b64decode(request(session + "/screenshot")))
                 request(session + "/url", {"url": site + "/ray-tracing/"})
+                wait("const i=document.querySelector('#native-still img');return i&&i.complete&&i.naturalWidth>=1024")
+                script("document.getElementById('native-still').scrollIntoView({block:'center'})")
+                (screenshots / "native-desktop.png").write_bytes(base64.b64decode(request(session + "/screenshot")))
+                script("document.querySelector('video').scrollIntoView({block:'center'});document.querySelector('video').play()")
                 wait("const v=document.querySelector('video');return v.readyState>=2&&v.videoWidth>0")
                 wait("return document.querySelector('video').currentTime>0.05")
                 assert script("return document.querySelectorAll('.planned').length") == 2
@@ -80,7 +84,9 @@ def main():
                     request(session + "/window/rect", {"width": width, "height": 900})
                     assert script("return document.documentElement.scrollWidth<=innerWidth"), "horizontal overflow"
                     (screenshots / (label + ".png")).write_bytes(base64.b64decode(request(session + "/screenshot")))
-                print("ray page: three thumbnails, real video playback, frame selection and mobile layout pass")
+                    script("document.getElementById('native-still').scrollIntoView({block:'center'})")
+                    (screenshots / ("native-" + label + ".png")).write_bytes(base64.b64decode(request(session + "/screenshot")))
+                print("ray page: native still, three thumbnails, real video playback, frame selection and mobile layout pass")
     finally:
         if session:
             with suppress(Exception):

@@ -254,3 +254,19 @@ plan:
 # Report allocation reuse and launch/guard costs without allocating GPU memory.
 ray-memory file="work/ray-integration/diagnostic-source.xir": build
     target/release/xetal-gpu memory "{{file}}"
+
+# Render a native high-resolution CPU still using an isolated committed snapshot.
+ray-hires-cpu *args:
+    python3 scripts/ray-render-cpu-tiles.py {{args}}
+
+# Curate the completed native still for the gallery.
+ray-stage-still:
+    python3 scripts/stage-ray-still.py
+
+# Validate camera/sample coordinates across independently rendered strips.
+ray-test-cpu-tiles:
+    python3 scripts/test-ray-cpu-tiles.py
+
+# Validate the curated high-resolution still and its uncompressed masters.
+ray-test-still:
+    python3 scripts/test-ray-still.py

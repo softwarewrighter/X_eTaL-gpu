@@ -607,3 +607,16 @@ frames at the boundary. Preserve safe deterministic validation without
 per-operation host round trips. RL10 supplies compatible reusable math;
 the backend execution model is local work and must not wait on a new
 language feature. The target contract is in ray-performance.md.
+
+## Independent native CPU still checkpoint
+
+Publish the first native 1280 by 512 CPU logo still independently of
+ray-device's generic region/loop implementation. Rendering uses an
+explicit committed CPU snapshot without changing the GPU pin, full-camera
+parallel strips and frozen provenance. It took 606.7 seconds with four
+workers at one sample per pixel. Whole/strip and four-sample linear-average
+checks pass. The high-resolution still does not satisfy the GPU timing
+milestone. The reviewed primary-source architecture and acceptance checks
+are recorded in ray-performance.md; the generic backend remains next.
+A 4-8 active-development-hour estimate for a first validated prototype is
+provisional and must be revised after the initial region/loop experiment.

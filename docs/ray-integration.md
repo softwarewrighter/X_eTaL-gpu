@@ -419,3 +419,40 @@ or evidence identifying a particular phase. Its planned payload falls
 from 8941960 to 86728 bytes with reuse, while 129916 launches remain.
 The first-principles correction prioritizes fused device-side tracing
 loops and resident tiled/frame execution; see ray-performance.md.
+
+## Native-resolution CPU still
+
+The gallery now offers a newly traced 1280 by 512 logo still, with an
+uncompressed RGB8 TIFF, lossless PNG and exact executed sources. The
+first still uses one centered sample per pixel. Its 32 full-camera
+16-row strips ran with four workers in 606.7 seconds of observed wall
+time, including evaluator setup, text output and encoding. This is not
+a paired CPU/GPU benchmark or a measured serial speedup.
+
+An isolated clean Git worktree at committed libraries a2d4de1 supplies
+the CPU candidate-culling implementation. The main GPU pin stays at
+8bd438d because its compatibility checks still reject the newer dynamic
+query branch. The artifact records its own language/library commits;
+CPU-only previewing does not adopt the candidate for GPU execution.
+
+```sh
+just ray-hires-cpu --libraries-ref a2d4de1359295471afff509215c078da9c25c963
+just ray-hires-cpu --libraries-ref a2d4de1359295471afff509215c078da9c25c963 --samples-axis 2 --output work/ray-hires/logo-aa
+just ray-test-cpu-tiles
+just ray-stage-still
+just ray-test-still
+```
+
+The strips use full-image dimensions and global sample IDs. Tests compare
+actual whole-frame and strip-rendered pixels exactly at one and four
+samples per pixel, including a partial final strip. An independent color
+case checks that linear samples are averaged before sRGB. The host only
+copies completed pixel rows and encodes images. The equivalent full-frame
+program and all exact strip programs are archived with their metadata.
+The archive uses ZIP storage and the TIFF has Compression=None.
+
+The old 160 by 64 movie remains clearly labeled. Its frozen assets/pins
+are unchanged. This still makes resolution visible before the separate
+GPU loop/fusion implementation is ready; glass and Cornell stills remain
+pending. One-sample edge aliasing and the L/arrow junction geometry are
+future quality refinements, rather than hidden image postprocessing.

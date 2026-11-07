@@ -206,3 +206,80 @@ lens/area-light checks. Strict bound-input RayTrace GPU lowering refused
 the new data-dependent nearest-query branch. The trial was not adopted;
 8bd438d remains pinned. RL10 needs a compatible bounded vectorized path
 without that dynamic-shape requirement. Shared validation stays intact.
+
+## Reviewed design references and next implementation
+
+The following primary sources were reviewed on 2026-11-06. These are
+architecture references; no external renderer/compiler implementation
+is copied or introduced as a dependency.
+
+- [Futhark regular flattening](https://futhark-book.readthedocs.io/en/latest/regular-flattening.html)
+  describes choosing an outer parallel map with an inner sequential loop.
+  That is the initial model for independent rays with geometry loops.
+- [Futhark performance guide](https://futhark.readthedocs.io/en/latest/performance.html)
+  explains producer/consumer fusion and the overhead of parallelizing tiny
+  arrays. Our three-component vector operations should become local
+  arithmetic, rather than independent global reductions/materializations.
+- [Halide GPU tutorial](https://halide-lang.org/docs/tutorial/lesson_12_using_the_gpu.html)
+  separates the algorithm from CPU/GPU scheduling, fuses work within tiles,
+  and retains device data across repeated realizations. This informs tile
+  scheduling and resident execution, not the ray-tracing math.
+- [PBRT GPU execution models](https://www.pbr-book.org/4ed/Wavefront_Rendering_on_GPUs/Mapping_Path_Tracing_to_the_GPU)
+  explains fused-kernel versus wavefront tradeoffs. Large fused kernels
+  can lose occupancy and suffer divergent execution; wavefront stages
+  improve scheduling but add queue/state memory traffic. Neither is an
+  automatic winner for all three scenes.
+
+The initial backend prototype will preserve a structured map/loop region
+in XIR instead of expanding p_ower across geometry during lowering.
+Scene arrays are immutable captures; ray-local fixed-size values become
+local/register arithmetic. Generate the repeated body once, with device
+loop bounds. Keep this a general backend capability over shared X_eTaL
+functions, without renderer-specific native kernels or new core syntax.
+
+First prove fixed-shape loop/map correctness and safe error propagation;
+then use the actual library intersection/shading functions. Target a small
+fixed dispatch set for the simple opaque prototype, with primitive-count
+changes affecting work rather than kernel count/source size. Validate
+zero iterations, capture/state types, input changes, first failure,
+partial tiles and raw CPU/GPU pixels. A kernel-count regression test must
+compare multiple primitive counts. Buffer reuse alone is not acceptance.
+
+Benchmark a fused per-ray baseline against coarse wavefront stages when
+material/path divergence warrants it. Report register/private-memory
+costs, launches, transfers, cold preparation and warm rendering. Keep
+scene, ray state, accumulations and frame buffers resident; add frame-ring
+and asynchronous export support after the first correct tracing region.
+The first high-resolution CPU still is independent of this backend work.
+
+## Prototype milestones from the design review
+
+The reviewed references motivate a specific first experiment, not a
+promise that one large shader is always best:
+
+1. Add general fixed-shape map/loop regions to the local GPU IR, checker,
+   CPU interpreter and emitter. Preserve p_ower as a device loop within
+   a mapped region rather than expanding its body per primitive.
+2. Keep small coordinate vectors and reductions local to a ray. Do not
+   turn a three-component dot product into a global reduction launch.
+   Keep immutable scene arrays as device captures, not per-ray copies.
+3. Preserve safe per-ray checks and deterministic first failure. A
+   failing lane must stop before unsafe arithmetic/indexing. Aggregate
+   its error status at the batch boundary; removing checks is not valid.
+4. Prove generic loops first, then actual library nearest-hit/shading.
+   Start with a fused ray-local baseline for the uniform opaque logo.
+   Keep geometry count in a device loop bound, without emitting a kernel
+   function for every triangle or every intermediate operation.
+5. Compare with coarse intersection/shading/shadow/accumulation stages
+   for more divergent glass paths. Keep those queues and states resident.
+   The choice follows measured register pressure, memory traffic and time.
+
+The first performance acceptance is structural: kernel count must stay
+small as geometry grows from a tiny scene to the full logo. Code size
+must not grow in proportion to triangle count, and ray-count changes
+must change work/grid size rather than duplicate the shader. Then verify
+raw CPU/GPU pixels, invalid-input recovery and sample/tile invariance.
+Measure cold preparation and repeated warm render calls separately.
+Frame-ring/export overlap follows the first correct region; it must not
+hold up a visible still. No native renderer or extra language syntax is
+part of this plan.
