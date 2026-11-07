@@ -90,6 +90,14 @@ tested e7140be pin. RL8/RL9 remain deferred.
 RL2a is adopted for this release with corrected a/e and visual regressions.
 
 
+Latest peer check: RL7 is committed in bfe0c67 (handoff a2d4de1),
+including subpixel/lens sampling and area emitters. It is ready for
+adoption at the ray-device boundary; the current pin remains 8bd438d
+until its changed/new CPU baselines pass. The peer also documents CPU
+candidate culling; GPU eligibility and performance are not established
+by that delivery. RL10 remains requested here, not acknowledged or
+delivered upstream. Local GPU profiling/resource work can proceed.
+
 ### Request summary and deadlines
 
 Deadlines are dependency milestones, not calendar promises. Ask status

@@ -1,6 +1,6 @@
 number = 43
 slug = "ray-device"
-status = "pending"
+status = "in-progress"
 description = "Run the same general-library RayTrace source on XIR CPU and RTX OpenCL, with ..."
 role = "production"
 context_files = []
