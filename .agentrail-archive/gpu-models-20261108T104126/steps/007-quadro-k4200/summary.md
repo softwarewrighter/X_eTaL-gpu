@@ -1,0 +1,1 @@
+Quadro K4200 (Kepler, 4 GB) added: hardware table (oldest generation, smallest memory), plan intro and gpu-hardware saga, README, opencl and runtime pages, nvidia-legacy.toml, landing page. Gate passes.

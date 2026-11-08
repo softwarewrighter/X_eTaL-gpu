@@ -1,0 +1,1 @@
+Ray-tracing plan and implementation queue delivered; planning/bookkeeping commits rebased onto upstream completed Mojo structural work. Saga reordered to preserve completed step 027; prior local IDs remain in snapshot refs.

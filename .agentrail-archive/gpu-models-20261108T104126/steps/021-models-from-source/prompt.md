@@ -1,0 +1,1 @@
+X_eTaL-ML's world model from its own world-model.xtl through the macro (the generator in ml-bench.py deleted), the three benchmarks likewise (plan 0q); docs/ml-results.md says from source; the README and the landing page say what runs today: X_eTaL source, lowered. Docs, CHANGES, commit, push, publish.

@@ -1,0 +1,9 @@
+number = 40
+slug = "ray-live-logo"
+status = "completed"
+description = "Deliver the first of three required live ray demos: stationary extruded X wit..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T12:13:05"
+completed_at = "2026-11-06T15:15:02"
+commits = ["578772ad8454da526535250d84593b2524cf4254"]

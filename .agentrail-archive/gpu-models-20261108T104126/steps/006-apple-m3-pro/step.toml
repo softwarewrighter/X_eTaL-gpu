@@ -1,0 +1,9 @@
+number = 6
+slug = "apple-m3-pro"
+status = "completed"
+description = "Add the Apple M3 Pro to the target GPUs (the user, 2026-10-12): the plan's ha..."
+role = "production"
+context_files = []
+created_at = "2026-10-12T09:57:06"
+completed_at = "2026-10-12T10:02:47"
+commits = ["d3bfb16ac7d000bb502e3dbdbc583c855bf2a7e9"]

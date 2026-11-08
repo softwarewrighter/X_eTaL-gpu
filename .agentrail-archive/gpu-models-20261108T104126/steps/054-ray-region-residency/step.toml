@@ -1,0 +1,8 @@
+number = 54
+slug = "ray-region-residency"
+status = "pending"
+description = "Continue the working structured OpenCL ray-region path. Remove scalar RGB cha..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T22:42:11"
+commits = []

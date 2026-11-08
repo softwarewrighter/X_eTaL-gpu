@@ -1,0 +1,1 @@
+argmax and top-k in the IR: the index of the largest item of each row (the decision, the next token) and the k largest with their indices (a router's choice), as the evaluator computes them (ties: the first); kernels; twins; equivalence on the interpreter and the GPU; an Accel export if it reads well. Docs, CHANGES, commit, push, publish.

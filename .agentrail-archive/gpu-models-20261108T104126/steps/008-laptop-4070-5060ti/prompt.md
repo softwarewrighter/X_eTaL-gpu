@@ -1,0 +1,1 @@
+Correct the hardware (the user, 2026-10-12): the RTX 4070 is a laptop GPU (System76) with 8 GB, not 12 GB; the 5060 is an RTX 5060 Ti with 16 GB. Every mention; docs, CHANGES, commit, push, publish.

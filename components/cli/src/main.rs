@@ -11,6 +11,8 @@
 //!   SCHEDULE: --float f32|f64  --int i32|i64  --work-group N
 //! ```
 
+mod batches;
+
 use std::collections::HashMap;
 use std::process::ExitCode;
 
@@ -24,12 +26,14 @@ usage: xetal-gpu COMMAND FILE [OPTIONS]
   FILE is an .xir program, or an .xtl program lowered from X_eTaL source first
   (its libraries beside it and on XETAL_PATH; the twins' oracle is the evaluator)
   lower FILE.xtl                 the XIR program the X_eTaL source lowers to
+  lower-function FILE --param NAME:TYPE[:DIMS]... [--uses IMPORTS] [--regions]
   check FILE.xir                 parse and check: every value with its type
   devices                        OpenCL devices (opencl:N) and the default Mojo GPU
   run FILE.xir [--device cpu|opencl:N|mojo] [SCHEDULE]   run; each output printed as xetal prints it
       [--bind NAME=1,2,3 | --bind NAME=@FILE]...   items, text file or XTLARR01 binary array
       [--time]                       on a device, where the time went, to standard error
       [--repeat N] [--refresh NAME]...   reuse kernels/buffers; reupload named inputs each repeat
+      [--advance NAME=STEP]... [--save-repeats DIR]   advance scalar Int inputs; save every CPU/OpenCL repeat
   print FILE.xir                 the program in its canonical text form
   kernel FILE.xir [SCHEDULE]     the OpenCL C 1.2 source it would run (--backend mojo: the Mojo source)
   memory FILE.xir [SCHEDULE]     logical/physical allocation bytes, buffers, launches and guards
@@ -82,6 +86,69 @@ fn dispatch(args: &[String], regions: bool) -> Result<()> {
             for (what, reason) in &loaded.reasons {
                 eprintln!("evaluated by xetal: {what}: {reason}");
             }
+            Ok(())
+        }
+        "lower-function" => {
+            let file = args.get(1).ok_or_else(|| Error("lower-function requires FILE".into()))?;
+            let mut params = Vec::new();
+            let mut uses = String::new();
+            let mut i = 2;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--regions" => {
+                        i += 1;
+                    }
+                    "--uses" => {
+                        uses = args
+                            .get(i + 1)
+                            .cloned()
+                            .ok_or_else(|| Error("--uses requires library imports".into()))?;
+                        i += 2;
+                    }
+                    "--param" => {
+                        let value = args.get(i + 1).ok_or_else(|| Error("--param requires NAME:TYPE[:DIMS]".into()))?;
+                        let parts: Vec<_> = value.split(':').collect();
+                        if !(2..=3).contains(&parts.len()) {
+                            return Err(Error("--param requires NAME:TYPE[:DIMS]".into()));
+                        }
+                        let scalar = match parts[1] {
+                            "i64" => Scalar::I64,
+                            "i32" => Scalar::I32,
+                            "f64" => Scalar::F64,
+                            "f32" => Scalar::F32,
+                            "bool" => Scalar::Bool,
+                            _ => return Err(Error("unknown parameter scalar type".into())),
+                        };
+                        let dims = if parts.len() == 2 {
+                            Vec::new()
+                        } else {
+                            parts[2]
+                                .split(',')
+                                .map(|s| s.parse::<usize>().map_err(|_| Error("invalid parameter dimension".into())))
+                                .collect::<Result<Vec<_>>>()?
+                        };
+                        params.push((
+                            parts[0].to_string(),
+                            xetal_gpu_xir::Ty {
+                                scalar,
+                                shape: Shape(dims),
+                            },
+                        ));
+                        i += 2;
+                    }
+                    other => return Err(Error(format!("unknown lower-function option {other}"))),
+                }
+            }
+            let path = std::path::Path::new(file);
+            let source = std::fs::read_to_string(path).map_err(|e| Error(e.to_string()))?;
+            let lowered = xetal_gpu_lower::lower_function_regions(
+                &source,
+                &params,
+                path.parent().unwrap_or_else(|| std::path::Path::new(".")),
+                &uses,
+                regions,
+            )?;
+            println!("{}", text::print(&lowered.program));
             Ok(())
         }
         "devices" => {
@@ -243,6 +310,8 @@ fn dispatch(args: &[String], regions: bool) -> Result<()> {
             let mut timed = false;
             let mut repeat = 1usize;
             let mut refresh = Vec::new();
+            let mut advances = Vec::new();
+            let mut save_repeats = None;
             let mut i = 2;
             while i < args.len() {
                 match args[i].as_str() {
@@ -252,6 +321,20 @@ fn dispatch(args: &[String], regions: bool) -> Result<()> {
                             .and_then(|n| n.parse().ok())
                             .filter(|n| *n > 0)
                             .ok_or_else(|| Error("--repeat needs a positive integer".into()))?;
+                        i += 2;
+                    }
+                    "--advance" => {
+                        advances.push(batches::parse(
+                            args.get(i + 1).ok_or_else(|| Error("--advance needs NAME=STEP".into()))?,
+                        )?);
+                        i += 2;
+                    }
+                    "--save-repeats" => {
+                        save_repeats = Some(
+                            args.get(i + 1)
+                                .cloned()
+                                .ok_or_else(|| Error("--save-repeats needs a directory".into()))?,
+                        );
                         i += 2;
                     }
                     "--refresh" => {
@@ -292,11 +375,19 @@ fn dispatch(args: &[String], regions: bool) -> Result<()> {
                     return Err(Error(format!("--refresh {name}: no bound input")));
                 }
             }
+            batches::validate(&inputs, &advances)?;
+            if device == "mojo" && (!advances.is_empty() || save_repeats.is_some()) {
+                return Err(Error("resident batch progression currently supports cpu/opencl only".into()));
+            }
             let outputs = if device == "cpu" {
                 let mut outputs = Vec::new();
                 for n in 1..=repeat {
                     let start = std::time::Instant::now();
+                    if n > 1 {
+                        batches::advance(&mut inputs, &advances)?;
+                    }
                     outputs = run(&checked, &inputs)?;
+                    batches::save(save_repeats.as_ref(), n, &outputs)?;
                     if timed {
                         eprintln!("repeat {n} cpu time: total {:.3} ms", start.elapsed().as_secs_f64() * 1000.0);
                     }
@@ -313,12 +404,15 @@ fn dispatch(args: &[String], regions: bool) -> Result<()> {
                     let start = std::time::Instant::now();
                     let mut upload = 0.0;
                     if n > 1 {
-                        for name in &refresh {
+                        batches::advance(&mut inputs, &advances)?;
+                        let names: std::collections::HashSet<_> = refresh.iter().chain(advances.iter().map(|(name, _)| name)).collect();
+                        for name in names {
                             upload += session.rebind(name, &inputs[name])?;
                         }
                     }
                     let (out, mut st) = session.run_timed()?;
                     outputs = out;
+                    batches::save(save_repeats.as_ref(), n, &outputs)?;
                     st.upload_ms = if n == 1 { initial.upload_ms } else { upload };
                     st.setup_ms = if n == 1 { initial.setup_ms } else { 0.0 };
                     st.total_ms = if n == 1 { first.elapsed() } else { start.elapsed() }.as_secs_f64() * 1000.0;

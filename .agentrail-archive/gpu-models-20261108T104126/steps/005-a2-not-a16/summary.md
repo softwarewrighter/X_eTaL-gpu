@@ -1,0 +1,1 @@
+A16 replaced by the user's A2 (Ampere, 16 GB, one GPU) in the hardware table, plan intro, README, component pages and schedule template. Gate passes.

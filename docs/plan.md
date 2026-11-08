@@ -667,3 +667,15 @@ structured sampling bands; upstream 017-legacy-glass-sampling is already
 queued. Adopt that correction or the canonical RL7 sampling path before
 claiming polished quality. Keep the final matched 1024-square validation,
 higher sampling/cap and isolated timings in the later quality steps.
+
+
+### Ray gallery and periodic pipe flight
+
+Current step 049 combines the existing glass gallery publication with the
+user-requested pipe fly-through. See docs/pipe-flythrough.md. The GPU source
+renders six frames per resident execution with explicit frameStart input;
+all frame math remains X_eTaL. The native 12-second cycle has an executed
+wraparound-frame check and animated card/dialog views. Completed Apple
+step 065 is preserved; preemption recovery is archived rather than
+hand-editing saga records. Antialiasing, smoother geometry and further
+throughput work remain refinements, not claims about this first video.

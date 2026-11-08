@@ -1,0 +1,9 @@
+number = 33
+slug = "ray-xetal-pin"
+status = "completed"
+description = "Prerequisite discovered while adopting committed RL1/RL4: this repo pins X_eT..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T09:57:44"
+completed_at = "2026-11-06T10:09:25"
+commits = ["575490bddbf55ab6f60b1fc1514dbc3edb9ca830"]

@@ -1,0 +1,9 @@
+number = 34
+slug = "ray-library-adoption"
+status = "completed"
+description = "Begin ray-tracing integration now that RL1/RL4 have committed deliveries. Pin..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T09:56:29"
+completed_at = "2026-11-06T10:09:25"
+commits = ["00588da6337f130fc457c2f5fc31f4f9a2767195"]

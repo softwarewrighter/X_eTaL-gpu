@@ -1,0 +1,9 @@
+number = 31
+slug = "ray-library-asks"
+status = "completed"
+description = "Write concrete, implementation-ready X_eTaL-libraries asks for the recommende..."
+role = "meta"
+context_files = []
+created_at = "2026-11-06T07:58:33"
+completed_at = "2026-11-06T08:06:24"
+commits = ["52db1dde53d20d6f3ef4b8798d6ea5fdcbe9f2d2"]

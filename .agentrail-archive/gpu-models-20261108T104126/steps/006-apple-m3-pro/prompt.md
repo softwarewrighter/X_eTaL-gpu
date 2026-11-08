@@ -1,0 +1,1 @@
+Add the Apple M3 Pro to the target GPUs (the user, 2026-10-12): the plan's hardware table and first paragraph, the README, the gpu-hardware saga (a step to run the checks on it), the landing page. Docs, CHANGES, commit, push, publish.

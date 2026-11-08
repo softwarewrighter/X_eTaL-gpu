@@ -1,0 +1,1 @@
+Hardware table in docs/plan.md with the user's cards (M10, P4, 1660 Super, 3090, 4070, 5060, A16, the Mac); plan intro and gpu-hardware saga, README, component pages, schedule templates and landing page follow it; research7's example cards noted as not targets. Gate passes.

@@ -1,0 +1,1 @@
+the session benchmark run on the M1 Max against NumPy's Accelerate (the script generalized: a BLAS without thread control named, title/device/pins from the machine, the verdict computed); docs/m1max-session-results.md: 0.01 to 0.85 times the CPU, the fixed cost about 1.3 ms of launches; the README's against-tuned-CPU table for both cards

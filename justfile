@@ -302,3 +302,15 @@ ray-stage-pair *args:
 # Independent CPU/GPU Float and TIFF pixel/tag checks on curated evidence
 ray-test-pair:
     python3 scripts/test-ray-pair.py
+
+# Trace the periodic pipe corridor in resident multi-frame GPU batches
+ray-pipe-render *args:
+    python3 scripts/ray-pipe-flythrough.py {{args}}
+
+# Compare decoded animation formats and curate every uncompressed frame
+ray-pipe-media *args:
+    python3 scripts/ray-pipe-media.py {{args}}
+
+# Check native frame masters, the GPU-rendered loop seam and encoded playback
+ray-test-pipes:
+    python3 scripts/test-pipe-media.py

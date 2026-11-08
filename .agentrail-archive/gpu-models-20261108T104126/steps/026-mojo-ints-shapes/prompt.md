@@ -1,0 +1,1 @@
+Saga gpu-mojo, step 2: Ints (i64, or i32 as the schedule's int asks) and Bool, cast, several array lengths and shapes in one program, and reductions along an axis in the Mojo emitter: vector-add, host-data, axis-reduce, tiny-net and topk from source give the evaluator's answers through Mojo; the pinned Mojo source per demo beside the OpenCL expected files

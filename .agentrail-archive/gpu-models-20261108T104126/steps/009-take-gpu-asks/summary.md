@@ -1,0 +1,1 @@
+X_eTaL-ML's GA1-GA6 taken: ledger of incoming asks in docs/plan.md; ml-bench, world-model, transpose, windows, denoiser queued ahead of tiny-nn (answered by world-model); GA4-GA6 map to X-1, G5/G8, G1-G3. Gate passes.

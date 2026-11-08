@@ -1,0 +1,1 @@
+Benchmark the same X_eTaL ray tracer and matched scene/settings on CPU and RTX 5060 Ti, following docs/ray-tracing-plan.md. Check pixel correctness before timing. Report CPU implementation and precision, cold/setup, warm wall and GPU event times, transfer/readback and file I/O separately; repeated resolution sweep with median/spread and speedup or slowdown.

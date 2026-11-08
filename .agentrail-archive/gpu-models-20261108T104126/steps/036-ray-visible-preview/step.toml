@@ -1,0 +1,9 @@
+number = 36
+slug = "ray-visible-preview"
+status = "completed"
+description = "User asks to see renders and wants ETA. Deliver a reproducible CPU logo previ..."
+role = "production"
+context_files = []
+created_at = "2026-11-06T11:03:04"
+completed_at = "2026-11-06T11:29:36"
+commits = ["a90c59c483f514b2c9d3956f2dc1729bda51401f"]

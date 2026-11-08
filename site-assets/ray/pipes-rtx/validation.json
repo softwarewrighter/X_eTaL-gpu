@@ -1,0 +1,46 @@
+{
+  "width": 2,
+  "height": 2,
+  "frames": 4,
+  "batch_frames": 2,
+  "fps": 15,
+  "triangles": 1142,
+  "xetal": "abdd371dd4ae644f00e04d04e09d67576056f031",
+  "libraries": "8bd438d21cce133ddcfced36b0e243b8377c7b8d",
+  "source_sha256": "277ec52368c344c75e4bc5e42aa82cbe544bb5887b71c32f44af225dc423a8e1",
+  "geometry_sha256": "0a2566cafccfb558cf3c7907bcc31ed7ae8605201367a87a14308de9e38c9eb8",
+  "renderer_binary_sha256": "13e72f3e944a24544bff58e692259d2bc5e2c0762a2ebe3273adc061c864dc38",
+  "function_sha256": "b37178b648ebfb01cbb056a647c574095850912e669328544107d9bd134dd226",
+  "ir_sha256": "850e5837827d08b523707a0f33345aa6daf0ccd763c16ba16480a23222d616d6",
+  "backend": "opencl:0",
+  "float_width": "f32",
+  "render_process_seconds": 0.8653606940060854,
+  "cpu_comparison": {
+    "linear_max_absolute_error": 2.3447471020343613e-08,
+    "display_max_absolute_error": 9.498071706914857e-08,
+    "rgb8_different_channels": 0,
+    "rgb8_max_absolute_difference": 0
+  },
+  "period_units": 36,
+  "pipe_starts": [
+    0,
+    18
+  ],
+  "pipe_length": 8,
+  "inner_radius": 1.9,
+  "outer_radius": 2.2,
+  "camera_height": 2.15,
+  "sphere_right": [
+    -3.6,
+    1.15,
+    14
+  ],
+  "pyramid_left": [
+    3.8,
+    0,
+    32
+  ],
+  "resident_scene": true,
+  "algorithm": "Shared RayTrace direct diffuse and hard shadows, flat triangles; each pixel traced three times by scalar RGB adapter",
+  "outputs": "Two Float arrays per batch: unclamped linear then shared sRGB; host quantization and encoding only"
+}

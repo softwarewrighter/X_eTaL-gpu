@@ -84,3 +84,21 @@ $ xetal-gpu run libs/Accel/demos/pipeline.xir --device opencl:0
 Use xetal-gpu memory FILE.xir to report logical/physical buffer counts,
 planned payload bytes, launches and guards without allocating GPU memory.
 The just ray-memory recipe builds the CLI and defaults to the ray diagnostic.
+
+
+## Resident frame batches
+
+`lower-function FILE --param NAME:TYPE[:DIMS] --uses IMPORTS --regions`
+exposes the existing typed-function lowering API. Parameters remain runtime
+inputs, rather than numeric file reads that can fold into constants. DIMS
+is comma-separated; omit it for a scalar. No language syntax is added.
+
+`run FILE.xir --bind frameStart=0 --repeat 31 --advance frameStart=6
+--save-repeats DIR --device opencl:0 --time` prepares a scene once, advances
+the bound scalar Int by six between executions, uploads only changed
+inputs and saves every repeat as batch-NNNN.out. Each execution can render
+several frames in one mapped region. CPU supports the same progression;
+Mojo refuses these batch options explicitly. Duplicate/non-Int/non-scalar
+inputs and Int overflow fail. Timings include saved-output serialization;
+only the first repeat includes GPU setup. ASCII output is currently a
+host-side throughput cost, not GPU-to-GPU traffic.

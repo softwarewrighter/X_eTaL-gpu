@@ -1,0 +1,1 @@
+Preserve uncommitted preemption state before recovery from a step-number collision with the newly fetched completed Apple Silicon step 065. Restore upstream saga and combine fly-through plus gallery work in current step 049 without renumbering completed history.

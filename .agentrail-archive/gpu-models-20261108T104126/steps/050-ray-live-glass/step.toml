@@ -1,6 +1,6 @@
-number = 49
+number = 50
 slug = "ray-live-glass"
-status = "pending"
+status = "in-progress"
 description = "Publish the second requested live ray demo using the actual reference-inspire..."
 role = "production"
 context_files = []

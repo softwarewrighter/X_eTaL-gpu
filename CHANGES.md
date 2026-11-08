@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-11-08
+
+- `feat` Checkpoint the native periodic pipe fly-through, typed runtime function parameters and resident scalar advancement. Preserve six-frame RTX batch evidence, executed loop endpoint, matched CPU/GPU pixels, measured animation formats and every uncompressed frame master. Keep gallery publication pending and preserve completed Apple Silicon history during preemption recovery.
+
 ## 2026-11-07
 
 - 17:48 `docs` Order today's CHANGES entries newest first.

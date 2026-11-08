@@ -1,0 +1,1 @@
+Live site with /doc like X_eTaL's: Accel and Gpu documented with ## blocks and ## >> examples (43, doc-test in the gate), pages/doc by xetal-x doc --out (relative paths), landing page, publish to gh-pages, Pages enabled, check-live passing. A commit was pushed with one failing test (gate piped to tail); fixed next commit; pipe-into-grep -q pattern removed from all scripts.

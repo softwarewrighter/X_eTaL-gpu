@@ -1,0 +1,9 @@
+number = 29
+slug = "ray-library-ownership"
+status = "completed"
+description = "Update ray-tracing planning for library-first and macro-library-first extensi..."
+role = "meta"
+context_files = []
+created_at = "2026-11-06T06:40:27"
+completed_at = "2026-11-06T06:50:11"
+commits = ["7177f91dbec2dae6d3fb11fb6738450ba233167a"]
