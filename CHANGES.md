@@ -12,6 +12,7 @@ complete, saga archive).
 
 ## 2026-11-07
 
+- 17:42 `docs` Document the ray-tracing results on the Apple M1 Max against the RTX 5060 Ti (`docs/m1max-ray-results.md`): the diagnostic and the 16 by 8 pair on Apple's OpenCL, 640 by 256 and 1280 by 512 logo renders compared pixel for pixel with the curated RTX stills, matched CPU evaluator against GPU timing on the same machine, the f32 glass attempt refused by Glass's tolerances (RL11), and the launch-count growth between backend commits as an open question; pointers from README, plan, ray-performance, the asks.
 - `chore` Record completed native RTX glass transport preview and advance to gallery integration, retaining explicit sampling and quality limitations.
 
 - `feat` Preserve the first native glass sphere/crystal still with raw linear/display Float data, uncompressed TIFF masters and independent matched CPU/GPU validation. Add reproducible curation and artifact checks; keep RTX observations separate from parallel Apple Silicon work.

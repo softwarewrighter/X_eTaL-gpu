@@ -676,3 +676,24 @@ in a central sphere crop, unchanged documented numeric contracts and an
 executed CPU/GPU comparison of the chosen path. GPU lowering gaps belong
 here. The current one-sample/cap-4 TIFF remains labeled a transport preview;
 increasing image dimensions alone does not solve this quality issue.
+## RL11: precision-aware Glass tolerances
+
+Status: requested here on 2026-11-07, not acknowledged upstream.
+Intended owner: X_eTaL-libraries, Glass. No language syntax is requested.
+
+Evidence: Glass pins its interface checks at relative 1e-10 (unit
+vectors, line 37; cosines, line 53) and 1e-12 (Fresnel, line 66) in
+`libs/Glass/src/Glass.xtl` at 8bd438d, and its boundary and grazing
+tests at 1e-10. An f32 vector normalized on a device has relative
+error near 6e-8, so the first guard refuses every f32 render: on the
+Apple M1 Max (OpenCL 1.2, no fp64) the 2 by 2 fixture compiled and
+then stopped at `Glass interface vectors must be unit length`
+(`docs/m1max-ray-results.md`). The f64 path on the RTX 5060 Ti is
+unaffected.
+
+Request: let the tolerance follow the data's precision or be a
+parameter of the transport entry points (about 1e-6 for f32), with the
+f64 default unchanged, so the same Glass functions validate on devices
+without fp64. This is the library instance of G13's tolerance-literal
+lint in `docs/xetal-asks.md`. Until it lands, glass renders are f64
+only, and the Apple column of the glass benchmark stays empty.

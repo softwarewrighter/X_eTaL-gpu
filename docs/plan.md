@@ -24,7 +24,7 @@ hosts, not cards; only the kernels' own times compare the cards.
 
 | Card | Architecture | Memory | Role here | Schedule |
 | ---- | ------------ | ------ | --------- | -------- |
-| Apple M1 Max (this Mac) | Apple GPU, OpenCL 1.2 | shared | development; every check so far; no fp64 | `apple-m1-max.toml` (run) |
+| Apple M1 Max (this Mac) | Apple GPU, OpenCL 1.2 | shared | development; every check so far, the ray path on 2026-11-07 (`docs/m1max-ray-results.md`: the logo stills match the RTX's); no fp64, so no glass until RL11 | `apple-m1-max.toml` (run) |
 | Apple M3 Pro | Apple GPU, Apple's OpenCL | shared | a second Apple-silicon target; its OpenCL version, fp64 and work-group limit to be recorded when first run | `apple-m1-max.toml` until run (a file of its own if it differs) |
 | Quadro K4200 | Kepler | 4 GB | the oldest generation here and the smallest memory: the case where weights stay on the host (a schedule field, saga gpu-models); the user has several | `nvidia-legacy.toml` (template) |
 | Tesla M10 | Maxwell | four GPUs of 8 GB | an old card the newest CUDA toolkits retire; each GPU an OpenCL device | `nvidia-legacy.toml` (template) |

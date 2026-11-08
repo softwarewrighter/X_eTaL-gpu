@@ -370,6 +370,14 @@ example programs the GPU runs) and `docs/README.md` (the reference).
   Temporary device storage is reused; `just ray-memory` reports costs.
   The next quality target is a native
   1280 by 512 or larger antialiased still/video with paired CPU/GPU timings.
+- [Ray tracing on Apple Silicon](docs/m1max-ray-results.md) -- the same
+  ray path on the M1 Max (2026-11-07): the diagnostic and the 16 by 8 pair
+  pass on Apple's OpenCL, the pair byte-identical to the RTX one; the
+  1280 by 512 logo matches the RTX still except 53 f32 edge pixels, in
+  0.89 to 0.91 s resident against the RTX's 1.21; the matched 640 by 256
+  logo takes 476 s on the Mac's CPU evaluator (8 strips in parallel, f64)
+  and 0.21 s resident on its GPU (f32); glass is refused by Glass's 1e-10
+  tolerances on a device without fp64 (RL11)
 - [Ray performance choices](docs/ray-performance.md) -- batching, resident
   sessions, frame concurrency and matched CPU/GPU measurement
 - [Ray integration status](docs/ray-integration.md) -- committed library

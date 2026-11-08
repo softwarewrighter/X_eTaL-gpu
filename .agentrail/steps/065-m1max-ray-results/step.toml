@@ -1,0 +1,8 @@
+number = 65
+slug = "m1max-ray-results"
+status = "pending"
+description = "Document the ray-tracing results on the Apple M1 Max (OpenCL 1.2, no fp64) ag..."
+role = "production"
+context_files = []
+created_at = "2026-11-07T15:41:46"
+commits = []

@@ -380,3 +380,15 @@ single bounded device loop, followed by vector RGB results from one trace.
 Both address shader size and duplicate work; more host batching alone does
 not remove cold compilation. Neither optimization requires a new language
 primitive or changing the reusable optics library.
+
+## Apple M1 Max
+
+The same regions path runs on the M1 Max through Apple's OpenCL 1.2:
+the 16 by 8 pair is byte-identical to the RTX one, the 1280 by 512
+logo differs from the RTX still in 53 f32 edge pixels and renders in
+0.89 to 0.91 s resident, and the matched 640 by 256 logo takes 476 s
+on the Mac's CPU evaluator against 0.21 s resident on its GPU. Apple's
+event timing does not cover the kernels, the per-launch overhead is
+about 50 us, and glass is refused by Glass's f64 tolerances. The
+numbers, the cautions and the launch-count question are in
+[m1max-ray-results.md](m1max-ray-results.md).
