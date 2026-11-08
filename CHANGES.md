@@ -12,9 +12,11 @@ complete, saga archive).
 
 ## 2026-11-07
 
-- 17:43 `chore` Close step 065-m1max-ray-results out of order with its commit; the cursor stays at the Arch lane's 048.
+- 17:48 `docs` Order today's CHANGES entries newest first.
 
 - 17:46 `chore` Re-record step 065-m1max-ray-results' commit after rebasing onto the Arch lane's glass preview commits; the cursor stays at the Arch lane's 049.
+
+- 17:43 `chore` Close step 065-m1max-ray-results out of order with its commit; the cursor stays at the Arch lane's 048.
 
 - 17:42 `docs` Document the ray-tracing results on the Apple M1 Max against the RTX 5060 Ti (`docs/m1max-ray-results.md`): the diagnostic and the 16 by 8 pair on Apple's OpenCL, 640 by 256 and 1280 by 512 logo renders compared pixel for pixel with the curated RTX stills, matched CPU evaluator against GPU timing on the same machine, the f32 glass attempt refused by Glass's tolerances (RL11), and the launch-count growth between backend commits as an open question; pointers from README, plan, ray-performance, the asks.
 
