@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-08
 
+- `feat` Add the animated pipe thumbnail and native-size looping dialog to the live gallery, publish the labeled glass transport preview, and verify real Chromium playback, wraparound and mobile layout. Include the canonical X_eTaL scene builder and its file input in the reproducible source.
+
 - `feat` Checkpoint the native periodic pipe fly-through, typed runtime function parameters and resident scalar advancement. Preserve six-frame RTX batch evidence, executed loop endpoint, matched CPU/GPU pixels, measured animation formats and every uncompressed frame master. Keep gallery publication pending and preserve completed Apple Silicon history during preemption recovery.
 
 ## 2026-11-07

@@ -90,6 +90,11 @@ is built here moves there when it does.
 
 ## Status
 
+The [ray-tracing gallery](https://softwarewrighter.github.io/X_eTaL-gpu/ray-tracing/#pipes)
+includes a native 640 by 360 pipe fly-through, with an animated thumbnail
+and full-size looping view. See [rendering and batching details](docs/pipe-flythrough.md).
+The first pipe video uses one sample per pixel and is not antialiased.
+
 Saga 1 (gpu-foundation) done on 2026-10-06: the process, the pinned
 X_eTaL (75e6a5c) and the library tooling (step 1); the Accel
 library, the acceleratable subset with its five example programs and

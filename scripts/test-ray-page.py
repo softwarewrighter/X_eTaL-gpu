@@ -65,9 +65,15 @@ def main():
                     raise AssertionError("browser condition timed out: " + code)
                 request(session + "/window/rect", {"width": 1100, "height": 900})
                 request(session + "/url", {"url": site + "/"})
-                wait("return document.querySelectorAll('#ray-tracing a.card').length===3")
+                wait("return document.querySelectorAll('#ray-tracing a.card').length===4")
                 wait("const i=document.querySelector('#ray-tracing img');return i.complete&&i.naturalWidth>0")
                 (screenshots / "root-desktop.png").write_bytes(base64.b64decode(request(session + "/screenshot")))
+                wait("const v=document.querySelector('video.pipe-loop');return v&&v.readyState>=2&&v.videoWidth===640&&v.loop&&v.muted")
+                wait("return document.querySelector('video.pipe-loop').currentTime>0.1")
+                assert script("return document.querySelector('video.pipe-loop').currentSrc.endsWith('/flythrough.webm')"), "smallest animation must actually decode"
+                script("document.querySelector('[data-pipe-open=pipe-home-dialog]').click()")
+                wait("const d=document.getElementById('pipe-home-dialog');return d.open&&d.querySelector('video').videoWidth===640")
+                script("document.getElementById('pipe-home-dialog').close()")
                 request(session + "/url", {"url": site + "/ray-tracing/"})
                 wait("const i=document.querySelector('#gpu-still img');return i&&i.complete&&i.naturalWidth>=1024")
                 script("document.getElementById('gpu-still').scrollIntoView({block:'center'})")
@@ -80,7 +86,15 @@ def main():
                 script("document.querySelector('video').scrollIntoView({block:'center'});document.querySelector('video').play()")
                 wait("const v=document.querySelector('video');return v.readyState>=2&&v.videoWidth>0")
                 wait("return document.querySelector('video').currentTime>0.05")
-                assert script("return document.querySelectorAll('.planned').length") == 2
+                assert script("return document.querySelectorAll('.planned').length") == 1
+                wait("const v=document.querySelector('#pipes video');return v&&v.readyState>=2&&v.currentTime>0.1")
+                script("document.querySelector('[data-pipe-open=pipe-gallery-dialog]').click()")
+                wait("const d=document.getElementById('pipe-gallery-dialog');return d.open&&d.querySelector('video').readyState>=2")
+                script("const v=document.querySelector('#pipe-gallery-dialog video');v.currentTime=v.duration-0.15;v.play()")
+                wait("const v=document.querySelector('#pipe-gallery-dialog video');return v.currentTime<1&&!v.paused")
+                script("document.getElementById('pipe-gallery-dialog').close()")
+                wait("const i=document.querySelector('#glass img');return i.complete&&i.naturalWidth===1024")
+
                 script("document.getElementById('frame-inspector').open=true;const r=document.getElementById('frame');r.value=6;r.dispatchEvent(new Event('input',{bubbles:true}));")
                 wait("const i=document.getElementById('frame-image');return i.complete&&i.currentSrc.endsWith('frame-006.png')")
                 assert script("return document.getElementById('angle').value") == "90 degrees"
@@ -93,7 +107,7 @@ def main():
                     (screenshots / ("gpu-" + label + ".png")).write_bytes(base64.b64decode(request(session + "/screenshot")))
                     script("document.getElementById('native-still').scrollIntoView({block:'center'})")
                     (screenshots / ("native-" + label + ".png")).write_bytes(base64.b64decode(request(session + "/screenshot")))
-                print("ray page: native still, three thumbnails, real video playback, frame selection and mobile layout pass")
+                print("ray page: native still, four thumbnails and looping full-size pipe dialog, real video playback, frame selection and mobile layout pass")
     finally:
         if session:
             with suppress(Exception):

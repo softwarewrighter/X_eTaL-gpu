@@ -4,6 +4,7 @@ import json
 import re
 from pathlib import Path
 import shutil
+import ray_pipe_site
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/softwarewrighter/X_eTaL-gpu"
@@ -20,14 +21,17 @@ def cards():
     if (ROOT / "site-assets/ray/logo-gpu/manifest.json").is_file():
         poster = "logo-gpu/still.png"
         label = "Native 1280-pixel RTX still + CPU preview video"
+    pipe_card, pipe_dialog = ray_pipe_site.card()
+    glass_image = '<img src="ray-tracing/media/glass-rtx/still.png" alt="Native glass transport preview with sampling artifacts">' if (ROOT / "site-assets/ray/glass-rtx/still.png").is_file() else GLASS
+    glass_label = "Native RTX transport preview; sampling artifacts remain" if glass_image != GLASS else "Planned &middot; transparent scene in development"
     return f'''<section id="ray-tracing" aria-labelledby="ray-title">
 <h2 id="ray-title">Ray tracing</h2>
 <p class="cap">Recorded X_eTaL renders. Open a thumbnail for demos, videos, settings and downloadable frames.</p>
-<div class="grid ray-cards">
+<div class="grid ray-cards">{pipe_card}
 <a class="card" href="ray-tracing/#logo"><img src="ray-tracing/media/{poster}" width="160" height="64" alt="Silver X and copper lettered arrow vane"><h3>X and rotating _eTaL</h3><p>{label}</p></a>
-<a class="card" href="ray-tracing/#glass">{GLASS}<h3>Glass spheres and crystals</h3><p>Planned &middot; transparent scene in development</p></a>
+<a class="card" href="ray-tracing/#glass">{glass_image}<h3>Glass spheres and crystals</h3><p>{glass_label}</p></a>
 <a class="card" href="ray-tracing/#benchmark">{BOX}<h3>Test / benchmark scene</h3><p>Planned &middot; Cornell Box reference comparison</p></a>
-</div></section>'''
+</div></section>{pipe_dialog}'''
 
 
 def build():
@@ -71,6 +75,14 @@ def build():
 <p>The exact same X_eTaL program produced both TIFFs. These small images test correctness, rather than presentation quality or performance. Maximum raw linear RGB error: {comparison['linear_max_absolute_error']:.3g}; maximum display RGB error: {comparison['display_max_absolute_error']:.3g}. {pixels}</p>
 <div class="links"><a href="media/image-pair/cpu.png">CPU PNG</a><a href="media/image-pair/gpu.png">GPU PNG</a><a href="media/image-pair/cpu.tif" download>CPU TIFF</a><a href="media/image-pair/gpu.tif" download>GPU TIFF</a><a href="media/image-pair/masters.zip" download>Paired masters, raw Float arrays and source</a><a href="media/image-pair/manifest.json">Validation settings</a></div>
 <p>Linear radiance is preserved before the shared X_eTaL display conversion. The host only quantizes RGB8 and encodes the images. Reproduce with <code>just ray-image-pair</code>.</p></details>'''
+    glass_dir = ROOT / "site-assets/ray/glass-rtx"
+    if (glass_dir / "manifest.json").is_file():
+        gm = json.loads((glass_dir / "manifest.json").read_text())
+        shutil.copytree(glass_dir, out / "media/glass-rtx", dirs_exist_ok=True)
+        glass = f'''<section id="glass"><h2>Glass spheres and crystals</h2><a href="media/glass-rtx/still.png"><img class="native-still" src="media/glass-rtx/still.png" width="{gm['width']}" height="{gm['height']}" alt="Native GPU glass transport preview with visible sampling artifacts"></a><p>Native {gm['width']} &times; {gm['height']} RTX transport preview. One sample per pixel, four interactions. Structured sampling bands and unresolved black paths remain; this is not the polished glass milestone.</p><div class="links"><a href="media/glass-rtx/still.png">Full-size PNG</a><a href="media/glass-rtx/still.tif" download>Uncompressed TIFF</a><a href="media/glass-rtx/masters.zip" download>Masters, source and raw Float results</a><a href="media/glass-rtx/manifest.json">Settings and validation</a></div></section>'''
+        text = re.sub(r'<section id="glass".*?</section>', glass, text, count=1, flags=re.S)
+    pipes = ray_pipe_site.section(out)
+    text = text.replace('<section id="glass"', pipes + '<section id="glass"')
     values = {
         "GPU": gpu, "PAIR": pair, "HIRES": still, "WIDTH": str(manifest["width"]), "HEIGHT": str(manifest["height"]),
         "FRAMES": str(manifest["frame_count"]), "FPS": str(manifest["fps"]),
@@ -82,4 +94,4 @@ def build():
     for name, value in values.items():
         text = text.replace("@@" + name + "@@", value)
     (out / "index.html").write_text(text)
-    print("pages: ray-tracing/index.html (native GPU/CPU logo; glass and benchmark planned)")
+    print("pages: ray-tracing/index.html (native GPU/CPU logo, glass preview and pipe flight; benchmark planned)")
