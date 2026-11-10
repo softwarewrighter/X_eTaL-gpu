@@ -12,6 +12,8 @@ complete, saga archive).
 
 ## 2026-11-10
 
+- `feat` Expose authoring and frozen X_eTaL sources beside each ray demo and in pipe dialogs, with immutable GitHub views, matching recorded library pins, current function/macro xrefs and labeled orchestration drivers. Validate source navigation without changing rendered media.
+
 - `chore` Record completed native pipe fly-through and glass gallery publication, verified public video bytes and actual looping dialog playback; advance to the benchmark gallery.
 
 ## 2026-11-08

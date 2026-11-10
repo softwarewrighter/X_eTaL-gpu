@@ -679,3 +679,14 @@ wraparound-frame check and animated card/dialog views. Completed Apple
 step 065 is preserved; preemption recovery is archived rather than
 hand-editing saga records. Antialiasing, smoother geometry and further
 throughput work remain refinements, not claims about this first video.
+
+
+### Ray source navigation
+
+User-requested source/xref navigation takes current step 050. The original
+benchmark prompt is restored as next step 051, and the existing logo-polish
+task is requeued as step 066, without shifting the completed Apple step 065. Source links distinguish frozen executed
+programs, equivalent CPU strip sources, editable authoring examples and
+current library docs from exact recording-specific dependency revisions.
+No rendering algorithm, media, language pin or library implementation
+changes are required for this navigation work.

@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 import shutil
 import ray_pipe_site
+import ray_sources
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/softwarewrighter/X_eTaL-gpu"
@@ -79,10 +80,21 @@ def build():
     if (glass_dir / "manifest.json").is_file():
         gm = json.loads((glass_dir / "manifest.json").read_text())
         shutil.copytree(glass_dir, out / "media/glass-rtx", dirs_exist_ok=True)
-        glass = f'''<section id="glass"><h2>Glass spheres and crystals</h2><a href="media/glass-rtx/still.png"><img class="native-still" src="media/glass-rtx/still.png" width="{gm['width']}" height="{gm['height']}" alt="Native GPU glass transport preview with visible sampling artifacts"></a><p>Native {gm['width']} &times; {gm['height']} RTX transport preview. One sample per pixel, four interactions. Structured sampling bands and unresolved black paths remain; this is not the polished glass milestone.</p><div class="links"><a href="media/glass-rtx/still.png">Full-size PNG</a><a href="media/glass-rtx/still.tif" download>Uncompressed TIFF</a><a href="media/glass-rtx/masters.zip" download>Masters, source and raw Float results</a><a href="media/glass-rtx/manifest.json">Settings and validation</a></div></section>'''
+        glass_sources = ray_sources.panel("glass-rtx", "media/glass-rtx", "examples/ray/glass-transport.xtl", [("scene.xtl", "Recorded glass scene and renderer (X_eTaL)")], "scripts/ray-render-regions.py", ["Scene", "Glass", "RayTrace", "Vector3"])
+        glass = f'''<section id="glass"><h2>Glass spheres and crystals</h2><a href="media/glass-rtx/still.png"><img class="native-still" src="media/glass-rtx/still.png" width="{gm['width']}" height="{gm['height']}" alt="Native GPU glass transport preview with visible sampling artifacts"></a><p>Native {gm['width']} &times; {gm['height']} RTX transport preview. One sample per pixel, four interactions. Structured sampling bands and unresolved black paths remain; this is not the polished glass milestone.</p><div class="links"><a href="media/glass-rtx/still.png">Full-size PNG</a><a href="media/glass-rtx/still.tif" download>Uncompressed TIFF</a><a href="media/glass-rtx/masters.zip" download>Masters, source and raw Float results</a><a href="media/glass-rtx/manifest.json">Settings and validation</a></div>{glass_sources}</section>'''
         text = re.sub(r'<section id="glass".*?</section>', glass, text, count=1, flags=re.S)
     pipes = ray_pipe_site.section(out)
     text = text.replace('<section id="glass"', pipes + '<section id="glass"')
+    if gpu:
+        gpu += ray_sources.panel("logo-gpu", "media/logo-gpu", "examples/ray/logo.xtl", [("scene.xtl", "Recorded full GPU program (X_eTaL)")], "scripts/ray-render-regions.py", ["Scene", "Extrusion", "RayTrace", "Vector3"])
+    if still:
+        still += ray_sources.panel("logo-still", "media/logo-still", "examples/ray/logo.xtl", [("scene.xtl", "Equivalent full-frame CPU program (X_eTaL)")], "scripts/ray-render-cpu-tiles.py", ["Scene", "Extrusion", "RayTrace", "Vector3"], "This full-frame equivalent describes the CPU image. The master archive contains the exact executed strip programs.")
+    if pair:
+        pair_sources = ray_sources.panel("image-pair", "media/image-pair", "examples/ray/logo.xtl", [("scene.xtl", "Exact CPU/GPU validation program (X_eTaL)")], "scripts/ray-render-regions.py", ["RayTrace", "Scene", "Extrusion"])
+    if pair:
+        pair = pair.replace("</details>", pair_sources + "</details>")
+    animation_sources = ray_sources.panel("logo", "media/logo", "examples/ray/logo.xtl", [("scene.xtl", "Recorded animation scene template (X_eTaL)")], "scripts/ray-animate-cpu.py", ["Scene", "Extrusion", "RayTrace", "Vector3"], "Exact per-frame programs and angles are preserved in the animation master archive.")
+    text = text.replace('<details id="scene-source">', animation_sources + '<details id="scene-source">')
     values = {
         "GPU": gpu, "PAIR": pair, "HIRES": still, "WIDTH": str(manifest["width"]), "HEIGHT": str(manifest["height"]),
         "FRAMES": str(manifest["frame_count"]), "FPS": str(manifest["fps"]),

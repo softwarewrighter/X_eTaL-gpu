@@ -314,3 +314,7 @@ ray-pipe-media *args:
 # Check native frame masters, the GPU-rendered loop seam and encoded playback
 ray-test-pipes:
     python3 scripts/test-pipe-media.py
+
+# Validate visible source links and recording-specific library references in built pages
+ray-test-sources:
+    python3 scripts/test-ray-sources.py

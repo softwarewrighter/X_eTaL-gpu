@@ -90,6 +90,10 @@ is built here moves there when it does.
 
 ## Status
 
+[Ray-tracing source guide](docs/ray-sources.md): authoring programs, exact
+recording sources, Python drivers and shared-library cross-references are
+linked beside each demo and in the pipe video dialogs.
+
 The [ray-tracing gallery](https://softwarewrighter.github.io/X_eTaL-gpu/ray-tracing/#pipes)
 includes a native 640 by 360 pipe fly-through, with an animated thumbnail
 and full-size looping view. See [rendering and batching details](docs/pipe-flythrough.md).

@@ -73,6 +73,7 @@ def main():
                 assert script("return document.querySelector('video.pipe-loop').currentSrc.endsWith('/flythrough.webm')"), "smallest animation must actually decode"
                 script("document.querySelector('[data-pipe-open=pipe-home-dialog]').click()")
                 wait("const d=document.getElementById('pipe-home-dialog');return d.open&&d.querySelector('video').videoWidth===640")
+                assert script("return !!document.querySelector('#pipe-home-dialog a[href$=\"/geometry.xtl\"]') && !!document.querySelector('#pipe-home-dialog a[href$=\"/function.xtl\"]')")
                 script("document.getElementById('pipe-home-dialog').close()")
                 request(session + "/url", {"url": site + "/ray-tracing/"})
                 wait("const i=document.querySelector('#gpu-still img');return i&&i.complete&&i.naturalWidth>=1024")
@@ -92,6 +93,7 @@ def main():
                 wait("const d=document.getElementById('pipe-gallery-dialog');return d.open&&d.querySelector('video').readyState>=2")
                 script("const v=document.querySelector('#pipe-gallery-dialog video');v.currentTime=v.duration-0.15;v.play()")
                 wait("const v=document.querySelector('#pipe-gallery-dialog video');return v.currentTime<1&&!v.paused")
+                assert script("return !!document.querySelector('#pipe-gallery-dialog a[href$=\"/geometry.xtl\"]') && document.querySelectorAll('.ray-sources[data-recording]').length===6")
                 script("document.getElementById('pipe-gallery-dialog').close()")
                 wait("const i=document.querySelector('#glass img');return i.complete&&i.naturalWidth===1024")
 
