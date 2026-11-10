@@ -10,6 +10,10 @@ one, `docs` documentation, `plan` saga planning and reordering,
 `release` milestone release, `chore` agentrail bookkeeping (step
 complete, saga archive).
 
+## 2026-11-10
+
+- `chore` Record completed native pipe fly-through and glass gallery publication, verified public video bytes and actual looping dialog playback; advance to the benchmark gallery.
+
 ## 2026-11-08
 
 - `feat` Add the animated pipe thumbnail and native-size looping dialog to the live gallery, publish the labeled glass transport preview, and verify real Chromium playback, wraparound and mobile layout. Include the canonical X_eTaL scene builder and its file input in the reproducible source.

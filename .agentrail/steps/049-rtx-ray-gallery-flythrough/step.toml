@@ -1,8 +1,9 @@
 number = 49
 slug = "rtx-ray-gallery-flythrough"
-status = "in-progress"
+status = "completed"
 description = "Publish the existing native glass preview with honest quality labels and add ..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T12:16:30"
-commits = []
+completed_at = "2026-11-10T07:46:31"
+commits = ["e1bbfc98969847f94e6c5e1acddf8a4fb3dc6d8e"]
