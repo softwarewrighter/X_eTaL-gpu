@@ -1,0 +1,50 @@
+{
+  "camera_fov": 0.18,
+  "renderer_binary_sha256": "55cfa9676219e743a4aad4a6814ef35e677031e26c25e202377a37d786662e73",
+  "scene": "glass",
+  "float_width": "f64",
+  "interaction_cap": 4,
+  "seed": 123,
+  "width": 2,
+  "height": 2,
+  "angle_radians": 0.0,
+  "backend": "opencl:0",
+  "repeats": 2,
+  "source_sha256": "54a78dc9e811455e5c8d5468d5be6a25ae7ceb941db5ff9fa504b0e5525bb738",
+  "xetal": "abdd371dd4ae644f00e04d04e09d67576056f031",
+  "libraries": "8bd438d21cce133ddcfced36b0e243b8377c7b8d",
+  "process_seconds": 524.8354452501517,
+  "timings": [
+    "202 warnings generated.",
+    "repeat 1 time: setup 521410.381 ms, upload 250.734 ms, kernels 7.598 ms (device), launches 11.751 ms (host), download 0.032 ms, total 521799.420 ms",
+    "repeat 2 time: setup 0.000 ms, upload 0.000 ms, kernels 7.642 ms (device), launches 10.840 ms (host), download 0.028 ms, total 11.208 ms"
+  ],
+  "execution_metrics": {
+    "logical_buffers": 461,
+    "physical_buffers": 107,
+    "logical_bytes": 47332,
+    "physical_bytes": 27380,
+    "kernels": 248,
+    "kernel_source_bytes": 3370989,
+    "launches": 332,
+    "guards": 38
+  },
+  "cpu_comparison": {
+    "cpu_process_seconds": 8.440374538069591,
+    "linear_max_absolute_error": 0.0,
+    "display_max_absolute_error": 2.7755575615628914e-17,
+    "rgb8_different_channels": 0,
+    "rgb8_max_absolute_difference": 0,
+    "tolerance": "1e-12 * (1 + abs(reference))",
+    "same_source": true,
+    "cpu_tiff": "validation-cpu.tif",
+    "cpu_png": "validation-cpu.png"
+  },
+  "samples_per_pixel": 1,
+  "compression": "None (TIFF)",
+  "host_geometry_fallbacks": [],
+  "algorithm": "Shared Glass dielectric sampled transport; conservative opaque point-light shadows; no caustics/DOF; scalar RGB channel adapter traces each pixel three times",
+  "outputs": "linear RGB Float array followed by shared X_eTaL sRGB Float array; TIFF/PNG encode display only",
+  "display_transfer": "Shared RayTrace s_rgb, exposure 1; host RGB8 quantization only",
+  "timing_scope": "CLI process includes load/setup/ASCII; resident run phase times recorded separately; CPU evaluator process timing includes load/ASCII"
+}

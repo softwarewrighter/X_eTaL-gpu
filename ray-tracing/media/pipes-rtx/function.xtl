@@ -1,0 +1,31 @@
+{ frameStart ->
+## Immutable mesh was evaluated once by the pinned X_eTaL evaluator; see geometry.xtl.
+triangles := 1142 3 3 r_eshape n_umbers []N_GET "triangles.txt"
+materialids := f_loor n_umbers []N_GET "materialids.txt"
+materials := 6 4 r_eshape 0.23 0.42 0.48 0.0 0.38 0.55 0.6 0.0 0.65 0.72 0.74 0.0 0.85 0.12 0.07 0.0 0.85 0.6 0.12 0.0 0.28 0.32 0.25 0.0
+width := 640
+height := 360
+framecount := 180
+batchframes := 6
+clip := 0.00001 32.0 1e-10 0.0001
+environment := 2 3 r_eshape 0.28 0.3 0.34 0.22 0.48 0.8
+## Flatten [frame,pixel,channel] so every batch is one parallel GPU region.
+batch_ := { indices ->
+  '{ index ->
+    f := frameStart + (index - 1) d_iv (width * height * 3)
+    pixel := 1 + ((index - 1) d_iv 3) m_od (width * height)
+    channel := 1 + (index - 1) m_od 3
+    phase := 36.0 * (f_loat (f m_od framecount)) / f_loat framecount
+    camera := 0.0 2.15 c_at phase c_at 0.0 2.15 c_at (phase + 5.0) c_at 0.0 1.0 0.0 1.05
+    o := camera rt:o_rigins 1
+    d := ((camera rt:r_ays width c_at height)_ 1 r_eshape pixel)
+    lights := 2 6 r_eshape -6.0 12.0 c_at (phase - 5.0) c_at 100.0 95.0 85.0 -0.4 3.1 c_at (phase - 1.0) c_at 7.0 7.5 8.0
+    color := (((((((clip rt:s_hade triangles)_ materialids)_ materials)_ lights)_ environment)_ o)_ d)
+    channel s_elect r_avel color
+  } e_ach indices
+}
+## A bound zero term keeps the function index vector device-valued for scalar each regions.
+indices := (f_loor f_loat r_ange batchframes * width * height * 3) + 0 * frameStart
+linear := ((batchframes * width * height) c_at 3) r_eshape batch_ indices
+(r_avel linear) c_at r_avel 1.0 rt:s_rgb linear
+}

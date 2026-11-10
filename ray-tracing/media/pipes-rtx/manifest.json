@@ -1,0 +1,154 @@
+{
+  "width": 640,
+  "height": 360,
+  "frames": 180,
+  "batch_frames": 6,
+  "fps": 15,
+  "triangles": 1142,
+  "xetal": "abdd371dd4ae644f00e04d04e09d67576056f031",
+  "libraries": "8bd438d21cce133ddcfced36b0e243b8377c7b8d",
+  "source_sha256": "46ce9101b6626e22082dd3a9aedfa172031c60d5c58b3c78839e0992eb2224d4",
+  "geometry_sha256": "0a2566cafccfb558cf3c7907bcc31ed7ae8605201367a87a14308de9e38c9eb8",
+  "renderer_binary_sha256": "13e72f3e944a24544bff58e692259d2bc5e2c0762a2ebe3273adc061c864dc38",
+  "function_sha256": "b80accc0f526b5ad62f6034319e14de579b2fbaffcb849b01e76935f69d9c9bf",
+  "ir_sha256": "d25b284cd5981383986eec928461c1821a9669a894251de84c4de8b48086843c",
+  "backend": "opencl:0",
+  "float_width": "f32",
+  "render_process_seconds": 116.26605117996223,
+  "cpu_comparison": null,
+  "period_units": 36,
+  "pipe_starts": [
+    0,
+    18
+  ],
+  "pipe_length": 8,
+  "inner_radius": 1.9,
+  "outer_radius": 2.2,
+  "camera_height": 2.15,
+  "sphere_right": [
+    -3.6,
+    1.15,
+    14
+  ],
+  "pyramid_left": [
+    3.8,
+    0,
+    32
+  ],
+  "resident_scene": true,
+  "algorithm": "Shared RayTrace direct diffuse and hard shadows, flat triangles; each pixel traced three times by scalar RGB adapter",
+  "outputs": "Two Float arrays per batch: unclamped linear then shared sRGB; host quantization and encoding only",
+  "selected_animation": "flythrough.webm",
+  "selected_codec": "av1",
+  "candidates": [
+    {
+      "file": "candidate.mp4",
+      "bytes": 191247,
+      "codec": "h264",
+      "frames": 180,
+      "duration": 12.0,
+      "psnr_db": 51.623653,
+      "eligible": true
+    },
+    {
+      "file": "candidate.vp9.webm",
+      "bytes": 103917,
+      "codec": "vp9",
+      "frames": 180,
+      "duration": 12.0,
+      "psnr_db": 34.180458,
+      "eligible": true
+    },
+    {
+      "file": "candidate.av1.webm",
+      "bytes": 71849,
+      "codec": "av1",
+      "frames": 180,
+      "duration": 12.0,
+      "psnr_db": 34.154339,
+      "eligible": true
+    },
+    {
+      "file": "candidate.webp",
+      "bytes": 556482,
+      "eligible": false,
+      "reason": "Decoded duration was not reported by ffprobe; could not validate the 12-second timing."
+    },
+    {
+      "file": "candidate.gif",
+      "bytes": 1088468,
+      "codec": "gif",
+      "frames": 180,
+      "duration": 12.0,
+      "psnr_db": 34.167776,
+      "eligible": true
+    }
+  ],
+  "quality_floor_psnr_db": 30,
+  "loop_seam": "GPU-rendered frame at index framecount matches frame zero byte for byte; endpoint excluded from encoded playback",
+  "validation": {
+    "linear_max_absolute_error": 2.3447471020343613e-08,
+    "display_max_absolute_error": 9.498071706914857e-08,
+    "rgb8_different_channels": 0,
+    "rgb8_max_absolute_difference": 0
+  },
+  "renderer_git_base": "f5ea0f06d2a989d73281a9eedbd0dd28e91472d3",
+  "masters": [
+    {
+      "file": "masters-00.zip",
+      "first_frame": 0,
+      "frames": 30
+    },
+    {
+      "file": "masters-01.zip",
+      "first_frame": 30,
+      "frames": 30
+    },
+    {
+      "file": "masters-02.zip",
+      "first_frame": 60,
+      "frames": 30
+    },
+    {
+      "file": "masters-03.zip",
+      "first_frame": 90,
+      "frames": 30
+    },
+    {
+      "file": "masters-04.zip",
+      "first_frame": 120,
+      "frames": 30
+    },
+    {
+      "file": "masters-05.zip",
+      "first_frame": 150,
+      "frames": 30
+    }
+  ],
+  "raw_float_storage": "All raw GPU batches and frame TIFFs retained in work/ray-pipe-publish; public archives contain every TIFF frame and source, not full Float streams",
+  "artifact_sha256": {
+    "timings.txt": "c14207ee7f85f2ea2893654a9da8800a8a53aabe7b52ad1523590fef8039b291",
+    "materialids.txt": "b0236fa52dc3cf3d49fcb2e3298cc0a8791ede6bc6c98d0ce2812077967c7420",
+    "poster.png": "6aee1993fbbaf1efc77fd21ad9562569f2c3f9f0615cee82e9891d185527137a",
+    "flythrough.mp4": "368a1bf0bdb641f7cd1715df97564f8a7938adb456c097f674b2ad8708b44a0c",
+    "masters-03.zip": "aab67d8bab408aeed1b8970ff5f1469a55bd8d50296c6f370881159dafde0624",
+    "masters-00.zip": "d08d90884d5069b2df7e1855f1def0c38de4d2e0abc98039ae999c40ae334527",
+    "validation-function.xtl": "b37178b648ebfb01cbb056a647c574095850912e669328544107d9bd134dd226",
+    "geometry.xtl": "0a2566cafccfb558cf3c7907bcc31ed7ae8605201367a87a14308de9e38c9eb8",
+    "flythrough.webm": "f15e551a417c5fa1ed6c844366ecdd5d89013563cfcbc548c54fcac0236624a6",
+    "masters-04.zip": "7e72be34468325407fa98dbaa81cc0939e648320d02373b7173fdd04b2509ed8",
+    "function.xtl": "b80accc0f526b5ad62f6034319e14de579b2fbaffcb849b01e76935f69d9c9bf",
+    "validation-gpu.out": "e3872e574ad4c6cc3345b7c029943f53fdda689c30f9a83249bd3f1b66af60f0",
+    "masters-02.zip": "64b1ec3df679faea6d8df044c552b8b3fc4b3dc130004ca5c03d1a25acdb9dea",
+    "masters-05.zip": "142ac09e7a212e373b75dc118f4a3d9f86955623b1d7212bd93a0468305334c5",
+    "scene.xir": "d25b284cd5981383986eec928461c1821a9669a894251de84c4de8b48086843c",
+    "triangles.txt": "33a517a7e3c703ae72c02d7896b65e4d9cd16a722510a8a5e5ca129db76fc118",
+    "validation.json": "077063cacf165544dc6aa44f06786c4e5d50e02fbb3921a1f711cd38bfcc98f2",
+    "validation-cpu.out": "cc7e1458957df019b4c372786414360ada4a7190dfb923248b00f0ba817bd470",
+    "masters-01.zip": "606e8c47205e99317e8add769bf43b90cf26b67785a2ea06a1b78c5a552177e0"
+  },
+  "renderer_source_sha256": {
+    "components/cli/src/main.rs": "b4a17351257b758d0f6a5f55e3f77a2337671f5841c2ba7862e9d89370b4f289",
+    "components/cli/src/batches.rs": "50d0f892e083bfee91f0b77cd3c7ae9978d15ad06453fb38905d0cc268abb340"
+  }
+}

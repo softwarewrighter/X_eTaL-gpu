@@ -1,0 +1,250 @@
+{
+  "backend": "X_eTaL CPU evaluator",
+  "width": 1280,
+  "height": 512,
+  "samples_axis": 1,
+  "samples_per_pixel": 1,
+  "angle_radians": 0.0,
+  "scene_sha256": "2f0bac5bf6c5ec2f332b7447000fb7d9f3177646b831b79a3cd0f5d8ecc0a568",
+  "xetal": "abdd371dd4ae644f00e04d04e09d67576056f031",
+  "libraries": "a2d4de1359295471afff509215c078da9c25c963",
+  "library_snapshot": true,
+  "compression": "None (TIFF)",
+  "render_wall_seconds": 606.7128607318737,
+  "workers": 4,
+  "strip_rows": 16,
+  "cached_strips": 0,
+  "total_strip_seconds": 2276.3807102597784,
+  "timing_scope": "Sequence wall time includes evaluator setup/text output and encoding; not a paired benchmark or measured serial baseline",
+  "paired_gpu_validation": "not established for this CPU snapshot",
+  "sample_pattern": "regular centered subpixel grid; linear RGB averaged in X_eTaL",
+  "strips": [
+    {
+      "row": 0,
+      "rows": 16,
+      "source_sha256": "69fd9e1f9a7bc8afb08ffd58e53e4b3a10e36888a7d56b6757b7fa878732c8d6",
+      "render_seconds": 70.13625684403814,
+      "source": "strips/row-0000.xtl"
+    },
+    {
+      "row": 16,
+      "rows": 16,
+      "source_sha256": "a6eecf5131d63047d105d1386d17457f0fac228b54a3b3ca6de4f79327d5ed9e",
+      "render_seconds": 67.94153732107952,
+      "source": "strips/row-0016.xtl"
+    },
+    {
+      "row": 32,
+      "rows": 16,
+      "source_sha256": "0b9b8bc9fa7fddde010ff01de48e044e36087ab41dfae9fec2e8201433399765",
+      "render_seconds": 67.55921252002008,
+      "source": "strips/row-0032.xtl"
+    },
+    {
+      "row": 48,
+      "rows": 16,
+      "source_sha256": "8777be942f4ea85b870c404600d619393c8b4862226d3b3f37238857c65b05a2",
+      "render_seconds": 69.58153596706688,
+      "source": "strips/row-0048.xtl"
+    },
+    {
+      "row": 64,
+      "rows": 16,
+      "source_sha256": "0c0873aea111f01127d8a188c920127b4148468d3abe39a749d59b48805ee755",
+      "render_seconds": 70.72169747715816,
+      "source": "strips/row-0064.xtl"
+    },
+    {
+      "row": 80,
+      "rows": 16,
+      "source_sha256": "dffe7524f6a7fa97deab3315e826f456c7adb61f36f703294e4e2e477f4f0ce3",
+      "render_seconds": 70.64283013599925,
+      "source": "strips/row-0080.xtl"
+    },
+    {
+      "row": 96,
+      "rows": 16,
+      "source_sha256": "0b89b67c9a8cc3d3bdb7ff0c7601c1f629455fb35eacddc76af56c669c8c29a5",
+      "render_seconds": 73.6231695979368,
+      "source": "strips/row-0096.xtl"
+    },
+    {
+      "row": 112,
+      "rows": 16,
+      "source_sha256": "5edc3b3d3fb2dd9c7b51fd3f2c24a53c6ee14102bdb311dae121119c9637dc96",
+      "render_seconds": 70.34105055895634,
+      "source": "strips/row-0112.xtl"
+    },
+    {
+      "row": 128,
+      "rows": 16,
+      "source_sha256": "f8f7ccdf41615acb50472e9e7351832a901255c51cf776fbe29266de92f0cb09",
+      "render_seconds": 70.1573572549969,
+      "source": "strips/row-0128.xtl"
+    },
+    {
+      "row": 144,
+      "rows": 16,
+      "source_sha256": "69c0aa4809adfe13e7b6b2f23a872e467de38eabc1c5e36eb83b3f6100d6ffc3",
+      "render_seconds": 69.28471285291016,
+      "source": "strips/row-0144.xtl"
+    },
+    {
+      "row": 160,
+      "rows": 16,
+      "source_sha256": "2f52e0db7e7873dfe9da357f65ad14355b40ce79fb393fd8d946666bf2e3826d",
+      "render_seconds": 67.57402689498849,
+      "source": "strips/row-0160.xtl"
+    },
+    {
+      "row": 176,
+      "rows": 16,
+      "source_sha256": "3013fdbdeaf1340af7c4b9dfa599c9f636a3cf4d3f48f9c808368c49b5a42fff",
+      "render_seconds": 68.56563820200972,
+      "source": "strips/row-0176.xtl"
+    },
+    {
+      "row": 192,
+      "rows": 16,
+      "source_sha256": "7bf956432a8d1a64441ae2a22d4e6e7923dfbdc6d5bbb4f3630d5da4cbca00df",
+      "render_seconds": 69.51647732895799,
+      "source": "strips/row-0192.xtl"
+    },
+    {
+      "row": 208,
+      "rows": 16,
+      "source_sha256": "9825d3a179db759a26797b0eaa918dd1e860814f5c05e73dc9539e2190ce613a",
+      "render_seconds": 73.07448285887949,
+      "source": "strips/row-0208.xtl"
+    },
+    {
+      "row": 224,
+      "rows": 16,
+      "source_sha256": "8f6cfa17a43dff2eb85f4382791ff544cb45c6daf4c2ce7966eff9adf548d1d7",
+      "render_seconds": 73.44288625498302,
+      "source": "strips/row-0224.xtl"
+    },
+    {
+      "row": 240,
+      "rows": 16,
+      "source_sha256": "25382c2d3aa69745037cabf0c0044d94cbafff0aa1fed93c8dbbc784d0245801",
+      "render_seconds": 76.27118882583454,
+      "source": "strips/row-0240.xtl"
+    },
+    {
+      "row": 256,
+      "rows": 16,
+      "source_sha256": "dbac96afb411729ce887af064a976e6b333b8d2e4f982375791991689172ecdd",
+      "render_seconds": 74.53375034313649,
+      "source": "strips/row-0256.xtl"
+    },
+    {
+      "row": 272,
+      "rows": 16,
+      "source_sha256": "9923808e7f1d5e8bf490a2148f4d6477b1d5c209adb132cedb7627e12a991f7c",
+      "render_seconds": 76.51682188897394,
+      "source": "strips/row-0272.xtl"
+    },
+    {
+      "row": 288,
+      "rows": 16,
+      "source_sha256": "3da89d5937fbe45523aaa7fdc9985cdbfbdc3108657450005a0da6aab1c000e9",
+      "render_seconds": 74.11643291194923,
+      "source": "strips/row-0288.xtl"
+    },
+    {
+      "row": 304,
+      "rows": 16,
+      "source_sha256": "25e2241c83943c76653c9e74d6abd7ee1b27542103c71fe47e2e0e947aec8cd8",
+      "render_seconds": 74.6047039218247,
+      "source": "strips/row-0304.xtl"
+    },
+    {
+      "row": 320,
+      "rows": 16,
+      "source_sha256": "a0f778902e612660fd537b87402b1ccec532d8a5e4d1d5c258ffa9c35f7fadeb",
+      "render_seconds": 71.28961101989262,
+      "source": "strips/row-0320.xtl"
+    },
+    {
+      "row": 336,
+      "rows": 16,
+      "source_sha256": "0b9e82e18ac31b32f94f3c56e3d7eed524df976aeba178ce988921b42a1c0c84",
+      "render_seconds": 69.54539248277433,
+      "source": "strips/row-0336.xtl"
+    },
+    {
+      "row": 352,
+      "rows": 16,
+      "source_sha256": "32082967b6eb3cbbea080cb17f0e84a285b73ba1c80c899b573d107478a66caa",
+      "render_seconds": 68.64228766178712,
+      "source": "strips/row-0352.xtl"
+    },
+    {
+      "row": 368,
+      "rows": 16,
+      "source_sha256": "ae5c922d150636ef704c427b2118e7b906392bd775fbd8cb035e769a6362ffee",
+      "render_seconds": 71.96687889215536,
+      "source": "strips/row-0368.xtl"
+    },
+    {
+      "row": 384,
+      "rows": 16,
+      "source_sha256": "c80b1e179209415216d2302bb0d915745540e072ca47e87a33f2de27e44c76b7",
+      "render_seconds": 70.30741483904421,
+      "source": "strips/row-0384.xtl"
+    },
+    {
+      "row": 400,
+      "rows": 16,
+      "source_sha256": "139365a2d8bc98755d64746c0cff9c99061457167a544be0d2ebfba6bef7cbfb",
+      "render_seconds": 69.55427458602935,
+      "source": "strips/row-0400.xtl"
+    },
+    {
+      "row": 416,
+      "rows": 16,
+      "source_sha256": "4fd638f789451bc87d4104e8b50489ad442d1fcffed61748a3ec109e4935cf9e",
+      "render_seconds": 69.6476793710608,
+      "source": "strips/row-0416.xtl"
+    },
+    {
+      "row": 432,
+      "rows": 16,
+      "source_sha256": "336733627c31fc7e745c98c014358c349ede7af71567bab0776defb350056e5d",
+      "render_seconds": 69.29684253712185,
+      "source": "strips/row-0432.xtl"
+    },
+    {
+      "row": 448,
+      "rows": 16,
+      "source_sha256": "49d2be8f80c8df3bf928c6a9e0c4b038784ac246077cd071b1f167c05afe5ebf",
+      "render_seconds": 69.93171971105039,
+      "source": "strips/row-0448.xtl"
+    },
+    {
+      "row": 464,
+      "rows": 16,
+      "source_sha256": "3b90dc39ce94a2c63e2541fe9de166fae0dacc9e41ba2ab407590b1749009aa4",
+      "render_seconds": 76.36791166896,
+      "source": "strips/row-0464.xtl"
+    },
+    {
+      "row": 480,
+      "rows": 16,
+      "source_sha256": "e5457be743ad55dec7c16f241e467fdbb761ffdbabcbd1baaef9f416694a0bef",
+      "render_seconds": 71.6017945271451,
+      "source": "strips/row-0480.xtl"
+    },
+    {
+      "row": 496,
+      "rows": 16,
+      "source_sha256": "8fb599b0492381b1f7f9ff7aff614f27ab94dd8e1023fd35b347596a0a8019ae",
+      "render_seconds": 70.02313300105743,
+      "source": "strips/row-0496.xtl"
+    }
+  ],
+  "source_sha256": "8483294f77441653d52a4de097bd3878f8decc2e189bc2998c0d6b9cf99469ab",
+  "source_role": "Equivalent full-frame X_eTaL program; exact executed strips in masters.zip",
+  "display_transfer": "sRGB after linear RGB averaging, exposure 1, clamped to 0..1; RGB8 quantized by encoder"
+}

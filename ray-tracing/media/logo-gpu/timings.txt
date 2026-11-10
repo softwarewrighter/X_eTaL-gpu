@@ -1,0 +1,3 @@
+21 warnings generated.
+repeat 1 time: setup 5003.902 ms, upload 22.333 ms, kernels 738.948 ms (device), launches 757.133 ms (host), download 50.018 ms, total 5851.123 ms
+repeat 2 time: setup 0.000 ms, upload 0.000 ms, kernels 890.943 ms (device), launches 1125.647 ms (host), download 87.446 ms, total 1213.376 ms
