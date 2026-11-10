@@ -1,8 +1,9 @@
 number = 50
 slug = "ray-source-links"
-status = "in-progress"
+status = "completed"
 description = "Add prominent source links beside every published ray-tracing demo and in the..."
 role = "production"
 context_files = []
 created_at = "2026-11-06T12:16:30"
-commits = []
+completed_at = "2026-11-10T14:54:42"
+commits = ["2fbf28cd970ce19cd77febd44ad2acb8f682321e"]
